@@ -10,6 +10,10 @@ export const metadata: Metadata = {
   description: 'Admin dashboard for burger restaurant order management',
 };
 
+// This enables server-side rendering
+export const dynamic = 'auto';
+export const runtime = 'nodejs';
+
 export default function RootLayout({
   children,
 }: {

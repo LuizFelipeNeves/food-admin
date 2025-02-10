@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import * as z from 'zod'
@@ -66,7 +66,7 @@ export function ProductDialog({
     defaultValues: {
       name: product?.name || '',
       description: product?.description || '',
-      price: product?.price.toString() || '',
+      price: product?.price?.toString() || '',
       categoryId: product?.categoryId || '',
       subcategoryId: product?.subcategoryId || '',
       active: product?.active ?? true,
@@ -74,13 +74,28 @@ export function ProductDialog({
     },
   })
 
+  useEffect(() => {
+    if (product) {
+      form.reset({
+        name: product.name,
+        description: product.description,
+        price: product.price.toString(),
+        categoryId: product.categoryId,
+        subcategoryId: product.subcategoryId,
+        active: product.active ?? true,
+        additionalCategories: product.additionalCategories || [],
+      })
+      setSelectedCategory(product.categoryId)
+    }
+  }, [product, form])
+
   const subcategories = categories
     .find(cat => cat.id === selectedCategory)
     ?.subcategories || []
 
   function onSubmit(values: z.infer<typeof productSchema>) {
     onSave({
-      id: product?.id || Math.random().toString(36).substr(2, 9),
+      _id: product?._id,
       ...values,
       price: parseFloat(values.price),
     })

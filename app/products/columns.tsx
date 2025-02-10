@@ -1,7 +1,7 @@
 'use client'
 
 import { ColumnDef } from '@tanstack/react-table'
-import { Product, ProductCategory, Additional, AdditionalCategory } from '@/data/products'
+import { Product, Category, Additional, AdditionalGroup } from '@/types'
 import { Button } from '@/components/ui/button'
 import { Edit, Trash2 } from 'lucide-react'
 import { 
@@ -35,7 +35,7 @@ const ActionCell = ({
           Editar
         </DropdownMenuItem>
         <DropdownMenuItem 
-          onClick={() => onDelete(row.original.id)}
+          onClick={() => onDelete(row.original._id)}
           className="text-destructive focus:text-destructive"
         >
           <Trash2 className="mr-2 h-4 w-4" />
@@ -57,10 +57,6 @@ export const productColumns = ({ onEdit, onDelete }: ColumnsProps): ColumnDef<Pr
     header: 'Nome',
   },
   {
-    accessorKey: 'description',
-    header: 'Descrição',
-  },
-  {
     accessorKey: 'price',
     header: 'Preço',
     cell: ({ row }) => {
@@ -73,51 +69,23 @@ export const productColumns = ({ onEdit, onDelete }: ColumnsProps): ColumnDef<Pr
     },
   },
   {
-    accessorKey: 'active',
-    header: 'Status',
-    cell: ({ row }) => {
-      const active = row.getValue('active')
-      return active ? 'Ativo' : 'Inativo'
-    },
+    accessorKey: 'category',
+    header: 'Categoria',
   },
   {
     id: 'actions',
-    cell: ({ row }) => (
-      <ActionCell 
-        row={row} 
-        onEdit={onEdit}
-        onDelete={onDelete}
-      />
-    ),
+    cell: ({ row }) => <ActionCell row={row} onEdit={onEdit} onDelete={onDelete} />,
   },
 ]
 
-export const productCategoryColumns = ({ onEdit, onDelete }: ColumnsProps): ColumnDef<ProductCategory>[] => [
+export const productCategoryColumns = ({ onEdit, onDelete }: ColumnsProps): ColumnDef<Category>[] => [
   {
     accessorKey: 'name',
     header: 'Nome',
   },
   {
-    accessorKey: 'description',
-    header: 'Descrição',
-  },
-  {
-    accessorKey: 'active',
-    header: 'Status',
-    cell: ({ row }) => {
-      const active = row.getValue('active')
-      return active ? 'Ativo' : 'Inativo'
-    },
-  },
-  {
     id: 'actions',
-    cell: ({ row }) => (
-      <ActionCell 
-        row={row} 
-        onEdit={onEdit}
-        onDelete={onDelete}
-      />
-    ),
+    cell: ({ row }) => <ActionCell row={row} onEdit={onEdit} onDelete={onDelete} />,
   },
 ]
 
@@ -127,10 +95,6 @@ export const additionalColumns = ({ onEdit, onDelete }: ColumnsProps): ColumnDef
     header: 'Nome',
   },
   {
-    accessorKey: 'description',
-    header: 'Descrição',
-  },
-  {
     accessorKey: 'price',
     header: 'Preço',
     cell: ({ row }) => {
@@ -143,58 +107,18 @@ export const additionalColumns = ({ onEdit, onDelete }: ColumnsProps): ColumnDef
     },
   },
   {
-    accessorKey: 'active',
-    header: 'Status',
-    cell: ({ row }) => {
-      const active = row.getValue('active')
-      return active ? 'Ativo' : 'Inativo'
-    },
-  },
-  {
     id: 'actions',
-    cell: ({ row }) => (
-      <ActionCell 
-        row={row} 
-        onEdit={onEdit}
-        onDelete={onDelete}
-      />
-    ),
+    cell: ({ row }) => <ActionCell row={row} onEdit={onEdit} onDelete={onDelete} />,
   },
 ]
 
-export const additionalCategoryColumns = ({ onEdit, onDelete }: ColumnsProps): ColumnDef<AdditionalCategory>[] => [
+export const additionalCategoryColumns = ({ onEdit, onDelete }: ColumnsProps): ColumnDef<AdditionalGroup>[] => [
   {
     accessorKey: 'name',
     header: 'Nome',
   },
   {
-    accessorKey: 'description',
-    header: 'Descrição',
-  },
-  {
-    accessorKey: 'minQuantity',
-    header: 'Qtd. Mínima',
-  },
-  {
-    accessorKey: 'maxQuantity',
-    header: 'Qtd. Máxima',
-  },
-  {
-    accessorKey: 'active',
-    header: 'Status',
-    cell: ({ row }) => {
-      const active = row.getValue('active')
-      return active ? 'Ativo' : 'Inativo'
-    },
-  },
-  {
     id: 'actions',
-    cell: ({ row }) => (
-      <ActionCell 
-        row={row} 
-        onEdit={onEdit}
-        onDelete={onDelete}
-      />
-    ),
+    cell: ({ row }) => <ActionCell row={row} onEdit={onEdit} onDelete={onDelete} />,
   },
 ]

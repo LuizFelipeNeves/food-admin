@@ -2,6 +2,7 @@
 
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
+import { useEffect } from 'react'
 import * as z from 'zod'
 import {
   Dialog,
@@ -59,17 +60,26 @@ export function AdditionalCategoryDialog({
     resolver: zodResolver(additionalCategorySchema),
     defaultValues: {
       name: category?.name || '',
-      description: category?.description || '',
-      minQuantity: category?.minQuantity.toString() || '0',
-      maxQuantity: category?.maxQuantity.toString() || '1',
-      active: category?.active ?? true,
+      minQuantity: category?.minQuantity?.toString() || '0',
+      maxQuantity: category?.maxQuantity?.toString() || '1',
       additionals: category?.additionals || [],
     },
   })
 
+  useEffect(() => {
+    if (category) {
+      form.reset({
+        name: category.name,
+        minQuantity: category.minQuantity.toString(),
+        maxQuantity: category.maxQuantity.toString(),
+        additionals: category.additionals,
+      })
+    }
+  }, [category, form])
+
   function onSubmit(values: z.infer<typeof additionalCategorySchema>) {
     onSave({
-      id: category?.id || Math.random().toString(36).substr(2, 9),
+      _id: category?._id,
       ...values,
       minQuantity: parseInt(values.minQuantity),
       maxQuantity: parseInt(values.maxQuantity),

@@ -2,6 +2,7 @@
 
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
+import { useEffect } from 'react'
 import * as z from 'zod'
 import {
   Dialog,
@@ -61,14 +62,25 @@ export function CategoryDialog({
     },
   })
 
+  useEffect(() => {
+    if (category) {
+      form.reset({
+        name: category.name,
+        description: category.description,
+        active: category.active,
+        subcategories: category.subcategories,
+      })
+    }
+  }, [category, form])
+
   function onSubmit(values: z.infer<typeof categorySchema>) {
     onSave({
-      id: category?.id || Math.random().toString(36).substr(2, 9),
+      _id: category?._id,
       ...values,
       subcategories: values.subcategories.map(sub => ({
         ...sub,
-        id: Math.random().toString(36).substr(2, 9),
-        categoryId: category?.id || '',
+        _id: Math.random().toString(36).substr(2, 9),
+        categoryId: category?._id || '',
       })),
     })
     onOpenChange(false)

@@ -2,6 +2,7 @@
 
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
+import { useEffect } from 'react'
 import * as z from 'zod'
 import {
   Dialog,
@@ -59,15 +60,27 @@ export function AdditionalDialog({
     defaultValues: {
       name: additional?.name || '',
       description: additional?.description || '',
-      price: additional?.price.toString() || '',
+      price: additional?.price?.toString() || '',
       categoryId: additional?.categoryId || '',
       active: additional?.active ?? true,
     },
   })
 
+  useEffect(() => {
+    if (additional) {
+      form.reset({
+        name: additional.name,
+        description: additional.description,
+        price: additional.price.toString(),
+        categoryId: additional.categoryId,
+        active: additional.active,
+      })
+    }
+  }, [additional, form])
+
   function onSubmit(values: z.infer<typeof additionalSchema>) {
     onSave({
-      id: additional?.id || Math.random().toString(36).substr(2, 9),
+      _id: additional?._id,
       ...values,
       price: parseFloat(values.price),
     })
