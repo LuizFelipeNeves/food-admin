@@ -2,40 +2,25 @@
 
 import { Layout } from '@/components/layout/layout';
 import { KanbanBoard } from '@/components/kanban/board';
-import { OrderFilters } from '@/components/orders/order-filters';
-import { Button } from '@/components/ui/button';
-import { Maximize2 } from 'lucide-react';
-import { useState } from 'react';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 
 export default function OrdersPage() {
-  const [isFullscreen, setIsFullscreen] = useState(false);
-
-  const toggleFullscreen = () => {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen();
-      setIsFullscreen(true);
-    } else {
-      document.exitFullscreen();
-      setIsFullscreen(false);
-    }
-  };
-
   return (
     <Layout>
       <div className="h-full space-y-4 p-4 md:p-8">
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold tracking-tight">Gestão de Pedidos (Kanban)</h1>
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={toggleFullscreen}
-            className="ml-auto"
-          >
-            <Maximize2 className="h-4 w-4" />
-          </Button>
         </div>
-        
-        <OrderFilters />
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <div className="flex flex-col gap-2">
+            <Label>Cliente</Label>
+            <Input
+              type="search"
+              placeholder="Buscar por nome..."
+            />
+          </div>
+        </div>
         <KanbanBoard />
       </div>
     </Layout>

@@ -1,6 +1,6 @@
 'use client';
 
-import { MoonIcon, SunIcon, BellIcon, LogOut, User, Settings } from 'lucide-react';
+import { MoonIcon, SunIcon, LogOut, User, Settings, Maximize2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useTheme } from 'next-themes';
 import {
@@ -15,10 +15,26 @@ import { NotificationsPopover } from '@/components/ui/notifications';
 export function Header() {
   const { setTheme } = useTheme();
 
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen();
+    } else {
+      document.exitFullscreen();
+    }
+  };
+
   return (
     <header className="border-b h-16 flex items-center px-6 sticky top-0 bg-background z-50">
       <div className="flex-1" />
       <div className="flex items-center gap-4">
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={toggleFullscreen}
+          className="ml-auto"
+        >
+          <Maximize2 className="h-4 w-4" />
+        </Button>
         <NotificationsPopover />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
