@@ -6,8 +6,11 @@ import { Providers } from './providers';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Burger Admin - Order Management',
-  description: 'Admin dashboard for burger restaurant order management',
+  title: 'Food Admin',
+  description: 'Food Admin',
+  icons: {
+    icon: '/favicon.ico',
+  },
 };
 
 // This enables server-side rendering
@@ -20,9 +23,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="pt-BR" suppressHydrationWarning>
       <body className={inter.className}>
-        <Providers>{children}</Providers>
+        <Providers>
+          {children}
+        </Providers>
       </body>
     </html>
   );

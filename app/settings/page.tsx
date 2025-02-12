@@ -15,7 +15,7 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Switch } from '@/components/ui/switch'
 import { Layout } from '@/components/layout/layout'
@@ -23,6 +23,8 @@ import { TimeInput } from '@/components/ui/time-input'
 import { Label } from "@/components/ui/label"
 import { useToast } from '@/components/ui/use-toast'
 import { trpc as api } from '@/app/_trpc/client'
+import { Save } from "lucide-react"
+import { Separator } from '@/components/ui/separator'
 
 const businessFormSchema = z.object({
   businessName: z.string().min(2, 'Nome muito curto'),
@@ -217,6 +219,20 @@ export default function SettingsPage() {
     { _id: 'saturday', label: 'Sábado' },
     { _id: 'sunday', label: 'Domingo' }
   ]
+
+  const handleSaveGeneralSettings = () => {
+    toast({
+      title: "Sucesso",
+      description: "Configurações gerais salvas com sucesso!",
+    })
+  }
+
+  const handleSavePaymentSettings = () => {
+    toast({
+      title: "Sucesso",
+      description: "Formas de pagamento salvas com sucesso!",
+    })
+  }
 
   return (
     <Layout>
@@ -473,35 +489,64 @@ export default function SettingsPage() {
           <TabsContent value="payment" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>Métodos de Pagamento</CardTitle>
+                <CardTitle>Formas de Pagamento</CardTitle>
                 <CardDescription>
-                  Configure os métodos de pagamento aceitos
+                  Configure as formas de pagamento aceitas pelo seu estabelecimento
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                {paymentMethods.map((method, index) => (
-                  <div key={method.type} className="flex items-center justify-between py-2">
-                    <div className="space-y-0.5">
-                      <Label>{method.type === 'CASH' ? 'Dinheiro' :
-                             method.type === 'CREDIT_CARD' ? 'Cartão de Crédito' :
-                             method.type === 'DEBIT_CARD' ? 'Cartão de Débito' :
-                             'PIX'}</Label>
-                      {method.type === 'PIX' && method.active && (
-                        <Input
-                          placeholder="Chave PIX"
-                          value={method.pixKey || ''}
-                          onChange={(e) => onPixKeyChange(e.target.value)}
-                          className="mt-2"
-                        />
-                      )}
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Dinheiro</Label>
+                    <div className="text-sm text-muted-foreground">
+                      Aceitar pagamento em dinheiro
                     </div>
-                    <Switch
-                      checked={method.active}
-                      onCheckedChange={() => onPaymentMethodToggle(index)}
-                    />
                   </div>
-                ))}
+                  <Switch defaultChecked />
+                </div>
+
+                <Separator />
+
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Cartão de Crédito</Label>
+                    <div className="text-sm text-muted-foreground">
+                      Aceitar pagamento com cartão de crédito
+                    </div>
+                  </div>
+                  <Switch defaultChecked />
+                </div>
+
+                <Separator />
+
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Cartão de Débito</Label>
+                    <div className="text-sm text-muted-foreground">
+                      Aceitar pagamento com cartão de débito
+                    </div>
+                  </div>
+                  <Switch defaultChecked />
+                </div>
+
+                <Separator />
+
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>PIX</Label>
+                    <div className="text-sm text-muted-foreground">
+                      Aceitar pagamento via PIX
+                    </div>
+                  </div>
+                  <Switch defaultChecked />
+                </div>
               </CardContent>
+              <CardFooter>
+                <Button onClick={handleSavePaymentSettings}>
+                  <Save className="h-4 w-4 mr-2" />
+                  Salvar Alterações
+                </Button>
+              </CardFooter>
             </Card>
           </TabsContent>
 

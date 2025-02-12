@@ -11,7 +11,9 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import type { Order } from '@/data/orders'
+import { Order, PAYMENT_STATUS } from '@/data/orders'
+import { format } from 'date-fns'
+import { ptBR } from 'date-fns/locale'
 
 export const columns: ColumnDef<Order>[] = [
   {
@@ -19,18 +21,20 @@ export const columns: ColumnDef<Order>[] = [
     header: 'Número',
   },
   {
-    accessorKey: 'customerName',
+    accessorKey: 'customer.name',
     header: 'Cliente',
   },
   {
-    accessorKey: 'customerPhone',
+    accessorKey: 'customer.phone',
     header: 'Telefone',
   },
   {
     accessorKey: 'orderDate',
     header: 'Data',
     cell: ({ row }) => {
-      return new Date(row.getValue('orderDate')).toLocaleDateString('pt-BR')
+      return format(new Date(row.getValue('orderDate')), 'dd/MM/yyyy HH:mm', {
+        locale: ptBR,
+      })
     },
   },
   {
@@ -43,26 +47,36 @@ export const columns: ColumnDef<Order>[] = [
         confirmed: { label: 'Confirmado', variant: 'secondary' },
         preparing: { label: 'Preparando', variant: 'warning' },
         ready: { label: 'Pronto', variant: 'success' },
-        delivering: { label: 'Entregando', variant: 'purple' },
-        completed: { label: 'Concluído', variant: 'green' },
+        delivering: { label: 'Entregando', variant: 'secondary' },
+        completed: { label: 'Concluído', variant: 'success' },
+      } as const
+
+      const { label, variant } = statusMap[status] ?? {
+        label: status,
+        variant: 'default',
       }
 
-      const { label, variant } = statusMap[status]
-      return (
-        <Badge variant={variant as any} className="capitalize">
-          {label}
-        </Badge>
-      )
+      return <Badge variant={variant}>{label}</Badge>
     },
   },
   {
-    accessorKey: 'paymentStatus',
+    accessorKey: 'payment',
     header: 'Status do Pagamento',
     cell: ({ row }) => {
-      const status = row.getValue('paymentStatus')
+      const payment = row.getValue('payment') as Order['payment']
+      const status = payment.status
+
       return (
-        <Badge variant={status === 'paid' ? 'success' : 'destructive'}>
-          {status === 'paid' ? 'Pago' : 'Pendente'}
+        <Badge
+          variant={
+            status === 'approved'
+              ? 'success'
+              : status === 'rejected'
+              ? 'destructive'
+              : 'warning'
+          }
+        >
+          {PAYMENT_STATUS[status].label}
         </Badge>
       )
     },
@@ -71,7 +85,8 @@ export const columns: ColumnDef<Order>[] = [
     accessorKey: 'total',
     header: 'Total',
     cell: ({ row }) => {
-      const amount = parseFloat(row.getValue('total'))
+      const amount = row.getValue('total') as number
+
       return new Intl.NumberFormat('pt-BR', {
         style: 'currency',
         currency: 'BRL',
@@ -81,25 +96,26 @@ export const columns: ColumnDef<Order>[] = [
   {
     accessorKey: '_id',
     header: 'Ações',
-    cell: ({ row }) => {
+    cell: ({ row, table }) => {
       const order = row.original
+      const meta = table.options.meta as { openOrderDetails: (order: Order) => void }
+
       return (
-        <div className="text-right">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-8 w-8 p-0">
-                <span className="sr-only">Abrir menu</span>
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => console.log('Ver pedido:', order._id)}>
-                <Eye className="mr-2 h-4 w-4" />
-                Ver detalhes
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="h-8 w-8 p-0">
+              <span className="sr-only">Abrir menu</span>
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuLabel>Ações</DropdownMenuLabel>
+            <DropdownMenuItem onClick={() => meta?.openOrderDetails(order)}>
+              <Eye className="mr-2 h-4 w-4" />
+              Ver detalhes
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       )
     },
   },

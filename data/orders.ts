@@ -378,39 +378,38 @@ export const mockOrders: Order[] = [
   }
 ]
 
-export const COLUMNS = [
-  {
+export const COLUMNS = {
+  new: {
     id: 'new',
     title: 'Novos',
-    color: 'bg-gray-100 dark:bg-zinc-800' // Usando uma cor escura mais contrastante para o modo escuro
+    color: 'bg-gray-100 dark:bg-gray-500/20'
   },
-  {
+  confirmed: {
     id: 'confirmed',
     title: 'Confirmados',
-    color: 'bg-blue-100 dark:bg-blue-800'
+    color: 'bg-blue-100 dark:bg-blue-500/20'
   },
-  {
+  preparing: {
     id: 'preparing',
-    title: 'Preparando',
-    color: 'bg-yellow-100 dark:bg-yellow-800'
+    title: 'Em Preparo',
+    color: 'bg-yellow-100 dark:bg-yellow-500/20'
   },
-  {
+  ready: {
     id: 'ready',
-    title: 'Pronto',
-    color: 'bg-gray-100 dark:bg-gray-800'
+    title: 'Prontos',
+    color: 'bg-green-100 dark:bg-green-500/20'
   },
-  {
+  delivering: {
     id: 'delivering',
-    title: 'Entregando',
-    color: 'bg-purple-100 dark:bg-purple-800'
+    title: 'Em Entrega',
+    color: 'bg-purple-100 dark:bg-purple-500/20'
   },
-  {
+  completed: {
     id: 'completed',
     title: 'Concluídos',
-    color: 'bg-green-100 dark:bg-green-800'
+    color: 'bg-gray-100 dark:bg-gray-500/20'
   }
-];
-
+};
 
 export const PAYMENT_METHODS = {
   credit: { label: 'Cartão de Crédito', icon: 'credit-card' },

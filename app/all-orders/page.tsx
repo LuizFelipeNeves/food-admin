@@ -5,16 +5,23 @@ import { Layout } from '@/components/layout/layout'
 import { OrderFilters } from '@/components/orders/order-filters'
 import { DataTable } from '@/components/ui/data-table'
 import { columns } from './columns'
-import { mockOrders } from '@/data/orders'
+import { mockOrders, type Order } from '@/data/orders'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Plus } from 'lucide-react'
+import { OrderDetails } from '@/components/orders/order-details'
 
 export default function AllOrdersPage() {
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
   const totalOrders = mockOrders.length
-  const pendingOrders = mockOrders.filter(order => order.status === 'new').length
+  const pendingOrders = mockOrders.filter(order => order.payment.status === 'pending').length
   const completedOrders = mockOrders.filter(order => order.status === 'completed').length
-  const totalRevenue = mockOrders.reduce((acc, order) => acc + order.total, 0)
+  const totalRevenue = mockOrders.reduce((acc, order) => {
+    if (order.payment.status === 'approved') {
+      return acc + order.total
+    }
+    return acc
+  }, 0)
 
   return (
     <Layout>
@@ -46,7 +53,7 @@ export default function AllOrdersPage() {
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Pedidos Pendentes</CardTitle>
+                <CardTitle className="text-sm font-medium">Pagamentos Pendentes</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{pendingOrders}</div>
@@ -64,7 +71,7 @@ export default function AllOrdersPage() {
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Faturamento Total</CardTitle>
+                <CardTitle className="text-sm font-medium">Receita Total</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
@@ -79,14 +86,20 @@ export default function AllOrdersPage() {
 
           <OrderFilters />
         </div>
-
-        <div className="flex-1 overflow-auto border rounded-lg bg-card mx-4 md:mx-6">
+        <div className="flex-1 p-4 md:p-6">
           <DataTable
             columns={columns}
             data={mockOrders}
+            meta={{
+              openOrderDetails: (order: Order) => setSelectedOrder(order),
+            }}
           />
         </div>
       </div>
+      <OrderDetails
+        order={selectedOrder}
+        onClose={() => setSelectedOrder(null)}
+      />
     </Layout>
-  )
+  );
 }

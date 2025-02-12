@@ -51,8 +51,9 @@ export function KanbanBoard() {
       preparing: 'Pedido em preparo',
       ready: 'Pedido pronto',
       delivering: 'Pedido em entrega',
-      completed: 'Pedido entregue'
+      completed: 'Pedido concluído',
     }
+
     return statusMap[status]
   }
 
@@ -61,18 +62,18 @@ export function KanbanBoard() {
       <DragDropContext onDragEnd={onDragEnd}>
         <div className="h-[calc(100vh-12rem)] overflow-hidden">
           <div className="grid grid-cols-6 gap-4 h-full">
-            {COLUMNS.map((column) => (
-              <div key={column.id} className="flex flex-col min-w-[250px]">
+            {Object.entries(COLUMNS).map(([status, column]) => (
+              <div key={status} className="flex flex-col min-w-[250px]">
                 <div className={`p-4 rounded-t-lg ${column.color}`}>
-                  <h3 className="font-semibold flex items-center justify-between">
+                  <h3 className="font-semibold flex items-center justify-between text-foreground dark:text-zinc-900">
                     {column.title}
                     <Badge variant="secondary" className="ml-2">
-                      {orders.filter((order) => order.status === column.id).length} pedidos
+                      {orders.filter((order) => order.status === status).length} pedidos
                     </Badge>
                   </h3>
                 </div>
                 <div className="p-2 bg-muted/50 rounded-b-lg flex-1">
-                  <Droppable droppableId={column.id}>
+                  <Droppable droppableId={status}>
                     {(provided, snapshot) => (
                       <div
                         ref={provided.innerRef}
@@ -82,7 +83,7 @@ export function KanbanBoard() {
                         }`}
                       >
                         {orders
-                          .filter((order) => order.status === column.id)
+                          .filter((order) => order.status === status)
                           .map((order, index) => (
                             <Draggable
                               key={order._id}
@@ -140,10 +141,10 @@ export function KanbanBoard() {
                                       <div key={item._id} className="text-xs flex justify-between">
                                         <span className="truncate flex-1">{item.quantity}x {item.name}</span>
                                         <span className="text-muted-foreground ml-2 shrink-0">
-                                          {item.price.toLocaleString('pt-BR', {
+                                          {new Intl.NumberFormat('pt-BR', {
                                             style: 'currency',
                                             currency: 'BRL'
-                                          })}
+                                          }).format(item.price)}
                                         </span>
                                       </div>
                                     ))}
@@ -158,10 +159,10 @@ export function KanbanBoard() {
                                     <div className="flex items-center gap-1">
                                       <CreditCard className="h-3 w-3" />
                                       <span className="font-medium">
-                                        {order.total.toLocaleString('pt-BR', {
+                                        {new Intl.NumberFormat('pt-BR', {
                                           style: 'currency',
                                           currency: 'BRL'
-                                        })}
+                                        }).format(order.total)}
                                       </span>
                                     </div>
                                     {order.waitTime && order.waitTime > 0 && (
@@ -190,8 +191,7 @@ export function KanbanBoard() {
 
       <OrderDetails
         order={selectedOrder}
-        open={!!selectedOrder}
-        onOpenChange={(open) => !open && setSelectedOrder(null)}
+        onClose={() => setSelectedOrder(null)}
       />
     </>
   )
