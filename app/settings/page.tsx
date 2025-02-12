@@ -21,7 +21,7 @@ import { Switch } from '@/components/ui/switch'
 import { Layout } from '@/components/layout/layout'
 import { TimeInput } from '@/components/ui/time-input'
 import { Label } from "@/components/ui/label"
-import { useToast } from '@/components/ui/use-toast'
+import toast from 'react-hot-toast'
 import { trpc as api } from '@/app/_trpc/client'
 import { Save } from "lucide-react"
 import { Separator } from '@/components/ui/separator'
@@ -66,8 +66,6 @@ export default function SettingsPage() {
     { day: 'saturday', enabled: true, hours: { from: { hour: 8, minute: 0 }, to: { hour: 22, minute: 0 } } },
     { day: 'sunday', enabled: true, hours: { from: { hour: 8, minute: 0 }, to: { hour: 22, minute: 0 } } }
   ])
-
-  const { toast } = useToast()
 
   const businessForm = useForm<z.infer<typeof businessFormSchema>>({
     resolver: zodResolver(businessFormSchema),
@@ -118,48 +116,63 @@ export default function SettingsPage() {
 
   const updateBusiness = api.settings.updateBusiness.useMutation({
     onSuccess: () => {
-      toast({
-        title: "Sucesso",
-        description: "Informações da empresa atualizadas com sucesso",
+      toast.success('Informações da empresa atualizadas com sucesso', {
+        style: {
+          borderRadius: '6px',
+          background: '#333',
+          color: '#fff',
+        },
       })
     },
     onError: (error) => {
-      toast({
-        title: "Erro",
-        description: error.message,
-        variant: "destructive",
+      toast.error(error.message, {
+        style: {
+          borderRadius: '6px',
+          background: '#333',
+          color: '#fff',
+        },
       })
     }
   })
 
   const updateBusinessHours = api.settings.updateBusinessHours.useMutation({
     onSuccess: () => {
-      toast({
-        title: "Sucesso",
-        description: "Horários atualizados com sucesso",
+      toast.success('Horários atualizados com sucesso', {
+        style: {
+          borderRadius: '6px',
+          background: '#333',
+          color: '#fff',
+        },
       })
     },
     onError: (error) => {
-      toast({
-        title: "Erro",
-        description: error.message,
-        variant: "destructive",
+      toast.error(error.message, {
+        style: {
+          borderRadius: '6px',
+          background: '#333',
+          color: '#fff',
+        },
       })
     }
   })
 
   const updatePaymentMethods = api.settings.updatePaymentMethods.useMutation({
     onSuccess: () => {
-      toast({
-        title: "Sucesso",
-        description: "Métodos de pagamento atualizados com sucesso",
+      toast.success('Métodos de pagamento atualizados com sucesso', {
+        style: {
+          borderRadius: '6px',
+          background: '#333',
+          color: '#fff',
+        },
       })
     },
     onError: (error) => {
-      toast({
-        title: "Erro",
-        description: error.message,
-        variant: "destructive",
+      toast.error(error.message, {
+        style: {
+          borderRadius: '6px',
+          background: '#333',
+          color: '#fff',
+        },
       })
     }
   })
@@ -221,16 +234,22 @@ export default function SettingsPage() {
   ]
 
   const handleSaveGeneralSettings = () => {
-    toast({
-      title: "Sucesso",
-      description: "Configurações gerais salvas com sucesso!",
+    toast.success('Configurações gerais salvas com sucesso!', {
+      style: {
+        borderRadius: '6px',
+        background: '#333',
+        color: '#fff',
+      },
     })
   }
 
   const handleSavePaymentSettings = () => {
-    toast({
-      title: "Sucesso",
-      description: "Formas de pagamento salvas com sucesso!",
+    toast.success('Formas de pagamento salvas com sucesso!', {
+      style: {
+        borderRadius: '6px',
+        background: '#333',
+        color: '#fff',
+      },
     })
   }
 
@@ -241,23 +260,15 @@ export default function SettingsPage() {
           <h2 className="text-3xl font-bold tracking-tight">Configurações</h2>
         </div>
 
-        <Tabs defaultValue="business" className="space-y-4">
-          <TabsList className="w-full justify-start">
-            <TabsTrigger value="business" className="text-base">
-              Dados do Negócio
-            </TabsTrigger>
-            <TabsTrigger value="notifications" className="text-base">
-              Notificações
-            </TabsTrigger>
-            <TabsTrigger value="payment" className="text-base">
-              Formas de Pagamento
-            </TabsTrigger>
-            <TabsTrigger value="hours" className="text-base">
-              Horário de Funcionamento
-            </TabsTrigger>
+        <Tabs defaultValue="general">
+          <TabsList>
+            <TabsTrigger value="general">Geral</TabsTrigger>
+            <TabsTrigger value="payment">Formas de Pagamento</TabsTrigger>
+            <TabsTrigger value="notifications">Notificações</TabsTrigger>
+            <TabsTrigger value="hours">Horário de Funcionamento</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="business" className="space-y-4">
+          <TabsContent value="general" className="space-y-4">
             <div className="grid gap-4 py-4">
               <Card>
                 <CardHeader>
@@ -339,7 +350,12 @@ export default function SettingsPage() {
                         )}
                       />
 
-                      <Button type="submit">Salvar Alterações</Button>
+                      <div className="mt-6">
+                        <Button type="submit">
+                          <Save className="h-4 w-4 mr-2" />
+                          Salvar Alterações
+                        </Button>
+                      </div>
                     </form>
                   </Form>
                 </CardContent>
@@ -347,84 +363,75 @@ export default function SettingsPage() {
             </div>
           </TabsContent>
 
-          <TabsContent value="notifications">
+          <TabsContent value="notifications" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>Preferências de Notificação</CardTitle>
+                <CardTitle>Notificações</CardTitle>
                 <CardDescription>
-                  Gerencie como você deseja receber notificações do sistema
+                  Configure como você deseja receber as notificações do sistema
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <Form {...notificationForm}>
-                  <form onSubmit={notificationForm.handleSubmit(() => console.log())} className="space-y-4">
-                    <FormField
-                      control={notificationForm.control}
-                      name="emailNotifications"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                          <div className="space-y-0.5">
-                            <FormLabel className="text-base">Notificações por Email</FormLabel>
-                            <FormDescription>
-                              Receba atualizações importantes por email
-                            </FormDescription>
-                          </div>
-                          <FormControl>
-                            <Switch
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
+              <CardContent className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Notificações por Email</Label>
+                    <div className="text-sm text-muted-foreground">
+                      Receber notificações por email quando houver novos pedidos
+                    </div>
+                  </div>
+                  <Switch defaultChecked />
+                </div>
 
-                    <FormField
-                      control={notificationForm.control}
-                      name="soundAlerts"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                          <div className="space-y-0.5">
-                            <FormLabel className="text-base">Alertas Sonoros</FormLabel>
-                            <FormDescription>
-                              Toque um som quando novos pedidos chegarem
-                            </FormDescription>
-                          </div>
-                          <FormControl>
-                            <Switch
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
+                <Separator />
 
-                    <FormField
-                      control={notificationForm.control}
-                      name="orderReminders"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                          <div className="space-y-0.5">
-                            <FormLabel className="text-base">Lembretes de Pedidos</FormLabel>
-                            <FormDescription>
-                              Receba lembretes sobre pedidos pendentes
-                            </FormDescription>
-                          </div>
-                          <FormControl>
-                            <Switch
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Notificações Push</Label>
+                    <div className="text-sm text-muted-foreground">
+                      Receber notificações push no navegador
+                    </div>
+                  </div>
+                  <Switch defaultChecked />
+                </div>
 
-                    <Button type="submit">Salvar Preferências</Button>
-                  </form>
-                </Form>
+                <Separator />
+
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Som de Notificação</Label>
+                    <div className="text-sm text-muted-foreground">
+                      Tocar som quando receber novos pedidos
+                    </div>
+                  </div>
+                  <Switch defaultChecked />
+                </div>
+
+                <Separator />
+
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>WhatsApp</Label>
+                    <div className="text-sm text-muted-foreground">
+                      Receber notificações via WhatsApp
+                    </div>
+                  </div>
+                  <Switch defaultChecked />
+                </div>
               </CardContent>
+              <CardFooter className="justify-start pt-6">
+                <Button onClick={() => {
+                  toast.success('Configurações de notificação salvas com sucesso!', {
+                    style: {
+                      borderRadius: '6px',
+                      background: '#333',
+                      color: '#fff',
+                    },
+                  })
+                }}>
+                  <Save className="h-4 w-4 mr-2" />
+                  Salvar Alterações
+                </Button>
+              </CardFooter>
             </Card>
           </TabsContent>
 
@@ -473,15 +480,17 @@ export default function SettingsPage() {
                   })}
                 </div>
 
-                <Button 
-                  className="mt-6"
-                  onClick={() => {
-                    updateBusinessHours.mutate({ businessHours, storeId })
-                  }}
-                  disabled={updateBusinessHours.isLoading}
-                >
-                  {updateBusinessHours.isLoading ? "Salvando..." : "Salvar Horários"}
-                </Button>
+                <div className="mt-6">
+                  <Button 
+                    onClick={() => {
+                      updateBusinessHours.mutate({ businessHours, storeId })
+                    }}
+                    disabled={updateBusinessHours.isLoading}
+                  >
+                    <Save className="h-4 w-4 mr-2" />
+                    {updateBusinessHours.isLoading ? "Salvando..." : "Salvar Horários"}
+                  </Button>
+                </div>
               </div>
             </Card>
           </TabsContent>
@@ -494,7 +503,7 @@ export default function SettingsPage() {
                   Configure as formas de pagamento aceitas pelo seu estabelecimento
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-6">
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
                     <Label>Dinheiro</Label>
@@ -541,7 +550,7 @@ export default function SettingsPage() {
                   <Switch defaultChecked />
                 </div>
               </CardContent>
-              <CardFooter>
+              <CardFooter className="justify-start pt-6">
                 <Button onClick={handleSavePaymentSettings}>
                   <Save className="h-4 w-4 mr-2" />
                   Salvar Alterações
