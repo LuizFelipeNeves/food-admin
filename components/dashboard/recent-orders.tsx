@@ -5,21 +5,21 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 
 const recentOrders = [
   {
-    id: '1',
+    _id: '1',
     customer: 'John Doe',
     order: '#12345',
     total: '$32.50',
     status: 'preparing',
   },
   {
-    id: '2',
+    _id: '2',
     customer: 'Jane Smith',
     order: '#12346',
     total: '$28.00',
     status: 'pending',
   },
   {
-    id: '3',
+    _id: '3',
     customer: 'Bob Johnson',
     order: '#12347',
     total: '$45.75',
@@ -33,7 +33,7 @@ export function RecentOrders() {
       <div className="space-y-4">
         {recentOrders.map((order) => (
           <div
-            key={order.id}
+            key={order._id}
             className="flex items-center justify-between p-4 border rounded-lg"
           >
             <div className="flex items-center space-x-4">

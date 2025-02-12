@@ -38,8 +38,8 @@ export const productsRouter = router({
       const product = new Item({
         ...input,
         store: new mongoose.Types.ObjectId(input.store),
-        additionals: input.additionals?.map(id => new mongoose.Types.ObjectId(id)),
-        additionalGroups: input.additionalGroups?.map(id => new mongoose.Types.ObjectId(id))
+        additionals: input.additionals?.map(_id => new mongoose.Types.ObjectId(_id)),
+        additionalGroups: input.additionalGroups?.map(_id => new mongoose.Types.ObjectId(_id))
       });
       await product.save();
       return product;
@@ -47,7 +47,7 @@ export const productsRouter = router({
 
   update: publicProcedure
     .input(z.object({
-      id: z.string(),
+      _id: z.string(),
       name: z.string(),
       description: z.string().optional(),
       price: z.number().min(0),
@@ -58,13 +58,13 @@ export const productsRouter = router({
       additionalGroups: z.array(z.string()).optional(),
     }))
     .mutation(async ({ input }) => {
-      const { id, ...updateData } = input;
+      const { _id, ...updateData } = input;
       const product = await Item.findByIdAndUpdate(
-        new mongoose.Types.ObjectId(id),
+        new mongoose.Types.ObjectId(_id),
         {
           ...updateData,
-          additionals: updateData.additionals?.map(id => new mongoose.Types.ObjectId(id)),
-          additionalGroups: updateData.additionalGroups?.map(id => new mongoose.Types.ObjectId(id))
+          additionals: updateData.additionals?.map(_id => new mongoose.Types.ObjectId(_id)),
+          additionalGroups: updateData.additionalGroups?.map(_id => new mongoose.Types.ObjectId(_id))
         },
         { new: true }
       ).populate('additionals').populate('additionalGroups');
@@ -73,10 +73,10 @@ export const productsRouter = router({
 
   delete: publicProcedure
     .input(z.object({
-      id: z.string(),
+      _id: z.string(),
     }))
     .mutation(async ({ input }) => {
-      await Item.findByIdAndDelete(new mongoose.Types.ObjectId(input.id));
+      await Item.findByIdAndDelete(new mongoose.Types.ObjectId(input._id));
       return { success: true };
     }),
 });

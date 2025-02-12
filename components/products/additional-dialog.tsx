@@ -43,7 +43,7 @@ const additionalSchema = z.object({
 interface AdditionalDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  additional?: Additional
+  additional: Additional | null
   categories: AdditionalCategory[]
   onSave: (data: Additional) => void
 }
@@ -79,6 +79,10 @@ export function AdditionalDialog({
   }, [additional, form])
 
   function onSubmit(values: z.infer<typeof additionalSchema>) {
+    if (!additional) {
+      return
+    }
+
     onSave({
       _id: additional?._id,
       ...values,
@@ -165,7 +169,7 @@ export function AdditionalDialog({
                       </FormControl>
                       <SelectContent>
                         {categories.map((category) => (
-                          <SelectItem key={category.id} value={category.id}>
+                          <SelectItem key={category._id} value={category._id}>
                             {category.name}
                           </SelectItem>
                         ))}

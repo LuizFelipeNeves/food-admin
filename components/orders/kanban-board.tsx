@@ -8,26 +8,28 @@ import { Order } from '@/app/types/order';
 
 const MOCK_ORDERS: Order[] = [
   {
-    id: '1',
+    _id: '1',
     orderNumber: '#12345',
     customerName: 'João Silva',
     orderTime: new Date(),
+    customerPhone: '11999999999',
     items: [
-      { id: '1', name: 'X-Burger', quantity: 2, price: 18.90 },
-      { id: '2', name: 'Batata Frita', quantity: 1, price: 12.90 }
+      { _id: '1', name: 'X-Burger', quantity: 2, price: 18.90 },
+      { _id: '2', name: 'Batata Frita', quantity: 1, price: 12.90 }
     ],
     totalValue: 50.70,
     status: 'pending',
     waitTime: 15
   },
   {
-    id: '2',
+    _id: '2',
     orderNumber: '#12346',
     customerName: 'João Silva s',
     orderTime: new Date(),
+    customerPhone: '11999999999',
     items: [
-      { id: '1', name: 'X-Burger', quantity: 2, price: 18.90 },
-      { id: '2', name: 'Batata Frita', quantity: 1, price: 12.90 }
+      { _id: '1', name: 'X-Burger', quantity: 2, price: 18.90 },
+      { _id: '2', name: 'Batata Frita', quantity: 1, price: 12.90 }
     ],
     totalValue: 50.70,
     status: 'pending',
@@ -36,12 +38,12 @@ const MOCK_ORDERS: Order[] = [
 ];
 
 const COLUMNS = [
-  { id: 'pending', title: 'Pendente', color: 'bg-yellow-100 dark:bg-yellow-900' },
-  { id: 'accepted', title: 'Aceito', color: 'bg-blue-100 dark:bg-blue-900' },
-  { id: 'preparing', title: 'Em Preparação', color: 'bg-orange-100 dark:bg-orange-900' },
-  { id: 'ready', title: 'Pronto para Entrega', color: 'bg-green-100 dark:bg-green-900' },
-  { id: 'delivering', title: 'Em Rota', color: 'bg-purple-100 dark:bg-purple-900' },
-  { id: 'delivered', title: 'Finalizado', color: 'bg-gray-100 dark:bg-gray-900' }
+  { _id: 'pending', title: 'Pendente', color: 'bg-yellow-100 dark:bg-yellow-900' },
+  { _id: 'accepted', title: 'Aceito', color: 'bg-blue-100 dark:bg-blue-900' },
+  { _id: 'preparing', title: 'Em Preparação', color: 'bg-orange-100 dark:bg-orange-900' },
+  { _id: 'ready', title: 'Pronto para Entrega', color: 'bg-green-100 dark:bg-green-900' },
+  { _id: 'delivering', title: 'Em Rota', color: 'bg-purple-100 dark:bg-purple-900' },
+  { _id: 'delivered', title: 'Finalizado', color: 'bg-gray-100 dark:bg-gray-900' }
 ];
 
 export function KanbanBoard() {
@@ -75,15 +77,15 @@ export function KanbanBoard() {
     <div className="flex gap-4 h-[calc(100vh-12rem)] overflow-x-auto pb-4">
       <DragDropContext onDragEnd={onDragEnd}>
         {COLUMNS.map((column) => (
-          <div key={column.id} className="flex flex-col min-w-[320px] w-[320px] rounded-lg">
+          <div key={column._id} className="flex flex-col min-w-[320px] w-[320px] rounded-lg">
             <div className={`p-3 rounded-t-lg ${column.color}`}>
               <h3 className="font-semibold">{column.title}</h3>
               <div className="text-sm text-muted-foreground">
-                {orders.filter((order) => order.status === column.id).length} pedidos
+                {orders.filter((order) => order.status === column._id).length} pedidos
               </div>
             </div>
 
-            <Droppable droppableId={column.id}>
+            <Droppable droppableId={column._id}>
               {(provided) => (
                 <ScrollArea className="flex-1 bg-muted/20 rounded-b-lg">
                   <div
@@ -92,11 +94,11 @@ export function KanbanBoard() {
                     className="p-2 space-y-2"
                   >
                     {orders
-                      .filter((order) => order.status === column.id)
+                      .filter((order) => order.status === column._id)
                       .map((order, index) => (
                         <Draggable
-                          key={order.id}
-                          draggableId={order.id}
+                          key={order._id}
+                          draggableId={order._id}
                           index={index}
                         >
                           {(provided) => (

@@ -12,7 +12,7 @@ export const categoriesRouter = router({
       return await Category.find({ 
         store: new mongoose.Types.ObjectId(input.storeId)
       })
-        .sort({ name: 1 });
+      .sort({ name: 1 });
     }),
 
   create: publicProcedure
@@ -31,13 +31,13 @@ export const categoriesRouter = router({
 
   update: publicProcedure
     .input(z.object({
-      id: z.string(),
+      _id: z.string(),
       name: z.string(),
     }))
     .mutation(async ({ input }) => {
-      const { id, ...updateData } = input;
+      const { _id, ...updateData } = input;
       const category = await Category.findByIdAndUpdate(
-        new mongoose.Types.ObjectId(id),
+        new mongoose.Types.ObjectId(_id),
         updateData,
         { new: true }
       );
@@ -46,10 +46,10 @@ export const categoriesRouter = router({
 
   delete: publicProcedure
     .input(z.object({
-      id: z.string(),
+      _id: z.string(),
     }))
     .mutation(async ({ input }) => {
-      await Category.findByIdAndDelete(new mongoose.Types.ObjectId(input.id));
+      await Category.findByIdAndDelete(new mongoose.Types.ObjectId(input._id));
       return { success: true };
     }),
 });

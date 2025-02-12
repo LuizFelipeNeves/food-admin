@@ -32,21 +32,21 @@ import { cn } from '@/lib/utils'
 
 const reports = [
   {
-    id: 1,
+    _id: 1,
     name: 'Vendas por Produto',
     description: 'Relatório detalhado de vendas por produto',
     lastGenerated: '2024-01-30T10:00:00',
     type: 'products',
   },
   {
-    id: 2,
+    _id: 2,
     name: 'Vendas por Período',
     description: 'Relatório de vendas por período',
     lastGenerated: '2024-01-30T11:30:00',
     type: 'sales',
   },
   {
-    id: 3,
+    _id: 3,
     name: 'Clientes',
     description: 'Relatório de clientes e pedidos',
     lastGenerated: '2024-01-30T09:15:00',
@@ -148,7 +148,7 @@ export default function ReportsPage() {
               </TableHeader>
               <TableBody>
                 {reports.map((report) => (
-                  <TableRow key={report.id}>
+                  <TableRow key={report._id}>
                     <TableCell className="font-medium">{report.name}</TableCell>
                     <TableCell>{report.description}</TableCell>
                     <TableCell>

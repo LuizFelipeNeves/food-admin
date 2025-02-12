@@ -19,14 +19,12 @@ export const columns: ColumnDef<Order>[] = [
     header: 'Número',
   },
   {
-    id: 'customerName',
+    accessorKey: 'customerName',
     header: 'Cliente',
-    accessorFn: (row) => row.customer.name,
   },
   {
-    id: 'customerPhone',
+    accessorKey: 'customerPhone',
     header: 'Telefone',
-    accessorFn: (row) => row.customer.phone,
   },
   {
     accessorKey: 'orderDate',
@@ -58,21 +56,13 @@ export const columns: ColumnDef<Order>[] = [
     },
   },
   {
-    id: 'paymentStatus',
-    header: 'Pagamento',
-    accessorFn: (row) => row.payment.status,
+    accessorKey: 'paymentStatus',
+    header: 'Status do Pagamento',
     cell: ({ row }) => {
-      const status = row.getValue('paymentStatus') as Order['payment']['status']
-      const statusMap = {
-        pending: { label: 'Pendente', variant: 'warning' },
-        approved: { label: 'Aprovado', variant: 'success' },
-        rejected: { label: 'Rejeitado', variant: 'destructive' },
-      }
-
-      const { label, variant } = statusMap[status]
+      const status = row.getValue('paymentStatus')
       return (
-        <Badge variant={variant as any} className="capitalize">
-          {label}
+        <Badge variant={status === 'paid' ? 'success' : 'destructive'}>
+          {status === 'paid' ? 'Pago' : 'Pendente'}
         </Badge>
       )
     },
@@ -89,26 +79,27 @@ export const columns: ColumnDef<Order>[] = [
     },
   },
   {
-    id: 'actions',
+    accessorKey: '_id',
+    header: 'Ações',
     cell: ({ row }) => {
       const order = row.original
-
       return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Abrir menu</span>
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Ações</DropdownMenuLabel>
-            <DropdownMenuItem onClick={() => console.log('Ver pedido:', order.id)}>
-              <Eye className="mr-2 h-4 w-4" />
-              Ver detalhes
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <div className="text-right">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="h-8 w-8 p-0">
+                <span className="sr-only">Abrir menu</span>
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => console.log('Ver pedido:', order._id)}>
+                <Eye className="mr-2 h-4 w-4" />
+                Ver detalhes
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       )
     },
   },

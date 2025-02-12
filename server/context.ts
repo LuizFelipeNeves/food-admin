@@ -1,10 +1,12 @@
-import * as trpcNext from '@trpc/server/adapters/next';
 import { connectDB } from '../lib/mongodb';
 
 export async function createContext({
   req,
   res,
-}: trpcNext.CreateNextContextOptions) {
+}: {
+  req: Request;
+  res: Response;
+}) {
   await connectDB();
   return {
     req,

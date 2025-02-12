@@ -33,15 +33,15 @@ export const additionalCategoriesRouter = router({
 
   update: publicProcedure
     .input(z.object({
-      id: z.string(),
+      _id: z.string(),
       name: z.string(),
       minQuantity: z.number().min(0),
       maxQuantity: z.number().min(0),
     }))
     .mutation(async ({ input }) => {
-      const { id, ...updateData } = input;
+      const { _id, ...updateData } = input;
       const category = await AdditionalCategory.findByIdAndUpdate(
-        new mongoose.Types.ObjectId(id),
+        new mongoose.Types.ObjectId(_id),
         updateData,
         { new: true }
       );
@@ -50,10 +50,10 @@ export const additionalCategoriesRouter = router({
 
   delete: publicProcedure
     .input(z.object({
-      id: z.string(),
+      _id: z.string(),
     }))
     .mutation(async ({ input }) => {
-      await AdditionalCategory.findByIdAndDelete(new mongoose.Types.ObjectId(input.id));
+      await AdditionalCategory.findByIdAndDelete(new mongoose.Types.ObjectId(input._id));
       return { success: true };
     }),
 });

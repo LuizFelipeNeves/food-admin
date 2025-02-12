@@ -22,14 +22,14 @@ import { ptBR } from 'date-fns/locale'
 import { useToast } from '@/components/ui/use-toast'
 
 interface Device {
-  id: string
+  _id: string
   name: string
   status: 'online' | 'offline' | 'disconnected'
   lastConnected: string
   battery?: number
   isMain?: boolean
   connectionHistory: Array<{
-    id: string
+    _id: string
     status: 'connected' | 'disconnected'
     timestamp: string
     duration?: string
@@ -38,7 +38,7 @@ interface Device {
 
 const mockDevices: Device[] = [
   {
-    id: '1',
+    _id: '1',
     name: 'Dispositivo Principal',
     status: 'online',
     lastConnected: '2024-01-30T20:00:00',
@@ -46,13 +46,13 @@ const mockDevices: Device[] = [
     isMain: true,
     connectionHistory: [
       {
-        id: '1',
+        _id: '1',
         status: 'connected',
         timestamp: '2024-01-30T20:00:00',
         duration: '2h 30min',
       },
       {
-        id: '2',
+        _id: '2',
         status: 'disconnected',
         timestamp: '2024-01-30T17:30:00',
         duration: '30min',
@@ -60,14 +60,14 @@ const mockDevices: Device[] = [
     ],
   },
   {
-    id: '2',
+    _id: '2',
     name: 'Dispositivo Secundário',
     status: 'offline',
     lastConnected: '2024-01-30T15:00:00',
     battery: 20,
     connectionHistory: [
       {
-        id: '1',
+        _id: '1',
         status: 'disconnected',
         timestamp: '2024-01-30T15:00:00',
         duration: '1h',
@@ -124,7 +124,7 @@ export default function DevicesPage() {
 
   const handleNewDevice = (data: { name: string; isMain: boolean }) => {
     const newDevice: Device = {
-      id: Math.random().toString(36).substr(2, 9),
+      _id: Math.random().toString(36).substring(2, 9),
       name: data.name,
       status: 'offline',
       lastConnected: new Date().toISOString(),
@@ -183,7 +183,7 @@ export default function DevicesPage() {
               </TableHeader>
               <TableBody>
                 {devices.map((device) => (
-                  <TableRow key={device.id}>
+                  <TableRow key={device._id}>
                     <TableCell className="font-medium">
                       <div className="flex items-center gap-2">
                         {device.name}

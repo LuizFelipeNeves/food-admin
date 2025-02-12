@@ -11,16 +11,16 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { MoreHorizontal } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
+import { Avatar, AvatarImage } from '@/components/ui/avatar'
 
-const ActionCell = ({ 
-  row, 
-  onEdit, 
-  onDelete 
-}: { 
-  row: any, 
-  onEdit: (item: any) => void, 
-  onDelete: (id: string) => void 
-}) => {
+interface ActionCellProps {
+  row: any;
+  onEdit: (item: any) => void;
+  onDelete: (id: string) => void;
+}
+
+function ActionCell({ row, onEdit, onDelete }: ActionCellProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -47,78 +47,144 @@ const ActionCell = ({
 }
 
 interface ColumnsProps {
-  onEdit: (item: any) => void
-  onDelete: (id: string) => void
+  onEdit: (item: any) => void;
+  onDelete: (id: string) => void;
 }
 
-export const productColumns = ({ onEdit, onDelete }: ColumnsProps): ColumnDef<Product>[] => [
-  {
-    accessorKey: 'name',
-    header: 'Nome',
-  },
-  {
-    accessorKey: 'price',
-    header: 'Preço',
-    cell: ({ row }) => {
-      const price = parseFloat(row.getValue('price'))
-      const formatted = new Intl.NumberFormat('pt-BR', {
-        style: 'currency',
-        currency: 'BRL',
-      }).format(price)
-      return formatted
+export function productColumns({ onEdit, onDelete }: ColumnsProps): ColumnDef<Product>[] {
+  return [
+    {
+      accessorKey: 'image',
+      header: 'Imagem',
+      cell: ({ row }) => row ? <Avatar><AvatarImage src={row.getValue('image')} /></Avatar> : null
     },
-  },
-  {
-    accessorKey: 'category',
-    header: 'Categoria',
-  },
-  {
-    id: 'actions',
-    cell: ({ row }) => <ActionCell row={row} onEdit={onEdit} onDelete={onDelete} />,
-  },
-]
-
-export const productCategoryColumns = ({ onEdit, onDelete }: ColumnsProps): ColumnDef<Category>[] => [
-  {
-    accessorKey: 'name',
-    header: 'Nome',
-  },
-  {
-    id: 'actions',
-    cell: ({ row }) => <ActionCell row={row} onEdit={onEdit} onDelete={onDelete} />,
-  },
-]
-
-export const additionalColumns = ({ onEdit, onDelete }: ColumnsProps): ColumnDef<Additional>[] => [
-  {
-    accessorKey: 'name',
-    header: 'Nome',
-  },
-  {
-    accessorKey: 'price',
-    header: 'Preço',
-    cell: ({ row }) => {
-      const price = parseFloat(row.getValue('price'))
-      const formatted = new Intl.NumberFormat('pt-BR', {
-        style: 'currency',
-        currency: 'BRL',
-      }).format(price)
-      return formatted
+    {
+      accessorKey: 'name',
+      header: 'Nome',
     },
-  },
-  {
-    id: 'actions',
-    cell: ({ row }) => <ActionCell row={row} onEdit={onEdit} onDelete={onDelete} />,
-  },
-]
+    {
+      accessorKey: 'price',
+      header: 'Preço',
+      cell: ({ row }) => {
+        const price = parseFloat(row.getValue('price'))
+        const formatted = new Intl.NumberFormat('pt-BR', {
+          style: 'currency',
+          currency: 'BRL',
+        }).format(price)
+        return formatted
+      },
+    },
+    {
+      accessorKey: 'category',
+      header: 'Categoria',
+    },
+    {
+      accessorKey: 'description',
+      header: 'Descrição',
+    },
+    {
+      accessorKey: 'stock',
+      header: 'Estoque',
+    },
+    {
+      accessorKey: 'active',
+      header: 'Ativo',
+      cell: ({ row }) => <Badge variant={row.getValue('active') ? 'success' : 'outline'}>{row.getValue('active') ? 'Sim' : 'Não'}</Badge>,
+    },
+    {
+      accessorKey: '_id',
+      header: 'Ações',
+      cell: ({ row }) => {
+        const item = row.original
+        return (
+          <div className="text-right">
+            <ActionCell row={row} onEdit={onEdit} onDelete={onDelete} />
+          </div>
+        )
+      },
+    },
+  ]
+}
 
-export const additionalCategoryColumns = ({ onEdit, onDelete }: ColumnsProps): ColumnDef<AdditionalGroup>[] => [
-  {
-    accessorKey: 'name',
-    header: 'Nome',
-  },
-  {
-    id: 'actions',
-    cell: ({ row }) => <ActionCell row={row} onEdit={onEdit} onDelete={onDelete} />,
-  },
-]
+export function productCategoryColumns({ onEdit, onDelete }: ColumnsProps): ColumnDef<Category>[] {
+  return [
+    {
+      accessorKey: 'name',
+      header: 'Nome',
+    },
+    {
+      accessorKey: 'description',
+      header: 'Descrição',
+    },
+    {
+      accessorKey: '_id',
+      header: 'Ações',
+      cell: ({ row }) => {
+        const item = row.original
+        return (
+          <div className="text-right">
+            <ActionCell row={row} onEdit={onEdit} onDelete={onDelete} />
+          </div>
+        )
+      },
+    },
+  ]
+}
+
+export function additionalColumns({ onEdit, onDelete }: ColumnsProps): ColumnDef<Additional>[] {
+  return [
+    {
+      accessorKey: 'name',
+      header: 'Nome',
+    },
+    {
+      accessorKey: 'price',
+      header: 'Preço',
+      cell: ({ row }) => {
+        const price = parseFloat(row.getValue('price'))
+        const formatted = new Intl.NumberFormat('pt-BR', {
+          style: 'currency',
+          currency: 'BRL',
+        }).format(price)
+        return formatted
+      },
+    },
+    {
+      accessorKey: '_id',
+      header: 'Ações',
+      cell: ({ row }) => {
+        const item = row.original
+        return (
+          <div className="text-right">
+            <ActionCell row={row} onEdit={onEdit} onDelete={onDelete} />
+          </div>
+        )
+      },
+    },
+  ]
+}
+
+export function additionalCategoryColumns({ onEdit, onDelete }: ColumnsProps): ColumnDef<AdditionalGroup>[] {
+  return [
+    {
+      accessorKey: 'name',
+      header: 'Nome',
+    },
+    {
+      accessorKey: 'description',
+      header: 'Descrição',
+    },
+    {
+      accessorKey: '_id',
+      header: 'Ações',
+      cell: ({ row }) => {
+        const item = row.original
+        return (
+          <div className="text-right">
+            <ActionCell row={row} onEdit={onEdit} onDelete={onDelete} />
+          </div>
+        )
+      },
+    },
+  ]
+}

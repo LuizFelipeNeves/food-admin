@@ -33,6 +33,7 @@ import { Switch } from '@/components/ui/switch'
 import { AdditionalCategory, Additional } from '@/data/products'
 
 const additionalCategorySchema = z.object({
+  _id: z.string().optional(),
   name: z.string().min(2, 'Nome muito curto'),
   description: z.string(),
   minQuantity: z.string().refine((val) => !isNaN(Number(val)), 'Quantidade inválida'),
@@ -44,7 +45,7 @@ const additionalCategorySchema = z.object({
 interface AdditionalCategoryDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  category?: AdditionalCategory
+  category: AdditionalCategory | null
   additionals: Additional[]
   onSave: (data: AdditionalCategory) => void
 }
@@ -78,8 +79,12 @@ export function AdditionalCategoryDialog({
   }, [category, form])
 
   function onSubmit(values: z.infer<typeof additionalCategorySchema>) {
+    if (!category) {
+      return
+    }
+
     onSave({
-      _id: category?._id,
+      _id: category._id,
       ...values,
       minQuantity: parseInt(values.minQuantity),
       maxQuantity: parseInt(values.maxQuantity),
@@ -192,9 +197,9 @@ export function AdditionalCategoryDialog({
                     </FormControl>
                     <SelectContent>
                       {additionals.map((additional) => (
-                        <SelectItem key={additional.id} value={additional.id}>
+                        <SelectItem key={additional._id} value={additional._id}>
                           {additional.name}
-                          {field.value.includes(additional.id) && ' ✓'}
+                          {field.value.includes(additional._id) && ' ✓'}
                         </SelectItem>
                       ))}
                     </SelectContent>

@@ -30,12 +30,13 @@ export function KanbanBoard() {
     movedOrder.status = destination.droppableId as Order['status']
     
     // Adicionar evento de mudança de status
-    movedOrder.events.push({
-      id: String(movedOrder.events.length + 1),
-      date: new Date().toISOString(),
-      status: movedOrder.status,
-      description: getStatusDescription(movedOrder.status)
-    })
+    const event = {
+      _id: String(movedOrder.events.length + 1),
+      date: new Date().toString(),
+      description: getStatusDescription(movedOrder.status),
+      status: destination.droppableId,
+    }
+    movedOrder.events.push(event)
 
     // Inserir o item na nova posição
     reorderedOrders.splice(destination.index, 0, movedOrder)
@@ -62,14 +63,15 @@ export function KanbanBoard() {
           <div className="grid grid-cols-6 gap-4 h-full">
             {COLUMNS.map((column) => (
               <div key={column.id} className="flex flex-col min-w-[250px]">
-                <div className={`${column.color} rounded-lg p-4 flex flex-col h-full`}>
-                  <div className="mb-4">
-                    <h3 className="font-semibold text-sm dark:text-black">{column.title}</h3>
-                    <div className="text-xs text-muted-foreground">
+                <div className={`p-4 rounded-t-lg ${column.color}`}>
+                  <h3 className="font-semibold flex items-center justify-between">
+                    {column.title}
+                    <Badge variant="secondary" className="ml-2">
                       {orders.filter((order) => order.status === column.id).length} pedidos
-                    </div>
-                  </div>
-
+                    </Badge>
+                  </h3>
+                </div>
+                <div className="p-2 bg-muted/50 rounded-b-lg flex-1">
                   <Droppable droppableId={column.id}>
                     {(provided, snapshot) => (
                       <div
@@ -83,8 +85,8 @@ export function KanbanBoard() {
                           .filter((order) => order.status === column.id)
                           .map((order, index) => (
                             <Draggable
-                              key={order.id}
-                              draggableId={order.id}
+                              key={order._id}
+                              draggableId={order._id}
                               index={index}
                             >
                               {(provided, snapshot) => (
@@ -135,7 +137,7 @@ export function KanbanBoard() {
                                   
                                   <div className="mt-2 space-y-1">
                                     {order.items.slice(0, 2).map((item) => (
-                                      <div key={item.id} className="text-xs flex justify-between">
+                                      <div key={item._id} className="text-xs flex justify-between">
                                         <span className="truncate flex-1">{item.quantity}x {item.name}</span>
                                         <span className="text-muted-foreground ml-2 shrink-0">
                                           {item.price.toLocaleString('pt-BR', {

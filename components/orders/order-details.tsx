@@ -87,7 +87,7 @@ export function OrderDetails({ order, open, onOpenChange }: OrderDetailsProps) {
             <h3 className="font-semibold mb-4">Itens do Pedido</h3>
             <div className="space-y-4">
               {order.items.map((item) => (
-                <div key={item.id} className="flex justify-between items-center">
+                <div key={item._id} className="flex justify-between items-center">
                   <div>
                     <div className="font-medium">{item.quantity}x {item.name}</div>
                     <div className="text-sm text-muted-foreground">
@@ -141,7 +141,7 @@ export function OrderDetails({ order, open, onOpenChange }: OrderDetailsProps) {
             <div className="relative pl-6 space-y-6">
               <div className="absolute top-0 bottom-0 left-2.5 w-px bg-muted-foreground/20" />
               {order.events.map((event, index) => (
-                <div key={event.id} className="relative">
+                <div key={event._id} className="relative">
                   <div className="absolute -left-6 p-1.5 rounded-full bg-background border">
                     <Clock className="h-3 w-3" />
                   </div>

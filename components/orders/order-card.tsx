@@ -57,7 +57,7 @@ export function OrderCard({ order }: OrderCardProps) {
 
       <div className="mt-4 space-y-2">
         {order.items.map((item) => (
-          <div key={item.id} className="flex justify-between text-sm">
+          <div key={item._id} className="flex justify-between text-sm">
             <span>
               {item.quantity}x {item.name}
             </span>

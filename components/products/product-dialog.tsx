@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useEffect } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import * as z from 'zod'
@@ -18,6 +18,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from '@/components/ui/form'
 import {
   Select,
@@ -28,9 +29,9 @@ import {
 } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import { ProductCategory, AdditionalCategory } from '@/data/products'
 import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
-import { Product, ProductCategory, AdditionalCategory } from '@/data/products'
 
 const productSchema = z.object({
   name: z.string().min(2, 'Nome muito curto'),
@@ -42,13 +43,25 @@ const productSchema = z.object({
   additionalCategories: z.array(z.string()),
 })
 
+interface Product {
+  _id: string;
+  name: string;
+  description?: string;
+  price: number;
+  active: boolean;
+  categoryId: string;
+  subcategoryId?: string;
+  additionalCategories?: string[];
+  additionals?: string[];
+}
+
 interface ProductDialogProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  product?: Product
-  categories: ProductCategory[]
-  additionalCategories: AdditionalCategory[]
-  onSave: (data: Product) => void
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  product?: Product;
+  categories: ProductCategory[];
+  additionalCategories: AdditionalCategory[];
+  onSave: (product: Product) => void;
 }
 
 export function ProductDialog({
@@ -59,14 +72,12 @@ export function ProductDialog({
   additionalCategories,
   onSave,
 }: ProductDialogProps) {
-  const [selectedCategory, setSelectedCategory] = useState(product?.categoryId || '')
-
   const form = useForm<z.infer<typeof productSchema>>({
     resolver: zodResolver(productSchema),
     defaultValues: {
       name: product?.name || '',
       description: product?.description || '',
-      price: product?.price?.toString() || '',
+      price: product?.price.toString() || '',
       categoryId: product?.categoryId || '',
       subcategoryId: product?.subcategoryId || '',
       active: product?.active ?? true,
@@ -78,37 +89,48 @@ export function ProductDialog({
     if (product) {
       form.reset({
         name: product.name,
-        description: product.description,
+        description: product.description || '',
         price: product.price.toString(),
         categoryId: product.categoryId,
-        subcategoryId: product.subcategoryId,
-        active: product.active ?? true,
+        subcategoryId: product.subcategoryId || '',
+        active: product.active,
         additionalCategories: product.additionalCategories || [],
       })
-      setSelectedCategory(product.categoryId)
+    } else {
+      form.reset({
+        name: '',
+        description: '',
+        price: '',
+        categoryId: '',
+        subcategoryId: '',
+        active: true,
+        additionalCategories: [],
+      })
     }
   }, [product, form])
 
-  const subcategories = categories
-    .find(cat => cat.id === selectedCategory)
-    ?.subcategories || []
-
-  function onSubmit(values: z.infer<typeof productSchema>) {
+  const onSubmit = async (data: z.infer<typeof productSchema>) => {
     onSave({
-      _id: product?._id,
-      ...values,
-      price: parseFloat(values.price),
+      _id: product?._id || Math.random().toString(36).substring(7),
+      name: data.name,
+      description: data.description,
+      price: parseFloat(data.price),
+      categoryId: data.categoryId,
+      subcategoryId: data.subcategoryId,
+      active: data.active,
+      additionalCategories: data.additionalCategories,
+      additionals: product?.additionals || [],
     })
     onOpenChange(false)
   }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent>
         <DialogHeader>
-          <DialogTitle>{product ? 'Editar' : 'Novo'} Produto</DialogTitle>
+          <DialogTitle>{product ? 'Editar Produto' : 'Novo Produto'}</DialogTitle>
           <DialogDescription>
-            {product ? 'Edite os dados do produto' : 'Adicione um novo produto ao cardápio'}
+            {product ? 'Edite as informações do produto.' : 'Adicione um novo produto ao catálogo.'}
           </DialogDescription>
         </DialogHeader>
 
@@ -121,7 +143,7 @@ export function ProductDialog({
                 <FormItem>
                   <FormLabel>Nome</FormLabel>
                   <FormControl>
-                    <Input placeholder="Nome do produto" {...field} />
+                    <Input {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -135,7 +157,7 @@ export function ProductDialog({
                 <FormItem>
                   <FormLabel>Descrição</FormLabel>
                   <FormControl>
-                    <Textarea placeholder="Descrição do produto" {...field} />
+                    <Textarea {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -149,79 +171,37 @@ export function ProductDialog({
                 <FormItem>
                   <FormLabel>Preço</FormLabel>
                   <FormControl>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      placeholder="0,00"
-                      {...field}
-                    />
+                    <Input type="number" step="0.01" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="categoryId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Categoria</FormLabel>
-                    <Select
-                      onValueChange={(value) => {
-                        field.onChange(value)
-                        setSelectedCategory(value)
-                      }}
-                      value={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione uma categoria" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {categories.map((category) => (
-                          <SelectItem key={category.id} value={category.id}>
-                            {category.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="subcategoryId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Subcategoria</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      value={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione uma subcategoria" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {subcategories.map((subcategory) => (
-                          <SelectItem key={subcategory.id} value={subcategory.id}>
-                            {subcategory.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+            <FormField
+              control={form.control}
+              name="categoryId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Categoria</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione uma categoria" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {categories.map((category) => (
+                        <SelectItem key={category._id} value={category._id}>
+                          {category.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <FormField
               control={form.control}
@@ -231,30 +211,50 @@ export function ProductDialog({
                   <FormLabel>Categorias de Adicionais</FormLabel>
                   <Select
                     onValueChange={(value) => {
-                      const current = new Set(field.value)
-                      if (current.has(value)) {
-                        current.delete(value)
+                      const currentValues = field.value || []
+                      if (currentValues.includes(value)) {
+                        field.onChange(currentValues.filter((v) => v !== value))
                       } else {
-                        current.add(value)
+                        field.onChange([...currentValues, value])
                       }
-                      field.onChange(Array.from(current))
                     }}
-                    value={field.value[field.value.length - 1] || ''}
                   >
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Selecione as categorias de adicionais" />
+                        <SelectValue placeholder="Selecione as categorias" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
                       {additionalCategories.map((category) => (
-                        <SelectItem key={category.id} value={category.id}>
+                        <SelectItem key={category._id} value={category._id}>
                           {category.name}
-                          {field.value.includes(category.id) && ' ✓'}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {field.value?.map((categoryId) => {
+                      const category = additionalCategories.find((c) => c._id === categoryId)
+                      if (!category) return null
+                      return (
+                        <div
+                          key={categoryId}
+                          className="flex items-center gap-1 bg-secondary text-secondary-foreground px-2 py-1 rounded-md"
+                        >
+                          <span>{category.name}</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              field.onChange(field.value?.filter((v) => v !== categoryId))
+                            }}
+                            className="text-sm hover:text-destructive"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      )
+                    })}
+                  </div>
                   <FormMessage />
                 </FormItem>
               )}
@@ -267,9 +267,9 @@ export function ProductDialog({
                 <FormItem className="flex items-center justify-between rounded-lg border p-4">
                   <div className="space-y-0.5">
                     <FormLabel>Ativo</FormLabel>
-                    <div className="text-sm text-muted-foreground">
+                    <FormDescription>
                       Produto disponível para venda
-                    </div>
+                    </FormDescription>
                   </div>
                   <FormControl>
                     <Switch
@@ -281,7 +281,7 @@ export function ProductDialog({
               )}
             />
 
-            <div className="flex justify-end space-x-4 pt-4">
+            <div className="flex justify-end space-x-4">
               <Button
                 type="button"
                 variant="outline"
@@ -290,7 +290,7 @@ export function ProductDialog({
                 Cancelar
               </Button>
               <Button type="submit">
-                {product ? 'Salvar' : 'Criar'} Produto
+                {product ? 'Salvar' : 'Criar'}
               </Button>
             </div>
           </form>

@@ -28,16 +28,16 @@ export const additionalsRouter = router({
 
   update: publicProcedure
     .input(z.object({
-      id: z.string(),
+      _id: z.string(),
       name: z.string(),
       description: z.string().optional(),
       price: z.number().min(0),
       category: z.string(),
     }))
     .mutation(async ({ input }) => {
-      const { id, ...updateData } = input;
+      const { _id, ...updateData } = input;
       const additional = await Additional.findByIdAndUpdate(
-        id,
+        _id,
         updateData,
         { new: true }
       );
@@ -46,10 +46,10 @@ export const additionalsRouter = router({
 
   delete: publicProcedure
     .input(z.object({
-      id: z.string(),
+      _id: z.string(),
     }))
     .mutation(async ({ input }) => {
-      await Additional.findByIdAndDelete(input.id);
+      await Additional.findByIdAndDelete(input._id);
       return { success: true };
     }),
 });

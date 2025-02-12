@@ -22,7 +22,7 @@ import {
 
 const customers = [
   {
-    id: 1,
+    _id: '1',
     name: 'João Silva',
     email: 'joao.silva@email.com',
     phone: '(11) 98765-4321',
@@ -30,7 +30,7 @@ const customers = [
     lastOrder: '2024-01-25',
   },
   {
-    id: 2,
+    _id: '2',
     name: 'Maria Santos',
     email: 'maria.santos@email.com',
     phone: '(11) 91234-5678',
@@ -38,7 +38,7 @@ const customers = [
     lastOrder: '2024-01-28',
   },
   {
-    id: 3,
+    _id: '3',
     name: 'Pedro Oliveira',
     email: 'pedro.oliveira@email.com',
     phone: '(11) 99876-5432',
@@ -82,7 +82,7 @@ export default function CustomersPage() {
                 </TableHeader>
                 <TableBody>
                   {customers.map((customer) => (
-                    <TableRow key={customer.id}>
+                    <TableRow key={customer._id}>
                       <TableCell className="font-medium">{customer.name}</TableCell>
                       <TableCell>{customer.email}</TableCell>
                       <TableCell>{customer.phone}</TableCell>

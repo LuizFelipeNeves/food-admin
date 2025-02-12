@@ -23,10 +23,10 @@ interface ConnectionHistoryDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   device: {
-    id: string
+    _id: string
     name: string
     connectionHistory: Array<{
-      id: string
+      _id: string
       status: 'connected' | 'disconnected'
       timestamp: string
       duration?: string
@@ -58,13 +58,11 @@ export function ConnectionHistoryDialog({
           </TableHeader>
           <TableBody>
             {device.connectionHistory.map((connection) => (
-              <TableRow key={connection.id}>
+              <TableRow key={connection._id}>
                 <TableCell>
                   <Badge
                     variant={
-                      connection.status === 'connected'
-                        ? 'success'
-                        : 'destructive'
+                      connection.status === 'connected' ? 'success' : 'destructive'
                     }
                   >
                     {connection.status === 'connected'

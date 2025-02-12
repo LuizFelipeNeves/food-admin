@@ -7,13 +7,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import QRCode from 'qrcode.react'
+import { QRCodeCanvas} from 'qrcode.react'
 
 interface QRCodeDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   device: {
-    id: string
+    _id: string
     name: string
   }
 }
@@ -33,11 +33,10 @@ export function QRCodeDialog({
           </DialogDescription>
         </DialogHeader>
         <div className="flex items-center justify-center p-6">
-          <QRCode
-            value={`device:${device.id}`}
+          <QRCodeCanvas
+            value={`device:${device._id}`}
             size={256}
             level="H"
-            includeMargin
           />
         </div>
       </DialogContent>
