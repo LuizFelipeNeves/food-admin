@@ -167,9 +167,6 @@ export default function DevicesPage() {
         </div>
 
         <Card>
-          <CardHeader>
-            <CardTitle>Dispositivos Conectados</CardTitle>
-          </CardHeader>
           <CardContent>
             <Table>
               <TableHeader>

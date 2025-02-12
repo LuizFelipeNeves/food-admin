@@ -7,64 +7,77 @@ import {
   ChevronLeft,
   LayoutDashboard,
   ShoppingCart,
+  Users,
   Package,
   Settings,
   FileText,
   BarChart3,
   Smartphone,
-  ListOrdered,
+  CreditCard,
+  Map,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 import { usePathname } from 'next/navigation';
 
-const routes = [
+export const sidebarLinks = [
   {
-    label: 'Dashboard',
-    icon: LayoutDashboard,
+    title: 'Visão Geral',
     href: '/',
+    icon: LayoutDashboard,
     color: 'text-sky-500',
   },
   {
-    label: 'Pedidos',
+    title: 'Pedidos',
+    href: '/orders',
     icon: ShoppingCart,
-    href: '/all-orders',
     color: 'text-violet-500',
   },
   {
-    label: 'Gestão de Pedidos (Kanban)',
-    icon: ListOrdered,
-    href: '/orders',
+    title: 'Todos os Pedidos',
+    href: '/all-orders',
+    icon: Package,
     color: 'text-lime-500',
   },
   {
-    label: 'Produtos',
-    icon: Package,
-    href: '/products',
+    title: 'Clientes',
+    href: '/customers',
+    icon: Users,
     color: 'text-pink-700',
   },
   {
-    label: 'Analytics',
-    icon: BarChart3,
-    href: '/analytics',
-    color: 'text-orange-500',
-  },
-  {
-    label: 'Relatórios',
-    icon: FileText,
-    href: '/reports',
-    color: 'text-emerald-500',
-  },
-  {
-    label: 'Dispositivos',
-    icon: Smartphone,
+    title: 'Dispositivos',
     href: '/devices',
+    icon: Smartphone,
     color: 'text-blue-500',
   },
   {
-    label: 'Configurações',
-    icon: Settings,
+    title: 'Relatórios',
+    href: '/reports',
+    icon: FileText,
+    color: 'text-emerald-500',
+  },
+  {
+    title: 'Analytics',
+    href: '/analytics',
+    icon: BarChart3,
+    color: 'text-orange-500',
+  },
+  {
+    title: 'Assinatura',
+    href: '/subscription',
+    icon: CreditCard,
+    color: 'text-yellow-500',
+  },
+  {
+    title: 'Roadmap',
+    href: '/roadmap',
+    icon: Map,
+  },
+  {
+    title: 'Configurações',
     href: '/settings',
+    icon: Settings,
   },
 ];
 
@@ -93,7 +106,7 @@ export function Sidebar() {
       
       <ScrollArea className="h-[calc(100vh-5rem)]">
         <div className="space-y-2 p-2">
-          {routes.map((route) => (
+          {sidebarLinks.map((route) => (
             <Link key={route.href} href={route.href}>
               <Button
                 variant={pathname === route.href ? 'default' : 'ghost'}
@@ -103,7 +116,7 @@ export function Sidebar() {
                 )}
               >
                 <route.icon className={cn('h-4 w-4', route.color)} />
-                {!collapsed && <span className="ml-2">{route.label}</span>}
+                {!collapsed && <span className="ml-2">{route.title}</span>}
               </Button>
             </Link>
           ))}
