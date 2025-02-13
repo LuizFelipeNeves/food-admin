@@ -52,7 +52,7 @@ export default function CustomersPage() {
     <Layout>
       <div className="flex-1 space-y-4 p-4 md:p-8">
         <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold tracking-tight">Clientes</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Clientes</h1>
           <Button>
             <Plus className="mr-2 h-4 w-4" />
             Novo Cliente

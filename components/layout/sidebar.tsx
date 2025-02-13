@@ -94,8 +94,8 @@ export function Sidebar() {
   return (
     <div
       className={cn(
-        'border-r bg-background h-screen relative transition-all duration-300',
-        collapsed ? 'w-16' : 'w-72'
+        'border-r bg-card/90 h-screen relative transition-all duration-300',
+        collapsed ? 'w-16' : 'w-64'
       )}
     >
       <div className="p-4 flex justify-between items-center">

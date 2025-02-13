@@ -24,7 +24,7 @@ export function Header() {
   };
 
   return (
-    <header className="border-b h-16 flex items-center px-6 sticky top-0 bg-background z-50">
+    <header className="border-b h-16 flex items-center px-6 sticky top-0 bg-card/90 z-50">
       <div className="flex-1" />
       <div className="flex items-center gap-4">
         <Button

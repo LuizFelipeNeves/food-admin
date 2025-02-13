@@ -407,7 +407,7 @@ export default function ProductsPage() {
     <Layout>
       <div className="flex-1 space-y-4 p-8">
         <div className="flex items-center justify-between">
-          <h2 className="text-3xl font-bold tracking-tight">
+          <h2 className="text-2xl font-bold tracking-tight">
             {activeTab === "products" && "Produtos"}
             {activeTab === "categories" && "Categorias"}
             {activeTab === "additionals" && "Adicionais"}

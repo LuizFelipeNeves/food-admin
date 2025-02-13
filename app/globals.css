@@ -1,45 +1,46 @@
 @import "tailwindcss";
 
 :root {
-  /* Cores base */
-  --background: 0 0% 100%;
-  --foreground: 222.2 84% 4.9%;
-
-  /* Cores de cartão */
-  --card: 0 0% 100%;
-  --card-foreground: 222.2 84% 4.9%;
-
-  /* Cores de popover */
+  --background: 224 48% 95%;
+  --foreground: 224 71.4% 4.1%;
+  --muted: 220 14.3% 95.9%;
+  --muted-foreground: 215.4 16.3% 46.9%;
   --popover: 0 0% 100%;
   --popover-foreground: 222.2 84% 4.9%;
-
-  /* Cores primárias */
-  --primary: 161.4 93.5% 30.4%; /* Verde */
-  --primary-foreground: 210, 40%, 98%;
-
-  /* Cores secundárias */
-  --secondary: 210 40% 96.1%;
+  --card: 0 0% 100%;
+  --card-foreground: 222.2 84% 4.9%;
+  --border: 220 13% 91%;
+  --input: 220 13% 91%;
+  --primary: 161.4 93.5% 30.4%;
+  --primary-foreground: 240 100% 98%;
+  --secondary: 214.3 31.8% 91.4%;
   --secondary-foreground: 222.2 47.4% 11.2%;
-
-  /* Cores muted */
-  --muted: 210 40% 96.1%;
-  --muted-foreground: 215.4 16.3% 46.9%;
-
-  /* Cores de destaque (accent) */
-  --accent: 210 40% 96.1%;
+  --accent: 214.3 31.8% 91.4%;
   --accent-foreground: 222.2 47.4% 11.2%;
-
-  /* Cores destrutivas */
   --destructive: 0 84.2% 60.2%;
-  --destructive-foreground: 210 40% 98%;
-
-  /* Bordas e inputs */
+  --destructive-foreground: 0 85.7% 97.3;
+  --ring: 262.1 83.3% 57.8%;
+  --success: 142.1 70.6% 45.3%;
+  --success-foreground: 138.5 76.5% 96.7%;
+  --warning: 24.6 95% 53.1%;
+  --warning-foreground: 33.3 100% 96.5%;
+  --info: 188.7 94.5% 42.7%;
+  --info-foreground: 183.2 100% 96.3%;
   --border: 214.3 31.8% 91.4%;
+  --default-50: 210 40% 98%;
+  --default-100: 210 40% 96.1%;
+  --default-200: 214.3 31.8% 91.4%;
+  --default-300: 212.7 26.8% 83.9%;
+  --default-400: 215 20.2% 65.1%;
+  --default-500: 215.4 16.3% 46.9%;
+  --default-600: 215.3 19.3% 34.5%;
+  --default-700: 215.3 25% 26.7%;
+  --default-800: 217.2 32.6% 17.5%;
+  --default-900: 222.2 47.4% 11.2%;
+  --default-950: 222.2 84% 4.9%;
   --input: 214.3 31.8% 91.4%;
-  --ring: 222.2 84% 4.9%;
-
-  /* Raio de borda */
   --radius: 0.5rem;
+  --nextra-primary-hue: 250deg;
 
   /* Cores de gráficos */
   --chart-1: 120 50% 90%; /* Verde claro */
@@ -50,42 +51,41 @@
 }
 
 .dark {
-  /* Cores base */
-  --background: 222.2 84% 4.9%;
+  --background: 222.2 47.4% 11.2%;
   --foreground: 210 40% 98%;
-
-  /* Cores de cartão */
-  --card: 222.2 84% 4.9%;
-  --card-foreground: 210 40% 98%;
-
-  /* Cores de popover */
-  --popover: 222.2 84% 4.9%;
+  --muted: 215 27.9% 16.9%;
+  --muted-foreground: 217.9 10.6% 64.9%;
+  --popover: 222.2 47.4% 11.2%;
   --popover-foreground: 210 40% 98%;
-
-  /* Cores primárias */
-  --primary: 161.4 93.5% 30.4%; /* Verde */
-  --primary-foreground: hsl(210, 40%, 98%);
-
-  /* Cores secundárias */
-  --secondary: 217.2 32.6% 17.5%;
+  --card: 215 27.9% 16.9%;
+  --card-foreground: 210 40% 98%;
+  --input: 215 27.9% 16.9%;
+  --primary: 161.4 93.5% 30.4%;
+  --secondary: 215.3 25% 26.7%;
   --secondary-foreground: 210 40% 98%;
-
-  /* Cores muted */
-  --muted: 217.2 32.6% 17.5%;
-  --muted-foreground: 215 20.2% 65.1%;
-
-  /* Cores de destaque (accent) */
-  --accent: 217.2 32.6% 17.5%;
+  --accent: 215 27.9% 16.9%;
   --accent-foreground: 210 40% 98%;
-
-  /* Cores destrutivas */
-  --destructive: 0 62.8% 30.6%;
-  --destructive-foreground: 210 40% 98%;
-
-  /* Bordas e inputs */
-  --border: 217.2 32.6% 17.5%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 0 85.7% 97.3;
+  --ring: 263.4 70% 50.4%;
+  --success: 142.1 70.6% 45.3%;
+  --success-foreground: 138.5 76.5% 96.7%;
+  --info: 188.7 94.5% 42.7%;
+  --info-foreground: 183.2 100% 96.3%;
+  --warning: 24.6 95% 53.1%;
+  --warning-foreground: 33.3 100% 96.5%;
+  --border: 215.3 25% 26.7%;
   --input: 217.2 32.6% 17.5%;
-  --ring: 212.7 26.8% 83.9%;
+  --default-950: 210 40% 98%;
+  --default-900: 210 40% 96.1%;
+  --default-800: 214.3 31.8% 91.4%;
+  --default-700: 212.7 26.8% 83.9%;
+  --default-600: 215 20.2% 65.1%;
+  --default-500: 215.4 16.3% 46.9%;
+  --default-300: 215.3 19.3% 34.5%;
+  --default-200: 215.3 25% 26.7%;
+  --default-100: 217.2 32.6% 17.5%;
+  --default-50: 222.2 47.4% 11.2%;
 }
 
 /* Classes utilitárias personalizadas */
@@ -105,6 +105,8 @@
   .bg-card {
     background-color: hsl(var(--card));
   }
+
+  .bg-card\/90{background-color:hsl(var(--card)/.9)}
   .text-card-foreground {
     color: hsl(var(--card-foreground));
   }
@@ -208,7 +210,8 @@
 
 @layer base {
   * {
-    border-color: hsl(var(--border)); /* Aplica a cor da borda */
+    --tw-border-opacity: 1;
+    border-color: hsl(var(--border)/var(--tw-border-opacity));
   }
 
   body {
