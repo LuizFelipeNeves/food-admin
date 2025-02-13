@@ -46,6 +46,12 @@ export const sidebarLinks = [
     color: 'text-pink-700',
   },
   {
+    title: 'Produtos',
+    href: '/products',
+    icon: Package,
+    color: 'text-violet-500',
+  },
+  {
     title: 'Dispositivos',
     href: '/devices',
     icon: Smartphone,

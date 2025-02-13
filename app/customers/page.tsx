@@ -96,8 +96,7 @@ export default function CustomersPage() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem>Ver Detalhes</DropdownMenuItem>
-                            <DropdownMenuItem>Editar</DropdownMenuItem>
+                            <DropdownMenuItem>Bloquear</DropdownMenuItem>
                             <DropdownMenuItem className="text-red-600">
                               Excluir
                             </DropdownMenuItem>
