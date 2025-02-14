@@ -5,7 +5,7 @@ import { Store } from '@/models';
 const businessSchema = z.object({
   businessName: z.string().min(2, 'Nome muito curto'),
   description: z.string().min(5, 'Descrição muito curta'),
-  email: z.string().email('Email inválido'),
+  // email: z.string().email('Email inválido'),
   phone: z.string().min(10, 'Telefone inválido'),
   address: z.string().min(5, 'Endereço muito curto'),
 });
@@ -62,7 +62,7 @@ export const settingsRouter = router({
         {
           title: data.businessName,
           description: data.description,
-          email: data.email,
+          // email: data.email,
           phone: data.phone,
           'address.street': data.address,
         },

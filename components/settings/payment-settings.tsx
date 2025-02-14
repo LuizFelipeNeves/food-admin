@@ -5,6 +5,7 @@ import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Save } from 'lucide-react'
 import { trpc as api } from '@/app/_trpc/client'
+import toast from 'react-hot-toast'
 
 const paymentsDefault = [
   {
@@ -52,7 +53,26 @@ const paymentsDefault = [
 export function PaymentSettings({ storeId }: { storeId: string }) {
   const [paymentMethods, setPaymentMethods] = useState<string[]>([])
   const { data: paymentData } = api.settings.getPaymentMethods.useQuery({ storeId })
-  const updatePaymentMethods = api.settings.updatePaymentMethods.useMutation()
+  const updatePaymentMethods = api.settings.updatePaymentMethods.useMutation({
+    onSuccess: () => {
+      toast.success('Métodos de pagamento atualizados com sucesso', {
+        style: {
+          borderRadius: '6px',
+          background: '#333',
+          color: '#fff',
+        },
+      })
+    },
+    onError: (error) => {
+      toast.error(error.message, {
+        style: {
+          borderRadius: '6px',
+          background: '#333',
+          color: '#fff',
+        },
+      })
+    }
+  })
 
   useEffect(() => {
     if (paymentData) {

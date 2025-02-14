@@ -14,6 +14,7 @@ import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { trpc as api } from '@/app/_trpc/client'
 import { useEffect } from 'react'
+import toast from 'react-hot-toast'
 
 const businessFormSchema = z.object({
   businessName: z.string().min(2, 'Nome muito curto'),
@@ -36,7 +37,26 @@ export function BusinessSettings({ storeId }: { storeId: string }) {
   })
 
   const { data: businessData } = api.settings.getBusiness.useQuery({ storeId })
-  const updateBusiness = api.settings.updateBusiness.useMutation()
+  const updateBusiness = api.settings.updateBusiness.useMutation({
+    onSuccess: () => {
+      toast.success('Informações da empresa atualizadas com sucesso', {
+        style: {
+          borderRadius: '6px',
+          background: '#333',
+          color: '#fff',
+        },
+      })
+    },
+    onError: (error) => {
+      toast.error(error.message, {
+        style: {
+          borderRadius: '6px',
+          background: '#333',
+          color: '#fff',
+        },
+      })
+    }
+  })
 
   useEffect(() => {
     if (businessData) {
@@ -95,7 +115,7 @@ export function BusinessSettings({ storeId }: { storeId: string }) {
                   <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <Input placeholder="email@exemplo.com" {...field} />
+                      <Input placeholder="email@exemplo.com" {...field} disabled />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

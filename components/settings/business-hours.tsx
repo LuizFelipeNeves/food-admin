@@ -5,6 +5,7 @@ import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { TimeInput } from '@/components/ui/time-input'
 import { trpc as api } from '@/app/_trpc/client'
+import toast from 'react-hot-toast'
 
 const daysOfWeek = [
   { _id: 'monday', label: 'Segunda-feira' },
@@ -37,7 +38,26 @@ export function BusinessHours({ storeId }: { storeId: string }) {
   ])
 
   const { data: hoursData } = api.settings.getBusinessHours.useQuery({ storeId })
-  const updateBusinessHours = api.settings.updateBusinessHours.useMutation()
+  const updateBusinessHours = api.settings.updateBusinessHours.useMutation({
+    onSuccess: () => {
+      toast.success('Horários atualizados com sucesso', {
+        style: {
+          borderRadius: '6px',
+          background: '#333',
+          color: '#fff',
+        },
+      })
+    },
+    onError: (error) => {
+      toast.error(error.message, {
+        style: {
+          borderRadius: '6px',
+          background: '#333',
+          color: '#fff',
+        },
+      })
+    }
+  })
 
   useEffect(() => {
     if (hoursData) {
