@@ -22,16 +22,6 @@ export const roadmapData: RoadmapItem[] = [
   },
   {
     id: '2',
-    title: 'Gestão de Dispositivos',
-    description: 'APIs para criar dispositivo, gerenciar QR Code e histórico',
-    status: 'planned',
-    quarter: 'Q1',
-    year: 2025,
-    category: 'core',
-    priority: 'high',
-  },
-  {
-    id: '3',
     title: 'Gestão de Produtos',
     description: 'Imagens, estoque, revalidação e campos adicionais',
     status: 'planned',
@@ -41,7 +31,7 @@ export const roadmapData: RoadmapItem[] = [
     priority: 'high',
   },
   {
-    id: '4',
+    id: '3',
     title: 'Upload de Arquivos',
     description: 'Sistema de upload para logo da empresa e fotos de produtos',
     status: 'planned',
@@ -51,7 +41,7 @@ export const roadmapData: RoadmapItem[] = [
     priority: 'high',
   },
   {
-    id: '5',
+    id: '4',
     title: 'Interface de Produtos',
     description: 'Modal de cadastro, ações com ícones e tooltips',
     status: 'planned',
@@ -61,7 +51,7 @@ export const roadmapData: RoadmapItem[] = [
     priority: 'high',
   },
   {
-    id: '6',
+    id: '5',
     title: 'Categorias e Adicionais',
     description: 'Implementação das telas de categorias e adicionais',
     status: 'planned',
@@ -71,7 +61,7 @@ export const roadmapData: RoadmapItem[] = [
     priority: 'high',
   },
   {
-    id: '7',
+    id: '6',
     title: 'Sistema de Pedidos',
     description: 'APIs de listagem geral e Kanban de pedidos',
     status: 'planned',
@@ -81,9 +71,19 @@ export const roadmapData: RoadmapItem[] = [
     priority: 'high',
   },
   {
-    id: '8',
+    id: '7',
     title: 'Autenticação',
     description: 'Sistema de cadastro, login, recuperação de senha e emails',
+    status: 'planned',
+    quarter: 'Q1',
+    year: 2025,
+    category: 'core',
+    priority: 'high',
+  },
+  {
+    id: '8',
+    title: 'Gestão de Dispositivos',
+    description: 'APIs para criar dispositivo, gerenciar QR Code e histórico',
     status: 'planned',
     quarter: 'Q1',
     year: 2025,

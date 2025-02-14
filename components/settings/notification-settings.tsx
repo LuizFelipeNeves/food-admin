@@ -16,6 +16,8 @@ import toast from 'react-hot-toast'
 
 const notificationFormSchema = z.object({
   emailNotifications: z.boolean(),
+  showPublicEmail: z.boolean(),
+  showPublicPhone: z.boolean(),
   soundAlerts: z.boolean(),
   orderReminders: z.boolean(),
 })
@@ -27,6 +29,8 @@ export function NotificationSettings() {
       emailNotifications: true,
       soundAlerts: true,
       orderReminders: true,
+      showPublicEmail: true,
+      showPublicPhone: true,
     },
   })
 
@@ -43,9 +47,9 @@ export function NotificationSettings() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Preferências de Notificação</CardTitle>
+        <CardTitle>Preferências de Notificação e Privacidade</CardTitle>
         <CardDescription>
-          Gerencie como você deseja receber notificações do sistema
+          Gerencie como você deseja receber notificações do sistema e se deseja deixar publico seus dados no perfil da empresa.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -91,6 +95,52 @@ export function NotificationSettings() {
                         <FormLabel className="text-base">Alertas Sonoros</FormLabel>
                         <FormDescription>
                           Toque um som quando novos pedidos chegarem
+                        </FormDescription>
+                      </div>
+                    </div>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={notificationForm.control}
+                name="showPublicEmail"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <div className="flex items-start gap-4 p-4 border rounded-lg">
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <div className="space-y-0.5">
+                        <FormLabel className="text-base">Exibir Email Publico</FormLabel>
+                        <FormDescription>
+                          Exiba seu email publicamente no perfil
+                        </FormDescription>
+                      </div>
+                    </div>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={notificationForm.control}
+                name="showPublicPhone"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <div className="flex items-start gap-4 p-4 border rounded-lg">
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <div className="space-y-0.5">
+                        <FormLabel className="text-base">Exibir Telefone Publico</FormLabel>
+                        <FormDescription>
+                          Exiba seu telefone publicamente no perfil
                         </FormDescription>
                       </div>
                     </div>

@@ -9,7 +9,10 @@ const storeSchema = new mongoose.Schema(
     email: { type: String, required: true, trim: true },
     phone: { type: String, required: true, trim: true },
     active: { type: Boolean, default: true },
-    soundAlert: { type: Boolean, default: false },
+    showPublicEmail: { type: Boolean, default: false },
+    showPublicPhone: { type: Boolean, default: false },
+    emailNotifications: { type: Boolean, default: false },
+    soundAlerts: { type: Boolean, default: false },
     description: { type: String, trim: true },
     logo: { type: String, trim: true },
     businessHours: [
