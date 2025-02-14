@@ -14,7 +14,7 @@ export const roadmapData: RoadmapItem[] = [
     id: '1',
     title: 'Notificações e Settings',
     description: 'Ajustar model de empresa, campos de notificações e router',
-    status: 'progress',
+    status: 'done',
     quarter: 'Q1',
     year: 2025,
     category: 'core',

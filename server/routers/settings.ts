@@ -27,6 +27,13 @@ const businessHoursSchema = z.array(z.object({
 
 const paymentMethodSchema = z.array(z.string());
 
+const notificationSettingsSchema = z.object({
+  emailNotifications: z.boolean(),
+  showPublicEmail: z.boolean(),
+  showPublicPhone: z.boolean(),
+  soundAlerts: z.boolean(),
+});
+
 export const settingsRouter = router({
   getBusiness: publicProcedure
     .input(z.object({
@@ -136,5 +143,46 @@ export const settingsRouter = router({
       );
 
       return updatedStore.paymentMethods;
+    }),
+
+  updateNotificationSettings: publicProcedure
+    .input(notificationSettingsSchema.extend({
+      storeId: z.string(),
+    }))
+    .mutation(async ({ input }) => {
+      const { storeId, ...settings } = input;
+      const store = await Store.findById(storeId);
+      
+      if (!store) {
+        throw new Error('Store not found');
+      }
+
+      await Store.findByIdAndUpdate(storeId, {
+        emailNotifications: settings.emailNotifications,
+        showPublicEmail: settings.showPublicEmail,
+        showPublicPhone: settings.showPublicPhone,
+        soundAlerts: settings.soundAlerts,
+      });
+
+      return { success: true };
+    }),
+
+  getNotificationSettings: publicProcedure
+    .input(z.object({
+      storeId: z.string(),
+    }))
+    .query(async ({ input }) => {
+      const store = await Store.findById(input.storeId);
+      
+      if (!store) {
+        throw new Error('Store not found');
+      }
+
+      return {
+        emailNotifications: store.emailNotifications ?? true,
+        showPublicEmail: store.showPublicEmail ?? true,
+        showPublicPhone: store.showPublicPhone ?? true,
+        soundAlerts: store.soundAlerts ?? true,
+      };
     }),
 });

@@ -13,35 +13,61 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Switch } from '@/components/ui/switch'
 import toast from 'react-hot-toast'
+import { trpc as api } from '@/app/_trpc/client'
+import { useEffect } from 'react'
 
 const notificationFormSchema = z.object({
   emailNotifications: z.boolean(),
   showPublicEmail: z.boolean(),
   showPublicPhone: z.boolean(),
   soundAlerts: z.boolean(),
-  orderReminders: z.boolean(),
 })
 
-export function NotificationSettings() {
+export function NotificationSettings({ storeId }: { storeId: string }) {
+  const { data: settings } = api.settings.getNotificationSettings.useQuery({ storeId });
+
+  const updateSettings = api.settings.updateNotificationSettings.useMutation({
+    onSuccess: () => {
+      toast.success('Configurações salvas com sucesso', {
+        style: {
+          borderRadius: '6px',
+          background: '#333',
+          color: '#fff',
+        },
+      })
+    },
+    onError: (error) => {
+      toast.error('Erro ao salvar configurações: ' + error.message, {
+        style: {
+          borderRadius: '6px',
+          background: '#333',
+          color: '#fff',
+        },
+      })
+    },
+  });
+
   const notificationForm = useForm<z.infer<typeof notificationFormSchema>>({
     resolver: zodResolver(notificationFormSchema),
     defaultValues: {
       emailNotifications: true,
       soundAlerts: true,
-      orderReminders: true,
       showPublicEmail: true,
       showPublicPhone: true,
     },
   })
 
-  const handleSaveNotificationSettings = () => {
-    toast.success('Configurações de notificações salvas com sucesso', {
-      style: {
-        borderRadius: '6px',
-        background: '#333',
-        color: '#fff',
-      },
-    })
+  useEffect(() => {
+    if (settings) {
+      notificationForm.reset(settings);
+    }
+  }, [settings, notificationForm]);
+
+  const handleSaveNotificationSettings = (data: z.infer<typeof notificationFormSchema>) => {    
+    updateSettings.mutate({
+      storeId,
+      ...data
+    });
   }
 
   return (

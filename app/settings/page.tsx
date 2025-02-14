@@ -42,7 +42,7 @@ export default function SettingsPage() {
             </TabsContent>
 
             <TabsContent value="notifications">
-              <NotificationSettings />
+              <NotificationSettings storeId={storeId}/>
             </TabsContent>
 
             <TabsContent value="payment" className="space-y-4">
