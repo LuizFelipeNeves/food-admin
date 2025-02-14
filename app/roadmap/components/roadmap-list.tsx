@@ -27,6 +27,12 @@ export function RoadmapList({ items }: RoadmapListProps) {
   }
 
   const getPriorityBadge = (priority: string) => {
+    const prioritys = {
+      high: 'Alta',
+      medium: 'Média',
+      low: 'Baixa'
+    }
+
     const className = priority === 'high'
       ? 'bg-red-100 text-red-800 border-red-200'
       : priority === 'medium'
@@ -35,9 +41,30 @@ export function RoadmapList({ items }: RoadmapListProps) {
 
     return (
       <Badge variant="outline" className={className}>
-        {priority}
+        {prioritys[priority as keyof typeof prioritys]}
       </Badge>
     )
+  }
+
+  const getCategoryBadge = (category: string) => {
+    const categorys = {
+      core: 'Core',
+      integration: 'Integração',
+      mobile: 'Mobile',
+      analytics: 'Analytics',
+      marketing: 'Marketing'
+    }
+    return (categorys[category as keyof typeof categorys] || 'Desconhecido')
+  }
+
+  const getQuarterBadge = (quarter: string) => {
+    const quarters = {
+      Q1: '1º Trimestre',
+      Q2: '2º Trimestre',
+      Q3: '3º Trimestre',
+      Q4: '4º Trimestre'
+    }
+    return (quarters[quarter as keyof typeof quarters] || 'Desconhecido')
   }
 
   return (
@@ -53,17 +80,17 @@ export function RoadmapList({ items }: RoadmapListProps) {
             <TableHead>Trimestre</TableHead>
           </TableRow>
         </TableHeader>
-        <TableBody>
+        <TableBody className="space-y-4">
           {items.map((item) => (
             <TableRow key={item.id}>
               <TableCell>{getStatusBadge(item.status)}</TableCell>
               <TableCell className="font-medium">{item.title}</TableCell>
               <TableCell>{item.description}</TableCell>
               <TableCell>
-                <Badge variant="outline">{item.category}</Badge>
+                <Badge variant="outline">{getCategoryBadge(item.category)}</Badge>
               </TableCell>
               <TableCell>{getPriorityBadge(item.priority)}</TableCell>
-              <TableCell>{item.quarter} {item.year}</TableCell>
+              <TableCell>{getQuarterBadge(item.quarter)} {item.year}</TableCell>
             </TableRow>
           ))}
         </TableBody>

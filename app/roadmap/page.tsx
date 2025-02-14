@@ -37,10 +37,10 @@ export default function RoadmapPage() {
           />
         </div>
 
-        <Tabs defaultValue="flow" className="space-y-4">
+        <Tabs defaultValue="list" className="space-y-4">
           <TabsList>
-            <TabsTrigger value="flow">Fluxo</TabsTrigger>
             <TabsTrigger value="list">Lista</TabsTrigger>
+            <TabsTrigger value="flow">Fluxo</TabsTrigger>
           </TabsList>
 
           <TabsContent value="flow">
