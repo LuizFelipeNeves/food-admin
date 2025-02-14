@@ -4,36 +4,23 @@ import { Layout } from '@/components/layout/layout'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Check, Download, CreditCard, AlertCircle, Clock, Calendar, ArrowUp, ArrowDown, AlertTriangle } from 'lucide-react'
+import { Check, ArrowUp, AlertTriangle } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Separator } from '@/components/ui/separator'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import { Progress } from "@/components/ui/progress"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { useState } from 'react'
+import cn from 'classnames'
+import { PaymentMethods } from '@/components/subscription/payment-methods'
+import { SubscriptionDetails } from '@/components/subscription/subscription-details'
+import { InvoicesTable } from '@/components/subscription/invoices-table'
+import { PlanChangeDialog } from '@/components/subscription/plan-change-dialog'
 
 const plans = [
   {
     name: 'Free',
     price: 'Grátis',
+    priceDetails: 'Sem compromisso',
     features: [
-      'Até 30 pedidos/mês',
+      'Até 100 pedidos/mês',
       'Painel básico',
       'Relatórios simples',
       'Suporte por email',
@@ -45,12 +32,16 @@ const plans = [
     usagePercent: 0,
     highlight: false,
     popular: false,
+    color: 'bg-background hover:bg-muted/50',
+    description: 'Perfeito para começar seu negócio',
+    buttonVariant: 'outline' as const
   },
   {
     name: 'Básico',
-    price: 'R$ 49/mês',
+    price: 'R$ 49',
+    priceDetails: 'por mês',
     features: [
-      'Até 100 pedidos/mês',
+      'Até 500 pedidos/mês',
       'Painel de controle',
       'Relatórios básicos',
       'Suporte por email',
@@ -63,10 +54,14 @@ const plans = [
     usagePercent: 45,
     highlight: false,
     popular: true,
+    color: 'bg-blue-50 dark:bg-blue-500/5 hover:bg-blue-100/50 dark:hover:bg-blue-500/10',
+    description: 'Ideal para negócios em crescimento',
+    buttonVariant: 'secondary' as const
   },
   {
     name: 'Profissional',
-    price: 'R$ 99/mês',
+    price: 'R$ 99',
+    priceDetails: 'por mês',
     features: [
       'Pedidos ilimitados',
       'Painel de controle avançado',
@@ -82,10 +77,14 @@ const plans = [
     usagePercent: 75,
     highlight: true,
     popular: false,
+    color: 'bg-primary/10 hover:bg-primary/20',
+    description: 'Para empresas que precisam de mais recursos',
+    buttonVariant: 'default' as const
   },
   {
     name: 'Empresarial',
-    price: 'R$ 199/mês',
+    price: 'R$ 199',
+    priceDetails: 'por mês',
     features: [
       'Tudo do Profissional',
       'Múltiplas filiais',
@@ -101,46 +100,33 @@ const plans = [
     usagePercent: 0,
     highlight: false,
     popular: false,
+    color: 'bg-purple-50 dark:bg-purple-500/5 hover:bg-purple-100/50 dark:hover:bg-purple-500/10',
+    description: 'Solução completa para grandes empresas',
+    buttonVariant: 'secondary' as const
   },
 ]
 
 const invoices = [
   {
-    date: '01/02/2025',
-    dueDate: '05/02/2025',
-    amount: 'R$ 99,00',
-    status: 'paid',
-    plan: 'Profissional',
-    paymentMethod: 'Cartão final 1234',
-    downloadUrl: '#',
+    id: '1',
+    date: '14/02/2025',
+    dueDate: '14/02/2025',
+    amount: 'R$ 29,90',
+    status: 'paid' as const,
+    plan: 'Basic',
+    paymentMethod: '**** 1234',
+    downloadUrl: '/invoices/1.pdf'
   },
   {
-    date: '01/01/2025',
-    dueDate: '05/01/2025',
-    amount: 'R$ 99,00',
-    status: 'paid',
-    plan: 'Profissional',
-    paymentMethod: 'Cartão final 1234',
-    downloadUrl: '#',
-  },
-  {
-    date: '01/12/2024',
-    dueDate: '05/12/2024',
-    amount: 'R$ 49,00',
-    status: 'paid',
-    plan: 'Básico',
-    paymentMethod: 'Cartão final 5678',
-    downloadUrl: '#',
-  },
-  {
-    date: '01/11/2024',
-    dueDate: '05/11/2024',
-    amount: 'R$ 49,00',
-    status: 'overdue',
-    plan: 'Básico',
-    paymentMethod: 'Cartão final 5678',
-    downloadUrl: '#',
-  },
+    id: '2',
+    date: '14/01/2025',
+    dueDate: '14/01/2025',
+    amount: 'R$ 29,90',
+    status: 'overdue' as const,
+    plan: 'Basic',
+    paymentMethod: '**** 1234',
+    downloadUrl: '/invoices/2.pdf'
+  }
 ]
 
 export default function SubscriptionPage() {
@@ -148,6 +134,8 @@ export default function SubscriptionPage() {
   const [selectedPlan, setSelectedPlan] = useState<typeof plans[0] | null>(null)
   const [showUpgradeDialog, setShowUpgradeDialog] = useState(false)
   const [showDowngradeDialog, setShowDowngradeDialog] = useState(false)
+  const [showCancelDialog, setShowCancelDialog] = useState(false)
+  const [activeTab, setActiveTab] = useState('plans')
 
   const handlePlanChange = (plan: typeof plans[0]) => {
     setSelectedPlan(plan)
@@ -162,79 +150,104 @@ export default function SubscriptionPage() {
     }
   }
 
-  const handleConfirmChange = () => {
+  const handleConfirmChange = (paymentMethod: 'credit_card' | 'boleto') => {
     // Implementar lógica de mudança de plano
-    console.log('Mudando para o plano:', selectedPlan?.name)
+    console.log('Mudando para o plano:', selectedPlan?.name, 'com pagamento via:', paymentMethod)
     setShowUpgradeDialog(false)
     setShowDowngradeDialog(false)
   }
 
+  const handleCancelSubscription = () => {
+    // Implementar lógica de cancelamento
+    console.log('Cancelando assinatura')
+    setShowCancelDialog(false)
+  }
+
+  const handlePayment = () => {
+    setActiveTab('payment')
+  }
+
   return (
     <Layout>
-      <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
-        <div className="flex items-center justify-between space-y-2">
-          <h2 className="text-2xl font-bold tracking-tight">Assinatura</h2>
+      <div className="flex-1 space-y-4 p-2 sm:p-4 md:p-8 pt-6 pb-20 sm:pb-8 h-[calc(100vh-4rem)] overflow-y-auto">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl sm:text-2xl font-bold tracking-tight">Assinatura</h2>
         </div>
 
         <div className="flex gap-4">
-          <div className="flex-1">
-            <Tabs defaultValue="plans" className="space-y-4">
-              <TabsList>
-                <TabsTrigger value="plans">Planos</TabsTrigger>
-                <TabsTrigger value="payment">Pagamento</TabsTrigger>
-                <TabsTrigger value="invoices">Faturas</TabsTrigger>
-              </TabsList>
+          <div className="flex-1 min-w-0">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+              <div className="flex justify-center sm:justify-start">
+                <TabsList className="w-full sm:w-auto">
+                  <TabsTrigger value="plans" className="flex-1 sm:flex-none">Planos</TabsTrigger>
+                  <TabsTrigger value="payment" className="flex-1 sm:flex-none">Pagamento</TabsTrigger>
+                  <TabsTrigger value="invoices" className="flex-1 sm:flex-none">Faturas</TabsTrigger>
+                </TabsList>
+              </div>
 
               <TabsContent value="plans" className="space-y-4">
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                <div className="grid gap-3 sm:gap-4 md:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
                   {plans.map((plan) => (
                     <Card 
                       key={plan.name} 
-                      className={
-                        plan.highlight 
-                          ? 'border-primary shadow-lg scale-105' 
-                          : plan.current 
-                            ? 'border-primary' 
-                            : ''
-                      }
+                      className={cn(
+                        'relative transition-all duration-200 hover:scale-[1.02]',
+                        'min-w-0',
+                        plan.highlight ? 'shadow-xl ring-2 ring-primary' : 'shadow-md',
+                        plan.current ? 'ring-1 ring-primary' : '',
+                        plan.color
+                      )}
                     >
-                      <CardHeader>
-                        <CardTitle className="flex items-center justify-between">
-                          {plan.name}
-                          <div className="flex gap-2">
-                            {plan.current && (
-                              <Badge variant="secondary">Atual</Badge>
-                            )}
-                            {plan.popular && (
-                              <Badge variant="default">Popular</Badge>
-                            )}
-                          </div>
-                        </CardTitle>
-                        <CardDescription>
-                          <span className="text-2xl font-bold">{plan.price}</span>
-                          {plan.name === 'Free' && (
-                            <span className="block text-sm text-muted-foreground mt-1">Sem compromisso</span>
+                      {plan.popular && (
+                        <div className="absolute -top-3 left-0 right-0 mx-auto w-fit">
+                          <Badge variant="default" className="bg-green-600 px-4 sm:px-8 py-1 text-xs sm:text-sm whitespace-nowrap">Mais Popular</Badge>
+                        </div>
+                      )}
+                      <CardHeader className="p-4 sm:p-6 space-y-2">
+                        <CardTitle className="flex items-center justify-between text-base sm:text-lg gap-2 flex-wrap">
+                          <span>{plan.name}</span>
+                          {plan.current && (
+                            <Badge variant="secondary" className="px-2 sm:px-3 text-xs whitespace-nowrap">Plano Atual</Badge>
                           )}
+                        </CardTitle>
+                        <CardDescription className="min-h-[40px] text-sm">
+                          {plan.description}
                         </CardDescription>
+                        <div className="mt-2">
+                          <div className="flex items-baseline gap-1 flex-wrap">
+                            <span className="text-2xl sm:text-4xl font-bold">{plan.price}</span>
+                            <span className="text-xs sm:text-sm text-muted-foreground">{plan.priceDetails}</span>
+                          </div>
+                        </div>
                       </CardHeader>
-                      <CardContent>
-                        <ul className="space-y-2 min-h-[320px]">
+                      <CardContent className="p-4 sm:p-6">
+                        <ul className="space-y-2 sm:space-y-3 text-sm">
                           {plan.features.map((feature) => (
-                            <li key={feature} className="flex items-center">
-                              <Check className="h-4 w-4 mr-2 text-green-500 flex-shrink-0" />
-                              <span className="text-sm">{feature}</span>
+                            <li key={feature} className="flex items-start sm:items-center gap-2 sm:gap-3">
+                              <div className={cn(
+                                "h-4 w-4 sm:h-5 sm:w-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 sm:mt-0",
+                                plan.highlight 
+                                  ? 'bg-primary text-primary-foreground' 
+                                  : 'bg-primary/10 text-primary'
+                              )}>
+                                <Check className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                              </div>
+                              <span className="text-xs sm:text-sm leading-tight">{feature}</span>
                             </li>
                           ))}
                         </ul>
                       </CardContent>
-                      <CardFooter>
+                      <CardFooter className="p-4 sm:p-6">
                         <Button 
-                          className="w-full" 
-                          variant={plan.current ? 'outline' : 'default'}
+                          className={cn(
+                            "w-full font-medium transition-all text-sm sm:text-base",
+                            !plan.current && plan.highlight && "bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20"
+                          )}
+                          variant={plan.buttonVariant}
                           disabled={plan.current}
                           onClick={() => !plan.current && handlePlanChange(plan)}
                         >
-                          {plan.current ? 'Plano Atual' : plan.name === 'Free' ? 'Começar Grátis' : 'Alterar Plano'}
+                          {plan.current ? 'Plano Atual' : plan.name === 'Free' ? 'Começar Grátis' : 'Escolher Plano'}
                         </Button>
                       </CardFooter>
                     </Card>
@@ -243,276 +256,82 @@ export default function SubscriptionPage() {
               </TabsContent>
 
               <TabsContent value="payment" className="space-y-4">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Informações de Pagamento</CardTitle>
-                    <CardDescription>
-                      Gerencie suas informações de pagamento e assinatura
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    <div className="rounded-lg border p-4 bg-muted/50">
-                      <div className="flex items-center gap-4">
-                        <CreditCard className="h-6 w-6" />
-                        <div className="flex-1">
-                          <p className="font-medium">Cartão atual</p>
-                          <p className="text-sm text-muted-foreground">Mastercard terminando em 1234</p>
-                        </div>
-                        <Badge variant="outline">Principal</Badge>
-                      </div>
-                    </div>
-
-                    <Separator />
-
-                    <div className="space-y-4">
-                      <h3 className="text-lg font-medium">Adicionar novo cartão</h3>
-                      <div className="space-y-2">
-                        <Label>Número do Cartão</Label>
-                        <div className="flex items-center space-x-2">
-                          <CreditCard className="h-4 w-4 text-muted-foreground" />
-                          <Input placeholder="•••• •••• •••• ••••" />
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label>Validade</Label>
-                          <Input placeholder="MM/AA" />
-                        </div>
-                        <div className="space-y-2">
-                          <Label>CVV</Label>
-                          <Input placeholder="•••" />
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Nome no Cartão</Label>
-                        <Input placeholder="Nome como está no cartão" />
-                      </div>
-                    </div>
-                  </CardContent>
-                  <CardFooter className="flex flex-col space-y-2">
-                    <Button className="w-full">Adicionar Cartão</Button>
-                    <Button variant="outline" className="w-full text-red-500 hover:text-red-500">
-                      Cancelar Assinatura
-                    </Button>
-                  </CardFooter>
-                </Card>
+                <div className="grid gap-4 grid-cols-1 lg:grid-cols-3">
+                  <PaymentMethods />
+                  <SubscriptionDetails 
+                    onCancelClick={() => setShowCancelDialog(true)}
+                    onPaymentClick={handlePayment}
+                  />
+                </div>
               </TabsContent>
 
               <TabsContent value="invoices" className="space-y-4">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Histórico de Faturas</CardTitle>
-                    <CardDescription>
-                      Visualize e baixe suas faturas anteriores
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Data</TableHead>
-                          <TableHead>Vencimento</TableHead>
-                          <TableHead>Plano</TableHead>
-                          <TableHead>Valor</TableHead>
-                          <TableHead>Forma de Pagamento</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead className="text-right">Download</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {invoices.map((invoice, index) => (
-                          <TableRow key={index}>
-                            <TableCell>{invoice.date}</TableCell>
-                            <TableCell>{invoice.dueDate}</TableCell>
-                            <TableCell>
-                              <Badge variant="outline">{invoice.plan}</Badge>
-                            </TableCell>
-                            <TableCell>{invoice.amount}</TableCell>
-                            <TableCell className="text-muted-foreground text-sm">
-                              {invoice.paymentMethod}
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex items-center gap-2">
-                                {invoice.status === 'paid' ? (
-                                  <Check className="h-4 w-4 text-green-500" />
-                                ) : (
-                                  <AlertCircle className="h-4 w-4 text-red-500" />
-                                )}
-                                <Badge variant={invoice.status === 'paid' ? 'success' : 'destructive'}>
-                                  {invoice.status === 'paid' ? 'Pago' : 'Em Atraso'}
-                                </Badge>
-                              </div>
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <Button variant="ghost" size="icon">
-                                <Download className="h-4 w-4" />
-                              </Button>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </CardContent>
-                </Card>
+                <InvoicesTable 
+                  invoices={invoices} 
+                  onPayInvoice={handlePayment}
+                />
               </TabsContent>
             </Tabs>
           </div>
-
-          {currentPlan && (
-            <div className="w-80 flex-shrink-0">
-              <Card className="sticky top-4">
-                <CardHeader>
-                  <CardTitle>Resumo do Plano Atual</CardTitle>
-                  <CardDescription>
-                    Você está no plano {currentPlan.name}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="text-sm font-medium">
-                          Uso do Plano ({currentPlan.usagePercent}%)
-                        </div>
-                        <div className="text-sm text-muted-foreground">75/100 pedidos</div>
-                      </div>
-                      <Progress value={currentPlan.usagePercent} className="h-2" />
-                    </div>
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <Clock className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm text-muted-foreground">Próxima cobrança em 5 dias</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <CreditCard className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm text-muted-foreground">Cartão final 1234</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Calendar className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm text-muted-foreground">Assinante desde Jan/2024</span>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-                <CardFooter>
-                  <Button variant="outline" className="w-full">
-                    Ver Detalhes do Plano
-                  </Button>
-                </CardFooter>
-              </Card>
-            </div>
-          )}
         </div>
       </div>
 
-      <Dialog open={showUpgradeDialog} onOpenChange={setShowUpgradeDialog}>
+      <PlanChangeDialog 
+        isOpen={showUpgradeDialog}
+        onOpenChange={setShowUpgradeDialog}
+        currentPlan={currentPlan || null}
+        selectedPlan={selectedPlan}
+        isUpgrade={true}
+        onConfirm={handleConfirmChange}
+      />
+
+      <PlanChangeDialog 
+        isOpen={showDowngradeDialog}
+        onOpenChange={setShowDowngradeDialog}
+        currentPlan={currentPlan || null}
+        selectedPlan={selectedPlan}
+        isUpgrade={false}
+        onConfirm={handleConfirmChange}
+      />
+
+      <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <ArrowUp className="h-5 w-5 text-green-500" />
-              Upgrade para {selectedPlan?.name}
-            </DialogTitle>
-            <DialogDescription>
-              Você está prestes a fazer um upgrade do plano <strong>{currentPlan?.name}</strong> para o plano <strong>{selectedPlan?.name}</strong>.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4">
-            <div className="rounded-lg border p-4">
-              <h4 className="font-medium mb-2">Benefícios do novo plano:</h4>
-              <ul className="space-y-2">
-                {selectedPlan?.features.map((feature, index) => (
-                  <li key={index} className="flex items-center text-sm">
-                    <Check className="h-4 w-4 mr-2 text-green-500 flex-shrink-0" />
-                    {feature}
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            <div className="rounded-lg border p-4 bg-muted">
-              <div className="flex justify-between items-center">
-                <div>
-                  <p className="font-medium">Novo valor mensal</p>
-                  <p className="text-sm text-muted-foreground">Cobrança imediata proporcional</p>
-                </div>
-                <p className="text-2xl font-bold">{selectedPlan?.price}</p>
-              </div>
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowUpgradeDialog(false)}>
-              Cancelar
-            </Button>
-            <Button onClick={handleConfirmChange} className="bg-green-600 hover:bg-green-700">
-              Confirmar Upgrade
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={showDowngradeDialog} onOpenChange={setShowDowngradeDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-yellow-600">
+            <DialogTitle className="flex items-center gap-2 text-destructive">
               <AlertTriangle className="h-5 w-5" />
-              Alterar para {selectedPlan?.name}
+              Cancelar Assinatura
             </DialogTitle>
             <DialogDescription>
-              Você está prestes a fazer um downgrade do plano <strong>{currentPlan?.name}</strong> para o plano <strong>{selectedPlan?.name}</strong>.
+              Você está prestes a cancelar sua assinatura do plano <strong>{currentPlan?.name}</strong>.
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
-            <div className="rounded-lg border p-4 border-yellow-200 bg-yellow-50">
-              <h4 className="font-medium mb-2 text-yellow-800">Atenção:</h4>
+            <div className="rounded-lg border p-4 border-destructive/20 bg-destructive/10">
+              <h4 className="font-medium mb-2 text-destructive">Atenção:</h4>
               <ul className="space-y-2">
-                <li className="text-sm text-yellow-800">
-                  • Você perderá acesso a recursos exclusivos do plano atual
+                <li className="text-sm text-destructive/90">
+                  • Você perderá acesso a todos os recursos premium imediatamente
                 </li>
-                <li className="text-sm text-yellow-800">
-                  • A mudança será efetivada no próximo ciclo de faturamento
+                <li className="text-sm text-destructive/90">
+                  • Seus dados serão mantidos por 30 dias
                 </li>
-                <li className="text-sm text-yellow-800">
-                  • Dados históricos serão mantidos, mas alguns recursos ficarão indisponíveis
+                <li className="text-sm text-destructive/90">
+                  • Você pode reativar sua assinatura a qualquer momento
                 </li>
               </ul>
-            </div>
-
-            <div className="rounded-lg border p-4">
-              <h4 className="font-medium mb-2">Recursos do novo plano:</h4>
-              <ul className="space-y-2">
-                {selectedPlan?.features.map((feature, index) => (
-                  <li key={index} className="flex items-center text-sm">
-                    <Check className="h-4 w-4 mr-2 text-green-500 flex-shrink-0" />
-                    {feature}
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            <div className="rounded-lg border p-4 bg-muted">
-              <div className="flex justify-between items-center">
-                <div>
-                  <p className="font-medium">Novo valor mensal</p>
-                  <p className="text-sm text-muted-foreground">Válido a partir do próximo ciclo</p>
-                </div>
-                <p className="text-2xl font-bold">{selectedPlan?.price}</p>
-              </div>
             </div>
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowDowngradeDialog(false)}>
-              Cancelar
+            <Button variant="outline" onClick={() => setShowCancelDialog(false)}>
+              Voltar
             </Button>
             <Button 
-              variant="default" 
-              onClick={handleConfirmChange}
-              className="bg-yellow-600 hover:bg-yellow-700"
+              variant="destructive"
+              onClick={handleCancelSubscription}
             >
-              Confirmar Alteração
+              Confirmar Cancelamento
             </Button>
           </DialogFooter>
         </DialogContent>

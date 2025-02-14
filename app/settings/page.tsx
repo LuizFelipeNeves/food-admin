@@ -70,7 +70,7 @@ const paymentsDefault = [
   }]
 
 export default function SettingsPage() {
-  const [paymentMethods, setPaymentMethods] = useState([])
+  const [paymentMethods, setPaymentMethods] = useState<string[]>([])
 
   const [businessHours, setBusinessHours] = useState([
     { day: 'monday', enabled: true, hours: { from: { hour: 8, minute: 0 }, to: { hour: 22, minute: 0 } } },

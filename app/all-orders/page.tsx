@@ -28,7 +28,7 @@ export default function AllOrdersPage() {
       <div className="flex flex-col h-full">
         <div className="flex-none space-y-4 p-4 md:p-6">
           <div className="flex items-center justify-between">
-            <div>
+            <div className="space-y-2">
               <h1 className="text-2xl font-bold tracking-tight">Pedidos</h1>
               <p className="text-sm text-muted-foreground">
                 Visualize e gerencie todos os pedidos em um só lugar
