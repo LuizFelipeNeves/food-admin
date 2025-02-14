@@ -25,11 +25,7 @@ const businessHoursSchema = z.array(z.object({
   }),
 }));
 
-const paymentMethodSchema = z.array(z.object({
-  type: z.string(),
-  active: z.boolean(),
-  pixKey: z.string().optional(),
-}));
+const paymentMethodSchema = z.array(z.string());
 
 export const settingsRouter = router({
   getBusiness: publicProcedure
