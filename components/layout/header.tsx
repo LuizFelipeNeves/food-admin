@@ -12,7 +12,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { NotificationsPopover } from '@/components/ui/notifications';
 
-export function Header() {
+export function Header({ children }: { children?: React.ReactNode }) {
   const { setTheme } = useTheme();
 
   const toggleFullscreen = () => {
@@ -25,6 +25,7 @@ export function Header() {
 
   return (
     <header className="border-b h-16 flex items-center px-6 sticky top-0 bg-card/90 z-50">
+      {children}
       <div className="flex-1" />
       <div className="flex items-center gap-4">
         <Button

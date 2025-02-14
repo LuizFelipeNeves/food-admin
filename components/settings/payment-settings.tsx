@@ -3,7 +3,6 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
-import { Separator } from '@/components/ui/separator'
 import { Save } from 'lucide-react'
 import { trpc as api } from '@/app/_trpc/client'
 
@@ -79,7 +78,7 @@ export function PaymentSettings({ storeId }: { storeId: string }) {
             <div key={payment.id} className="flex flex-col">
               <div className="flex items-start gap-4 p-4 border rounded-lg">
                 <Switch 
-                  defaultChecked={paymentMethods.includes(payment.id)} 
+                  checked={paymentMethods.includes(payment.id)} 
                   onCheckedChange={(checked) => handlePaymentMethodChange(payment.id, checked)} 
                 />
                 <div className="space-y-0.5">

@@ -259,20 +259,22 @@ export default function SettingsPage() {
         </div>
 
         <Tabs defaultValue="business" className="space-y-4">
-          <TabsList className="w-full justify-start">
-            <TabsTrigger value="business" className="text-base">
-              Dados do Negócio
-            </TabsTrigger>
-            <TabsTrigger value="notifications" className="text-base">
-              Notificações
-            </TabsTrigger>
-            <TabsTrigger value="payment" className="text-base">
-              Formas de Pagamento
-            </TabsTrigger>
-            <TabsTrigger value="hours" className="text-base">
-              Horário de Funcionamento
-            </TabsTrigger>
-          </TabsList>
+          <div className="overflow-x-auto">
+            <TabsList className="w-full justify-start inline-flex">
+              <TabsTrigger value="business" className="text-base">
+                Dados do Negócio
+              </TabsTrigger>
+              <TabsTrigger value="notifications" className="text-base">
+                Notificações
+              </TabsTrigger>
+              <TabsTrigger value="payment" className="text-base">
+                Formas de Pagamento
+              </TabsTrigger>
+              <TabsTrigger value="hours" className="text-base">
+                Horário de Funcionamento
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           <div className="overflow-auto max-h-[calc(100vh-200px)]">
             <TabsContent value="business" className="space-y-4">

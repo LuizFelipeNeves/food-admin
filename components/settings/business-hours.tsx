@@ -67,7 +67,7 @@ export function BusinessHours({ storeId }: { storeId: string }) {
   }
 
   return (
-    <Card className="p-6">
+    <Card className="p-4 sm:p-6">
       <div className="space-y-4">
         <div className="grid gap-6 pt-4">
           {daysOfWeek.map((day) => {
@@ -75,18 +75,18 @@ export function BusinessHours({ storeId }: { storeId: string }) {
             if (!dayHours) return null
 
             return (
-              <div key={day._id} className="flex items-center gap-4">
-                <div className="w-40">
-                  <Label>{day.label}</Label>
+              <div key={day._id} className="space-y-3 sm:space-y-0 sm:grid sm:grid-cols-[180px_1fr] sm:items-center sm:gap-4">
+                <div className="flex items-center justify-center sm:justify-start">
+                  <Label className="font-medium">{day.label}</Label>
                 </div>
-
-                <div className="flex items-center gap-4">
-                  <Switch
-                    checked={dayHours.enabled}
-                    onCheckedChange={(checked) => handleHourChange(day._id, 'enabled', checked)}
-                  />
-
-                  <div className="flex items-center gap-2">
+                <div className="flex flex-col sm:flex-row items-center sm:items-center gap-4">
+                  <div className="flex items-center justify-center gap-4">
+                    <Switch
+                      checked={dayHours.enabled}
+                      onCheckedChange={(checked) => handleHourChange(day._id, 'enabled', checked)}
+                    />
+                  </div>
+                  <div className="flex items-center justify-center gap-2">
                     <TimeInput
                       value={{
                         hours: dayHours.hours.from.hour.toString().padStart(2, '0'),
@@ -95,7 +95,7 @@ export function BusinessHours({ storeId }: { storeId: string }) {
                       onChange={(value) => handleHourChange(day._id, 'from', value)}
                       disabled={!dayHours.enabled}
                     />
-                    <span>às</span>
+                    <span className="text-sm text-muted-foreground">às</span>
                     <TimeInput
                       value={{
                         hours: dayHours.hours.to.hour.toString().padStart(2, '0'),
@@ -112,7 +112,7 @@ export function BusinessHours({ storeId }: { storeId: string }) {
         </div>
 
         <Button
-          className="mt-6"
+          className="w-full sm:w-auto mt-6"
           onClick={() => {
             updateBusinessHours.mutate({ businessHours, storeId })
           }}
