@@ -61,12 +61,14 @@ interface ColumnsProps {
   onDelete: (id: string) => void;
 }
 
+const baseUrl = 'https://piratafood.vercel.app/'
+
 export function productColumns({ onEdit, onDelete }: ColumnsProps): ColumnDef<Product>[] {
   return [
     {
       accessorKey: 'image',
       header: 'Imagem',
-      cell: ({ row }) => row ? <Avatar><AvatarImage src={row.getValue('image')} /></Avatar> : null,
+      cell: ({ row }) => row ? <Avatar><AvatarImage src={baseUrl + row.getValue('image')} /></Avatar> : null,
       enableHiding: true,
     },
     {
