@@ -10,11 +10,11 @@ interface LayoutProps {
 
 export function Layout({ children }: LayoutProps) {
   return (
-    <div className="flex h-screen">
-      <div className="hidden md:block">
+    <div className="flex h-screen overflow-y-hidden">
+      <div className="hidden md:block h-full">
         <Sidebar />
       </div>
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col min-h-0">
         <Header>
           <MobileSidebar />
         </Header>

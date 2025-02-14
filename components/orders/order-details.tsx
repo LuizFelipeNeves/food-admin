@@ -18,14 +18,15 @@ import { CreditCard, MapPin, Phone, Mail, Clock } from "lucide-react"
 
 interface OrderDetailsProps {
   order: Order | null
-  onClose: () => void
+  open: boolean
+  onOpenChange: (open: boolean) => void
 }
 
-export function OrderDetails({ order, onClose }: OrderDetailsProps) {
+export function OrderDetails({ order, open, onOpenChange }: OrderDetailsProps) {
   if (!order) return null
 
   return (
-    <Dialog open={!!order} onOpenChange={(open) => !open && onClose()}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="w-[calc(100%-2rem)] max-w-3xl max-h-[calc(100vh-2rem)] overflow-y-auto p-4 md:p-6">
         <DialogHeader>
           <DialogTitle className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
@@ -80,14 +81,14 @@ export function OrderDetails({ order, onClose }: OrderDetailsProps) {
                   <MapPin className="h-4 w-4" />
                   Endereço de Entrega
                 </div>
-                <div>
+                <div className="text-sm">
                   {order.customer.address.street}, {order.customer.address.number}
                   {order.customer.address.complement && ` - ${order.customer.address.complement}`}
                 </div>
-                <div>
+                <div className="text-sm">
                   {order.customer.address.neighborhood} - {order.customer.address.city}/{order.customer.address.state}
                 </div>
-                <div>{order.customer.address.zipCode}</div>
+                <div className="text-sm">{order.customer.address.zipCode}</div>
               </div>
             </div>
           </Card>
@@ -100,15 +101,23 @@ export function OrderDetails({ order, onClose }: OrderDetailsProps) {
                 <div className="text-sm font-medium">Itens</div>
                 <div className="space-y-2 mt-2">
                   {order.items.map((item) => (
-                    <div key={item._id} className="flex flex-col sm:flex-row sm:justify-between gap-1">
-                      <div>
-                        {item.quantity}x {item.name}
+                    <div key={item._id} className="flex items-start justify-between gap-4 text-sm">
+                      <div className="flex-1">
+                        <div className="font-medium">{item.name}</div>
+                        {item.additionals && item.additionals.length > 0 && (
+                          <div className="text-muted-foreground text-xs mt-0.5">
+                            {item.additionals.map((additional) => additional.name).join(', ')}
+                          </div>
+                        )}
                       </div>
                       <div className="text-right">
-                        {new Intl.NumberFormat('pt-BR', {
-                          style: 'currency',
-                          currency: 'BRL',
-                        }).format(item.price)}
+                        <div>{item.quantity}x</div>
+                        <div>
+                          {new Intl.NumberFormat('pt-BR', {
+                            style: 'currency',
+                            currency: 'BRL',
+                          }).format(item.price)}
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -117,50 +126,61 @@ export function OrderDetails({ order, onClose }: OrderDetailsProps) {
 
               <Separator />
 
-              <div className="flex justify-between font-semibold">
-                <div>Total</div>
-                <div>
-                  {new Intl.NumberFormat('pt-BR', {
-                    style: 'currency',
-                    currency: 'BRL',
-                  }).format(order.total)}
+              <div className="space-y-1.5">
+                <div className="flex justify-between text-sm">
+                  <div>Subtotal</div>
+                  <div>
+                    {new Intl.NumberFormat('pt-BR', {
+                      style: 'currency',
+                      currency: 'BRL',
+                    }).format(order.subtotal)}
+                  </div>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <div>Taxa de entrega</div>
+                  <div>
+                    {new Intl.NumberFormat('pt-BR', {
+                      style: 'currency',
+                      currency: 'BRL',
+                    }).format(order.deliveryFee)}
+                  </div>
+                </div>
+                <div className="flex justify-between font-medium">
+                  <div>Total</div>
+                  <div>
+                    {new Intl.NumberFormat('pt-BR', {
+                      style: 'currency',
+                      currency: 'BRL',
+                    }).format(order.total)}
+                  </div>
                 </div>
               </div>
+
+              <Separator />
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <div className="text-sm font-medium flex items-center gap-2">
                     <CreditCard className="h-4 w-4" />
-                    Pagamento
+                    Forma de Pagamento
                   </div>
-                  <div>{PAYMENT_METHODS[order.payment.method].label}</div>
-                  {order.payment.change && (
-                    <div className="text-sm text-muted-foreground">
-                      Troco para{' '}
-                      {new Intl.NumberFormat('pt-BR', {
-                        style: 'currency',
-                        currency: 'BRL',
-                      }).format(order.payment.change)}
-                    </div>
-                  )}
+                  <div className="text-sm">{PAYMENT_METHODS[order.payment.method].label}</div>
                 </div>
 
-                {order.waitTime && (
-                  <div>
-                    <div className="text-sm font-medium flex items-center gap-2">
-                      <Clock className="h-4 w-4" />
-                      Tempo de Espera
-                    </div>
-                    <div>{order.waitTime} minutos</div>
+                <div>
+                  <div className="text-sm font-medium flex items-center gap-2">
+                    <Clock className="h-4 w-4" />
+                    Tempo de Preparo
                   </div>
-                )}
+                  <div className="text-sm">30-45 minutos</div>
+                </div>
               </div>
             </div>
           </Card>
 
-          {/* Histórico */}
+          {/* Status do Pedido */}
           <Card className="p-4 md:p-6">
-            <h3 className="font-semibold mb-4">Histórico</h3>
+            <h3 className="font-semibold mb-4">Status do Pedido</h3>
             <Timeline events={order.events} />
           </Card>
         </div>

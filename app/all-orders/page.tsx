@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { SetStateAction, useState } from 'react'
 import { Layout } from '@/components/layout/layout'
 import { OrderFilters } from '@/components/orders/order-filters'
 import { DataTable } from '@/components/ui/data-table'
@@ -33,7 +33,7 @@ export default function AllOrdersPage() {
 
   return (
     <Layout>
-      <div className="flex flex-col h-full">
+      <div className="flex flex-col h-full overflow-hidden">
         <div className="flex-none space-y-4 p-4 md:p-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="space-y-1">
@@ -43,13 +43,13 @@ export default function AllOrdersPage() {
               </p>
             </div>
 
-            <Button className="w-full sm:w-auto">
+            <Button className="w-full sm:w-auto whitespace-nowrap">
               <Plus className="mr-2 h-4 w-4" />
               Novo Pedido
             </Button>
           </div>
 
-          <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
+          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Total de Pedidos</CardTitle>
@@ -94,19 +94,25 @@ export default function AllOrdersPage() {
 
           <OrderFilters />
         </div>
-        <div className="flex-1 p-4 md:p-6">
-          <DataTable
-            columns={visibleColumns}
-            data={mockOrders}
-            meta={{
-              openOrderDetails: (order: Order) => setSelectedOrder(order),
-            }}
-          />
+
+        <div className="flex-1 min-h-0 p-4 md:p-6">
+          <div className="h-full overflow-auto rounded-md border">
+            <DataTable
+              columns={visibleColumns}
+              data={mockOrders}
+              meta={{
+                onRowClick: (row: { original: SetStateAction<Order | null> }) => setSelectedOrder(row.original),
+                selectedRow: selectedOrder,
+              }}
+            />
+          </div>
         </div>
       </div>
+
       <OrderDetails
         order={selectedOrder}
-        onClose={() => setSelectedOrder(null)}
+        open={!!selectedOrder}
+        onOpenChange={(open) => !open && setSelectedOrder(null)}
       />
     </Layout>
   )

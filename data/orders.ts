@@ -3,6 +3,10 @@ export interface OrderItem {
   name: string
   quantity: number
   price: number
+  additionals: {
+    name: string
+    price: number
+  }[]
 }
 
 export interface Address {
@@ -43,6 +47,8 @@ export interface Order {
   customer: Customer
   orderDate: string
   status: 'new' | 'confirmed' | 'preparing' | 'ready' | 'delivering' | 'completed'
+  subtotal: number
+  deliveryFee: number
   total: number
   items: OrderItem[]
   payment: Payment
@@ -69,8 +75,10 @@ export const mockOrders: Order[] = [
         zipCode: '01234-567'
       }
     },
-    orderDate: new Date().toISOString(),
+    orderDate: '2025-02-14T06:20:00-03:00',
     status: 'new',
+    subtotal: 79.90,
+    deliveryFee: 10.00,
     total: 89.90,
     waitTime: 15,
     payment: {
@@ -79,13 +87,25 @@ export const mockOrders: Order[] = [
       total: 89.90
     },
     items: [
-      { _id: '1', name: 'X-Burger', quantity: 2, price: 18.90 },
-      { _id: '2', name: 'Batata Frita', quantity: 1, price: 12.90 }
+      { 
+        _id: '1', 
+        name: 'X-Burger', 
+        quantity: 2, 
+        price: 18.90,
+        additionals: []
+      },
+      { 
+        _id: '2', 
+        name: 'Batata Frita', 
+        quantity: 1, 
+        price: 12.90,
+        additionals: []
+      }
     ],
     events: [
       {
         _id: '1',
-        date: new Date().toISOString(),
+        date: '2025-02-14T06:20:00-03:00',
         status: 'new',
         description: 'Pedido recebido'
       }
@@ -97,10 +117,10 @@ export const mockOrders: Order[] = [
     customer: {
       _id: '2',
       name: 'João Silva',
-      phone: '(11) 98888-7777',
+      phone: '(11) 91234-5678',
       email: 'joao@email.com',
       address: {
-        street: 'Av. Paulista',
+        street: 'Avenida Paulista',
         number: '1000',
         neighborhood: 'Bela Vista',
         city: 'São Paulo',
@@ -108,31 +128,45 @@ export const mockOrders: Order[] = [
         zipCode: '01310-100'
       }
     },
-    orderDate: new Date().toISOString(),
-    status: 'confirmed',
+    orderDate: '2025-02-14T06:15:00-03:00',
+    status: 'preparing',
+    subtotal: 35.80,
+    deliveryFee: 10.00,
     total: 45.80,
-    waitTime: 10,
+    waitTime: 20,
     payment: {
       method: 'pix',
-      status: 'pending',
+      status: 'approved',
       total: 45.80
     },
     items: [
-      { _id: '3', name: 'X-Salada', quantity: 1, price: 16.90 },
-      { _id: '4', name: 'Refrigerante', quantity: 1, price: 8.90 }
+      { 
+        _id: '3', 
+        name: 'X-Salada', 
+        quantity: 1, 
+        price: 16.90,
+        additionals: []
+      },
+      { 
+        _id: '4', 
+        name: 'Coca-Cola', 
+        quantity: 2, 
+        price: 7.90,
+        additionals: []
+      }
     ],
     events: [
       {
         _id: '1',
-        date: new Date(Date.now() - 5 * 60000).toISOString(),
+        date: '2025-02-14T06:15:00-03:00',
         status: 'new',
         description: 'Pedido recebido'
       },
       {
         _id: '2',
-        date: new Date().toISOString(),
-        status: 'confirmed',
-        description: 'Pedido confirmado'
+        date: '2025-02-14T06:17:00-03:00',
+        status: 'preparing',
+        description: 'Pedido em preparo'
       }
     ]
   },
@@ -153,8 +187,10 @@ export const mockOrders: Order[] = [
         zipCode: '05422-001'
       }
     },
-    orderDate: new Date().toISOString(),
+    orderDate: '2025-02-14T06:10:00-03:00',
     status: 'preparing',
+    subtotal: 146.70,
+    deliveryFee: 10.00,
     total: 156.70,
     waitTime: 25,
     payment: {
@@ -163,25 +199,31 @@ export const mockOrders: Order[] = [
       total: 156.70
     },
     items: [
-      { _id: '5', name: 'Pizza Grande', quantity: 1, price: 89.90 },
-      { _id: '6', name: 'Refrigerante 2L', quantity: 2, price: 12.90 }
+      { 
+        _id: '5', 
+        name: 'Pizza Grande', 
+        quantity: 1, 
+        price: 89.90,
+        additionals: []
+      },
+      { 
+        _id: '6', 
+        name: 'Refrigerante 2L', 
+        quantity: 2, 
+        price: 12.90,
+        additionals: []
+      }
     ],
     events: [
       {
         _id: '1',
-        date: new Date().toISOString(),
+        date: '2025-02-14T06:10:00-03:00',
         status: 'new',
         description: 'Pedido recebido'
       },
       {
         _id: '2',
-        date: new Date(Date.now() - 10 * 60000).toISOString(),
-        status: 'confirmed',
-        description: 'Pedido confirmado'
-      },
-      {
-        _id: '3',
-        date: new Date().toISOString(),
+        date: '2025-02-14T06:12:00-03:00',
         status: 'preparing',
         description: 'Pedido em preparo'
       }
@@ -204,8 +246,10 @@ export const mockOrders: Order[] = [
         zipCode: '01451-000'
       }
     },
-    orderDate: new Date().toISOString(),
+    orderDate: '2025-02-14T06:05:00-03:00',
     status: 'ready',
+    subtotal: 57.80,
+    deliveryFee: 10.00,
     total: 67.80,
     waitTime: 0,
     payment: {
@@ -214,31 +258,37 @@ export const mockOrders: Order[] = [
       total: 67.80
     },
     items: [
-      { _id: '7', name: 'X-Tudo', quantity: 2, price: 25.90 },
-      { _id: '8', name: 'Milk Shake', quantity: 1, price: 16.00 }
+      { 
+        _id: '7', 
+        name: 'X-Tudo', 
+        quantity: 2, 
+        price: 25.90,
+        additionals: []
+      },
+      { 
+        _id: '8', 
+        name: 'Milk Shake', 
+        quantity: 1, 
+        price: 16.00,
+        additionals: []
+      }
     ],
     events: [
       {
         _id: '1',
-        date: new Date().toISOString(),
+        date: '2025-02-14T06:05:00-03:00',
         status: 'new',
         description: 'Pedido recebido'
       },
       {
         _id: '2',
-        date: new Date(Date.now() - 15 * 60000).toISOString(),
-        status: 'confirmed',
-        description: 'Pedido confirmado'
-      },
-      {
-        _id: '3',
-        date: new Date(Date.now() - 5 * 60000).toISOString(),
+        date: '2025-02-14T06:07:00-03:00',
         status: 'preparing',
         description: 'Pedido em preparo'
       },
       {
-        _id: '4',
-        date: new Date().toISOString(),
+        _id: '3',
+        date: '2025-02-14T06:09:00-03:00',
         status: 'ready',
         description: 'Pedido pronto'
       }
@@ -261,8 +311,10 @@ export const mockOrders: Order[] = [
         zipCode: '04578-000'
       }
     },
-    orderDate: new Date().toISOString(),
+    orderDate: '2025-02-14T06:00:00-03:00',
     status: 'delivering',
+    subtotal: 88.70,
+    deliveryFee: 10.00,
     total: 98.70,
     waitTime: 15,
     payment: {
@@ -271,37 +323,43 @@ export const mockOrders: Order[] = [
       total: 98.70
     },
     items: [
-      { _id: '9', name: 'Combo Família', quantity: 1, price: 89.90 },
-      { _id: '10', name: 'Sobremesa', quantity: 1, price: 8.80 }
+      { 
+        _id: '9', 
+        name: 'Combo Família', 
+        quantity: 1, 
+        price: 89.90,
+        additionals: []
+      },
+      { 
+        _id: '10', 
+        name: 'Sobremesa', 
+        quantity: 1, 
+        price: 8.80,
+        additionals: []
+      }
     ],
     events: [
       {
         _id: '1',
-        date: new Date().toISOString(),
+        date: '2025-02-14T06:00:00-03:00',
         status: 'new',
         description: 'Pedido recebido'
       },
       {
         _id: '2',
-        date: new Date(Date.now() - 20 * 60000).toISOString(),
-        status: 'confirmed',
-        description: 'Pedido confirmado'
-      },
-      {
-        _id: '3',
-        date: new Date(Date.now() - 10 * 60000).toISOString(),
+        date: '2025-02-14T06:02:00-03:00',
         status: 'preparing',
         description: 'Pedido em preparo'
       },
       {
-        _id: '4',
-        date: new Date(Date.now() - 5 * 60000).toISOString(),
+        _id: '3',
+        date: '2025-02-14T06:04:00-03:00',
         status: 'ready',
         description: 'Pedido pronto'
       },
       {
-        _id: '5',
-        date: new Date().toISOString(),
+        _id: '4',
+        date: '2025-02-14T06:06:00-03:00',
         status: 'delivering',
         description: 'Pedido em entrega'
       }
@@ -324,8 +382,10 @@ export const mockOrders: Order[] = [
         zipCode: '04716-000'
       }
     },
-    orderDate: new Date().toISOString(),
+    orderDate: '2025-02-14T05:55:00-03:00',
     status: 'completed',
+    subtotal: 35.90,
+    deliveryFee: 10.00,
     total: 45.90,
     waitTime: 0,
     payment: {
@@ -334,43 +394,49 @@ export const mockOrders: Order[] = [
       total: 45.90
     },
     items: [
-      { _id: '11', name: 'X-Bacon', quantity: 1, price: 22.90 },
-      { _id: '12', name: 'Refrigerante', quantity: 2, price: 11.50 }
+      { 
+        _id: '11', 
+        name: 'X-Bacon', 
+        quantity: 1, 
+        price: 22.90,
+        additionals: []
+      },
+      { 
+        _id: '12', 
+        name: 'Refrigerante', 
+        quantity: 2, 
+        price: 11.50,
+        additionals: []
+      }
     ],
     events: [
       {
         _id: '1',
-        date: new Date().toISOString(),
+        date: '2025-02-14T05:55:00-03:00',
         status: 'new',
         description: 'Pedido recebido'
       },
       {
         _id: '2',
-        date: new Date(Date.now() - 25 * 60000).toISOString(),
-        status: 'confirmed',
-        description: 'Pedido confirmado'
-      },
-      {
-        _id: '3',
-        date: new Date(Date.now() - 15 * 60000).toISOString(),
+        date: '2025-02-14T05:57:00-03:00',
         status: 'preparing',
         description: 'Pedido em preparo'
       },
       {
-        _id: '4',
-        date: new Date(Date.now() - 10 * 60000).toISOString(),
+        _id: '3',
+        date: '2025-02-14T05:59:00-03:00',
         status: 'ready',
         description: 'Pedido pronto'
       },
       {
-        _id: '5',
-        date: new Date(Date.now() - 5 * 60000).toISOString(),
+        _id: '4',
+        date: '2025-02-14T06:01:00-03:00',
         status: 'delivering',
         description: 'Pedido em entrega'
       },
       {
-        _id: '6',
-        date: new Date().toISOString(),
+        _id: '5',
+        date: '2025-02-14T06:03:00-03:00',
         status: 'completed',
         description: 'Pedido entregue'
       }

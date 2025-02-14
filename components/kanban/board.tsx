@@ -60,25 +60,25 @@ export function KanbanBoard() {
   return (
     <>
       <DragDropContext onDragEnd={onDragEnd}>
-        <div className="h-[calc(100vh-12rem)] overflow-hidden">
-          <div className="grid grid-cols-6 gap-4 h-full">
+        <div className="h-full overflow-x-auto">
+          <div className="inline-flex gap-3 h-full pb-4">
             {Object.entries(COLUMNS).map(([status, column]) => (
-              <div key={status} className="flex flex-col min-w-[250px]">
-                <div className={`p-4 rounded-t-lg ${column.color}`}>
-                  <h3 className="font-semibold flex items-center justify-between text-foreground dark:text-zinc-900">
+              <div key={status} className="flex flex-col w-[250px]">
+                <div className={`p-2 rounded-t-lg ${column.color}`}>
+                  <h3 className="font-medium flex items-center justify-between text-foreground dark:text-zinc-900 text-sm">
                     {column.title}
-                    <Badge variant="secondary" className="ml-2">
-                      {orders.filter((order) => order.status === status).length} pedidos
+                    <Badge variant="secondary" className="ml-2 text-xs">
+                      {orders.filter((order) => order.status === status).length}
                     </Badge>
                   </h3>
                 </div>
-                <div className="p-2 bg-muted/50 rounded-b-lg flex-1">
+                <div className="p-1.5 bg-muted/50 rounded-b-lg flex-1">
                   <Droppable droppableId={status}>
                     {(provided, snapshot) => (
                       <div
                         ref={provided.innerRef}
                         {...provided.droppableProps}
-                        className={`flex-1 overflow-y-auto space-y-3 pr-2 -mr-2 ${
+                        className={`h-full overflow-y-auto space-y-1.5 pr-1.5 -mr-1.5 ${
                           snapshot.isDraggingOver ? "bg-muted/10" : ""
                         }`}
                       >
@@ -95,36 +95,20 @@ export function KanbanBoard() {
                                   ref={provided.innerRef}
                                   {...provided.draggableProps}
                                   {...provided.dragHandleProps}
-                                  className={`p-3 bg-background border shadow-sm hover:shadow-md transition-all ${
+                                  className={`p-2 bg-background border shadow-sm hover:shadow-md transition-all ${
                                     snapshot.isDragging ? "rotate-2 shadow-lg" : ""
                                   }`}
                                 >
-                                  <div className="flex justify-between items-start gap-2">
-                                    <div className="min-w-0 flex-1">
-                                      <div className="flex items-center gap-2">
-                                        <h4 className="font-medium text-sm truncate">
-                                          {order.orderNumber}
-                                        </h4>
-                                        <Badge
-                                          variant={
-                                            order.payment.status === 'approved'
-                                              ? 'success'
-                                              : order.payment.status === 'rejected'
-                                              ? 'destructive'
-                                              : 'warning'
-                                          }
-                                          className="text-[10px] h-4"
-                                        >
-                                          {order.payment.status === 'approved' ? 'Pago' : 'Pendente'}
-                                        </Badge>
-                                      </div>
-                                      <p className="text-sm text-muted-foreground truncate">
-                                        {order.customer.name}
-                                      </p>
+                                  <div className="flex items-center justify-between gap-1">
+                                    <div className="flex items-center gap-1">
+                                      <Clock className="h-3 w-3 text-muted-foreground" />
+                                      <span className="text-[11px] text-muted-foreground">
+                                        {order.orderDate.substring(11, 16)}
+                                      </span>
                                     </div>
                                     <DropdownMenu>
                                       <DropdownMenuTrigger asChild>
-                                        <button className="h-6 w-6 flex items-center justify-center rounded-full hover:bg-muted shrink-0">
+                                        <button className="p-0.5 hover:bg-muted rounded-md">
                                           <MoreVertical className="h-3 w-3" />
                                         </button>
                                       </DropdownMenuTrigger>
@@ -135,44 +119,31 @@ export function KanbanBoard() {
                                       </DropdownMenuContent>
                                     </DropdownMenu>
                                   </div>
-                                  
-                                  <div className="mt-2 space-y-1">
-                                    {order.items.slice(0, 2).map((item) => (
-                                      <div key={item._id} className="text-xs flex justify-between">
-                                        <span className="truncate flex-1">{item.quantity}x {item.name}</span>
-                                        <span className="text-muted-foreground ml-2 shrink-0">
-                                          {new Intl.NumberFormat('pt-BR', {
-                                            style: 'currency',
-                                            currency: 'BRL'
-                                          }).format(item.price)}
-                                        </span>
-                                      </div>
-                                    ))}
-                                    {order.items.length > 2 && (
-                                      <div className="text-xs text-muted-foreground">
-                                        +{order.items.length - 2} itens
-                                      </div>
-                                    )}
+
+                                  <div className="mt-1">
+                                    <div className="text-xs font-medium">#{order.orderNumber}</div>
+                                    <div className="text-[11px] text-muted-foreground truncate">
+                                      {order.customer.name}
+                                    </div>
                                   </div>
 
-                                  <div className="flex items-center justify-between mt-2 text-xs">
+                                  <div className="mt-1 flex items-center justify-between text-[11px]">
                                     <div className="flex items-center gap-1">
-                                      <CreditCard className="h-3 w-3" />
-                                      <span className="font-medium">
-                                        {new Intl.NumberFormat('pt-BR', {
-                                          style: 'currency',
-                                          currency: 'BRL'
-                                        }).format(order.total)}
+                                      <CreditCard className="h-3 w-3 text-muted-foreground" />
+                                      <span className="text-muted-foreground">
+                                        {PAYMENT_METHODS[order.payment.method].label}
                                       </span>
                                     </div>
-                                    {order.waitTime && order.waitTime > 0 && (
-                                      <div className="flex items-center text-muted-foreground">
-                                        <Clock className="h-3 w-3 mr-1" />
-                                        <span className="font-medium">
-                                          {order.waitTime}min
-                                        </span>
-                                      </div>
-                                    )}
+                                    <div className="font-medium">
+                                      {new Intl.NumberFormat('pt-BR', {
+                                        style: 'currency',
+                                        currency: 'BRL',
+                                      }).format(order.total)}
+                                    </div>
+                                  </div>
+
+                                  <div className="mt-1 line-clamp-1 text-[11px] text-muted-foreground">
+                                    {order.items.map((item) => `${item.quantity}x ${item.name}`).join(', ')}
                                   </div>
                                 </Card>
                               )}
@@ -191,7 +162,8 @@ export function KanbanBoard() {
 
       <OrderDetails
         order={selectedOrder}
-        onClose={() => setSelectedOrder(null)}
+        open={!!selectedOrder}
+        onOpenChange={(open) => !open && setSelectedOrder(null)}
       />
     </>
   )
