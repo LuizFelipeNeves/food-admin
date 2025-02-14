@@ -28,29 +28,33 @@ export default function RoadmapPage() {
 
   return (
     <Layout>
-      <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
-        <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold tracking-tight">Roadmap</h2>
-          <RoadmapFilters 
-            filters={filter} 
-            onFilterChange={(key, value) => setFilter(f => ({ ...f, [key]: value }))} 
-          />
+      <div className="flex-1 h-[calc(100vh-4rem)] overflow-y-auto">
+        <div className="sticky top-0 bg-background z-40 p-4 md:p-8 pt-6 border-b">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-2xl font-bold tracking-tight">Roadmap</h2>
+            <RoadmapFilters 
+              filters={filter} 
+              onFilterChange={(key, value) => setFilter(f => ({ ...f, [key]: value }))} 
+            />
+          </div>
+
+          <Tabs defaultValue="list">
+            <TabsList>
+              <TabsTrigger value="list">Lista</TabsTrigger>
+              <TabsTrigger value="flow">Fluxo</TabsTrigger>
+            </TabsList>
+
+            <div className="p-4 md:p-8">
+              <TabsContent value="flow" className="m-0">
+                <RoadmapFlow items={filteredData} />
+              </TabsContent>
+
+              <TabsContent value="list" className="m-0">
+                <RoadmapList items={filteredData} />
+              </TabsContent>
+            </div>
+          </Tabs>
         </div>
-
-        <Tabs defaultValue="list" className="space-y-4">
-          <TabsList>
-            <TabsTrigger value="list">Lista</TabsTrigger>
-            <TabsTrigger value="flow">Fluxo</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="flow">
-            <RoadmapFlow items={filteredData} />
-          </TabsContent>
-
-          <TabsContent value="list">
-            <RoadmapList items={filteredData} />
-          </TabsContent>
-        </Tabs>
       </div>
     </Layout>
   )
