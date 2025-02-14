@@ -5,7 +5,6 @@ import { Layout } from '@/components/layout/layout'
 import { DataTable } from '@/components/ui/data-table'
 import { Button } from '@/components/ui/button'
 import { Plus } from 'lucide-react'
-import { Card, CardContent } from '@/components/ui/card'
 import type { 
   Product as IProduct,
   ProductCategory as IProductCategory,
@@ -405,213 +404,216 @@ export default function ProductsPage() {
 
   return (
     <Layout>
-      <div className="flex-1 space-y-4 p-8">
-        <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold tracking-tight">
-            {activeTab === "products" && "Produtos"}
-            {activeTab === "categories" && "Categorias"}
-            {activeTab === "additionals" && "Adicionais"}
-            {activeTab === "additional-categories" && "Categorias de Adicionais"}
-          </h2>
-        </div>
+      <div className="flex-1 overflow-hidden">
+        <div className="flex flex-col h-full">
+          <div className="flex-none space-y-4 p-8 pb-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-bold tracking-tight">
+                {activeTab === "products" && "Produtos"}
+                {activeTab === "categories" && "Categorias"}
+                {activeTab === "additionals" && "Adicionais"}
+                {activeTab === "additional-categories" && "Categorias de Adicionais"}
+              </h2>
+            </div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex-shrink-0">
-              <TabsList>
-                <TabsTrigger value="products">Produtos</TabsTrigger>
-                <TabsTrigger value="categories">Categorias</TabsTrigger>
-                <TabsTrigger value="additionals">Adicionais</TabsTrigger>
-                <TabsTrigger value="additional-categories">Cat. Adicionais</TabsTrigger>
-              </TabsList>
-            </div>
-            <div className="flex items-center space-x-2 ml-4">
-              {activeTab === "products" && (
-                <>
-                  <Input
-                    placeholder="Filtrar produtos..."
-                    value={(table?.getColumn('name')?.getFilterValue() as string) ?? ''}
-                    onChange={(event) => table?.getColumn('name')?.setFilterValue(event.target.value)}
-                    className="w-[180px]"
-                  />
-                  <Button onClick={() => setProductDialog({ open: true, item: undefined })} disabled={!categories || !additionalCategories}>
-                    <Plus className="mr-2 h-4 w-4" /> Novo Produto
-                  </Button>
-                </>
-              )}
-              {activeTab === "categories" && (
-                <>
-                  <Input
-                    placeholder="Filtrar categorias..."
-                    value={(table?.getColumn('name')?.getFilterValue() as string) ?? ''}
-                    onChange={(event) => table?.getColumn('name')?.setFilterValue(event.target.value)}
-                    className="w-[180px]"
-                  />
-                  <Button onClick={() => setCategoryDialog({ open: true, item: null })}>
-                    <Plus className="mr-2 h-4 w-4" /> Nova Categoria
-                  </Button>
-                </>
-              )}
-              {activeTab === "additionals" && (
-                <>
-                  <Input
-                    placeholder="Filtrar adicionais..."
-                    value={(table?.getColumn('name')?.getFilterValue() as string) ?? ''}
-                    onChange={(event) => table?.getColumn('name')?.setFilterValue(event.target.value)}
-                    className="w-[180px]"
-                  />
-                  <Button onClick={() => setAdditionalDialog({ open: true, item: null })}>
-                    <Plus className="mr-2 h-4 w-4" /> Novo Adicional
-                  </Button>
-                </>
-              )}
-              {activeTab === "additional-categories" && (
-                <>
-                  <Input
-                    placeholder="Filtrar categorias..."
-                    value={(table?.getColumn('name')?.getFilterValue() as string) ?? ''}
-                    onChange={(event) => table?.getColumn('name')?.setFilterValue(event.target.value)}
-                    className="w-[180px]"
-                  />
-                  <Button onClick={() => setAdditionalCategoryDialog({ open: true, item: null })}>
-                    <Plus className="mr-2 h-4 w-4" /> Nova Categoria
-                  </Button>
-                </>
-              )}
-            </div>
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
+                <div className="w-full sm:w-auto overflow-x-auto">
+                  <TabsList className="w-full sm:w-auto">
+                    <TabsTrigger value="products" className="flex-1 sm:flex-none">Produtos</TabsTrigger>
+                    <TabsTrigger value="categories" className="flex-1 sm:flex-none">Categorias</TabsTrigger>
+                    <TabsTrigger value="additionals" className="flex-1 sm:flex-none">Adicionais</TabsTrigger>
+                    <TabsTrigger value="additional-categories" className="flex-1 sm:flex-none whitespace-nowrap">Cat. Adicionais</TabsTrigger>
+                  </TabsList>
+                </div>
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-2">
+                  {activeTab === "products" && (
+                    <>
+                      <Input
+                        placeholder="Filtrar produtos..."
+                        value={(table?.getColumn('name')?.getFilterValue() as string) ?? ''}
+                        onChange={(event) => table?.getColumn('name')?.setFilterValue(event.target.value)}
+                        className="w-full sm:w-[180px]"
+                      />
+                      <Button 
+                        onClick={() => setProductDialog({ open: true, item: undefined })} 
+                        disabled={!categories || !additionalCategories}
+                        className="w-full sm:w-auto whitespace-nowrap"
+                      >
+                        <Plus className="mr-2 h-4 w-4" /> Novo Produto
+                      </Button>
+                    </>
+                  )}
+                  {activeTab === "categories" && (
+                    <>
+                      <Input
+                        placeholder="Filtrar categorias..."
+                        value={(table?.getColumn('name')?.getFilterValue() as string) ?? ''}
+                        onChange={(event) => table?.getColumn('name')?.setFilterValue(event.target.value)}
+                        className="w-full sm:w-[180px]"
+                      />
+                      <Button 
+                        onClick={() => setCategoryDialog({ open: true, item: null })}
+                        className="w-full sm:w-auto whitespace-nowrap"
+                      >
+                        <Plus className="mr-2 h-4 w-4" /> Nova Categoria
+                      </Button>
+                    </>
+                  )}
+                  {activeTab === "additionals" && (
+                    <>
+                      <Input
+                        placeholder="Filtrar adicionais..."
+                        value={(table?.getColumn('name')?.getFilterValue() as string) ?? ''}
+                        onChange={(event) => table?.getColumn('name')?.setFilterValue(event.target.value)}
+                        className="w-full sm:w-[180px]"
+                      />
+                      <Button 
+                        onClick={() => setAdditionalDialog({ open: true, item: null })}
+                        className="w-full sm:w-auto whitespace-nowrap"
+                      >
+                        <Plus className="mr-2 h-4 w-4" /> Novo Adicional
+                      </Button>
+                    </>
+                  )}
+                  {activeTab === "additional-categories" && (
+                    <>
+                      <Input
+                        placeholder="Filtrar categorias..."
+                        value={(table?.getColumn('name')?.getFilterValue() as string) ?? ''}
+                        onChange={(event) => table?.getColumn('name')?.setFilterValue(event.target.value)}
+                        className="w-full sm:w-[180px]"
+                      />
+                      <Button 
+                        onClick={() => setAdditionalCategoryDialog({ open: true, item: null })}
+                        className="w-full sm:w-auto whitespace-nowrap"
+                      >
+                        <Plus className="mr-2 h-4 w-4" /> Nova Categoria
+                      </Button>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex-1 overflow-auto px-1">
+                <TabsContent value="products" className="h-full">
+                  <div className="space-y-4 h-full">
+                    {productsIsLoading ? (
+                      <div className="w-full h-24 flex items-center justify-center">
+                        <span className="text-muted-foreground">Carregando produtos...</span>
+                      </div>
+                    ) : products && products.length > 0 ? (
+                      <DataTable
+                        columns={productColumns({ onEdit: handleEditItem, onDelete: handleDeleteItem })}
+                        data={products}
+                        onTableChange={handleTableChange}
+                      />
+                    ) : (
+                      <div className="w-full h-24 flex items-center justify-center">
+                        <span className="text-muted-foreground">Nenhum produto encontrado</span>
+                      </div>
+                    )}
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="categories" className="h-full">
+                  <div className="space-y-4 h-full">
+                    {categoriesIsLoading ? (
+                      <div className="w-full h-24 flex items-center justify-center">
+                        <span className="text-muted-foreground">Carregando categorias...</span>
+                      </div>
+                    ) : categories && categories.length > 0 ? (
+                      <DataTable
+                        columns={productCategoryColumns({ onEdit: handleEditItem, onDelete: handleDeleteItem })}
+                        data={categories}
+                        onTableChange={handleTableChange}
+                      />
+                    ) : (
+                      <div className="w-full h-24 flex items-center justify-center">
+                        <span className="text-muted-foreground">Nenhuma categoria encontrada</span>
+                      </div>
+                    )}
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="additionals" className="h-full">
+                  <div className="space-y-4 h-full">
+                    {additionalsIsLoading ? (
+                      <div className="w-full h-24 flex items-center justify-center">
+                        <span className="text-muted-foreground">Carregando adicionais...</span>
+                      </div>
+                    ) : additionals && additionals.length > 0 ? (
+                      <DataTable
+                        columns={additionalColumns({ onEdit: handleEditItem, onDelete: handleDeleteItem })}
+                        data={additionals}
+                        onTableChange={handleTableChange}
+                      />
+                    ) : (
+                      <div className="w-full h-24 flex items-center justify-center">
+                        <span className="text-muted-foreground">Nenhum adicional encontrado</span>
+                      </div>
+                    )}
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="additional-categories" className="h-full">
+                  <div className="space-y-4 h-full">
+                    {additionalCategoriesIsLoading ? (
+                      <div className="w-full h-24 flex items-center justify-center">
+                        <span className="text-muted-foreground">Carregando categorias...</span>
+                      </div>
+                    ) : additionalCategories && additionalCategories.length > 0 ? (
+                      <DataTable
+                        columns={additionalCategoryColumns({ onEdit: handleEditItem, onDelete: handleDeleteItem })}
+                        data={additionalCategories}
+                        onTableChange={handleTableChange}
+                      />
+                    ) : (
+                      <div className="w-full h-24 flex items-center justify-center">
+                        <span className="text-muted-foreground">Nenhuma categoria encontrada</span>
+                      </div>
+                    )}
+                  </div>
+                </TabsContent>
+              </div>
+            </Tabs>
           </div>
-
-          <TabsContent value="products">
-            <Card>
-              <CardContent className="pt-6">
-                <div className="space-y-4">
-                  {productsIsLoading ? (
-                    <div className="w-full h-24 flex items-center justify-center">
-                      <span className="text-muted-foreground">Carregando produtos...</span>
-                    </div>
-                  ) : products && products.length > 0 ? (
-                    <DataTable
-                      columns={productColumns({ onEdit: handleEditItem, onDelete: handleDeleteItem })}
-                      data={products}
-                      onTableChange={handleTableChange}
-                    />
-                  ) : (
-                    <div className="w-full h-24 flex items-center justify-center">
-                      <span className="text-muted-foreground">Nenhum produto encontrado</span>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="categories">
-            <Card>
-              <CardContent className="pt-6">
-                <div className="space-y-4">
-                  {categoriesIsLoading ? (
-                    <div className="w-full h-24 flex items-center justify-center">
-                      <span className="text-muted-foreground">Carregando categorias...</span>
-                    </div>
-                  ) : categories && categories.length > 0 ? (
-                    <DataTable
-                      columns={productCategoryColumns({ onEdit: handleEditItem, onDelete: handleDeleteItem })}
-                      data={categories}
-                      onTableChange={handleTableChange}
-                    />
-                  ) : (
-                    <div className="w-full h-24 flex items-center justify-center">
-                      <span className="text-muted-foreground">Nenhuma categoria encontrada</span>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="additionals">
-            <Card>
-              <CardContent className="pt-6">
-                <div className="space-y-4">
-                  {additionalsIsLoading ? (
-                    <div className="w-full h-24 flex items-center justify-center">
-                      <span className="text-muted-foreground">Carregando adicionais...</span>
-                    </div>
-                  ) : additionals && additionals.length > 0 ? (
-                    <DataTable
-                      columns={additionalColumns({ onEdit: handleEditItem, onDelete: handleDeleteItem })}
-                      data={additionals}
-                      onTableChange={handleTableChange}
-                    />
-                  ) : (
-                    <div className="w-full h-24 flex items-center justify-center">
-                      <span className="text-muted-foreground">Nenhum adicional encontrado</span>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="additional-categories">
-            <Card>
-              <CardContent className="pt-6">
-                <div className="space-y-4">
-                  {additionalCategoriesIsLoading ? (
-                    <div className="w-full h-24 flex items-center justify-center">
-                      <span className="text-muted-foreground">Carregando categorias...</span>
-                    </div>
-                  ) : additionalCategories && additionalCategories.length > 0 ? (
-                    <DataTable
-                      columns={additionalCategoryColumns({ onEdit: handleEditItem, onDelete: handleDeleteItem })}
-                      data={additionalCategories}
-                      onTableChange={handleTableChange}
-                    />
-                  ) : (
-                    <div className="w-full h-24 flex items-center justify-center">
-                      <span className="text-muted-foreground">Nenhuma categoria encontrada</span>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-
-        <ProductDialog 
-          open={productDialog.open} 
-          onOpenChange={(open) => setProductDialog({ open, item: undefined })}
-          product={productDialog.item}
-          categories={categories || []}
-          additionalCategories={additionalCategories || []}
-          onSave={handleSaveProduct}
-        />
-        <CategoryDialog 
-          open={categoryDialog.open} 
-          onOpenChange={(open) => setCategoryDialog({ open, item: null })}
-          category={categoryDialog.item}
-          onSave={handleSaveCategory}
-        />
-        <AdditionalDialog 
-          open={additionalDialog.open} 
-          onOpenChange={(open) => setAdditionalDialog({ open, item: null })}
-          additional={additionalDialog.item}
-          categories={additionalCategories || []}
-          onSave={handleSaveAdditional}
-        />
-        <AdditionalCategoryDialog 
-          open={additionalCategoryDialog.open} 
-          onOpenChange={(open) => setAdditionalCategoryDialog({ open, item: null })}
-          category={additionalCategoryDialog.item}
-          additionals={additionals || []}
-          onSave={handleSaveAdditionalCategory}
-        />
-        <DeleteDialog 
-          {...deleteDialog}
-          {...getDeleteDialogProps()}
-          onOpenChange={(open) => setDeleteDialog({ ...deleteDialog, open })}
-        />
+        </div>
       </div>
+
+      <ProductDialog 
+        open={productDialog.open} 
+        onOpenChange={(open) => setProductDialog({ open, item: undefined })}
+        product={productDialog.item}
+        categories={categories || []}
+        additionalCategories={additionalCategories || []}
+        onSave={handleSaveProduct}
+      />
+      <CategoryDialog 
+        open={categoryDialog.open} 
+        onOpenChange={(open) => setCategoryDialog({ open, item: null })}
+        category={categoryDialog.item}
+        onSave={handleSaveCategory}
+      />
+      <AdditionalDialog 
+        open={additionalDialog.open} 
+        onOpenChange={(open) => setAdditionalDialog({ open, item: null })}
+        additional={additionalDialog.item}
+        categories={additionalCategories || []}
+        onSave={handleSaveAdditional}
+      />
+      <AdditionalCategoryDialog 
+        open={additionalCategoryDialog.open} 
+        onOpenChange={(open) => setAdditionalCategoryDialog({ open, item: null })}
+        category={additionalCategoryDialog.item}
+        additionals={additionals || []}
+        onSave={handleSaveAdditionalCategory}
+      />
+      <DeleteDialog 
+        {...deleteDialog}
+        {...getDeleteDialogProps()}
+        onOpenChange={(open) => setDeleteDialog({ ...deleteDialog, open })}
+      />
     </Layout>
   );
 }

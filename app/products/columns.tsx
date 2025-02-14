@@ -3,14 +3,8 @@
 import { ColumnDef } from '@tanstack/react-table'
 import { Product, Category, Additional, AdditionalGroup } from '@/types'
 import { Button } from '@/components/ui/button'
-import { Edit, Trash2 } from 'lucide-react'
-import { 
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import { MoreHorizontal } from 'lucide-react'
+import { PencilIcon, TrashIcon } from 'lucide-react'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarImage } from '@/components/ui/avatar'
 
@@ -22,27 +16,43 @@ interface ActionCellProps {
 
 function ActionCell({ row, onEdit, onDelete }: ActionCellProps) {
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="h-8 w-8 p-0">
-          <span className="sr-only">Abrir menu</span>
-          <MoreHorizontal className="h-4 w-4" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={() => onEdit(row.original)}>
-          <Edit className="mr-2 h-4 w-4" />
-          Editar
-        </DropdownMenuItem>
-        <DropdownMenuItem 
-          onClick={() => onDelete(row.original._id)}
-          className="text-destructive focus:text-destructive"
-        >
-          <Trash2 className="mr-2 h-4 w-4" />
-          Excluir
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <div className="flex items-center justify-end gap-2">
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              className="h-8 w-8 p-0"
+              onClick={() => onEdit(row.original)}
+            >
+              <PencilIcon className="h-4 w-4" />
+              <span className="sr-only">Editar</span>
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Editar</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              className="h-8 w-8 p-0 text-destructive"
+              onClick={() => onDelete(row.original._id)}
+            >
+              <TrashIcon className="h-4 w-4" />
+              <span className="sr-only">Excluir</span>
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Excluir</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    </div>
   )
 }
 
@@ -56,7 +66,8 @@ export function productColumns({ onEdit, onDelete }: ColumnsProps): ColumnDef<Pr
     {
       accessorKey: 'image',
       header: 'Imagem',
-      cell: ({ row }) => row ? <Avatar><AvatarImage src={row.getValue('image')} /></Avatar> : null
+      cell: ({ row }) => row ? <Avatar><AvatarImage src={row.getValue('image')} /></Avatar> : null,
+      enableHiding: true,
     },
     {
       accessorKey: 'name',
@@ -77,19 +88,22 @@ export function productColumns({ onEdit, onDelete }: ColumnsProps): ColumnDef<Pr
     {
       accessorKey: 'category',
       header: 'Categoria',
+      enableHiding: true,
     },
     {
       accessorKey: 'description',
       header: 'Descrição',
+      enableHiding: true,
     },
     {
       accessorKey: 'stock',
       header: 'Estoque',
+      enableHiding: true,
     },
     {
       accessorKey: 'active',
       header: 'Ativo',
-      cell: ({ row }) => <Badge variant={row.getValue('active') ? 'success' : 'outline'}>{row.getValue('active') ? 'Sim' : 'Não'}</Badge>,
+      cell: ({ row }) => <Badge variant={row.getValue('active') ? 'success' : 'outline'}>{row.getValue('active') ? 'Sim' : 'Não'}</Badge>,
     },
     {
       accessorKey: '_id',
@@ -115,6 +129,12 @@ export function productCategoryColumns({ onEdit, onDelete }: ColumnsProps): Colu
     {
       accessorKey: 'description',
       header: 'Descrição',
+      enableHiding: true,
+    },
+    {
+      accessorKey: 'active',
+      header: 'Ativo',
+      cell: ({ row }) => <Badge variant={row.getValue('active') ? 'success' : 'outline'}>{row.getValue('active') ? 'Sim' : 'Não'}</Badge>,
     },
     {
       accessorKey: '_id',
@@ -150,6 +170,11 @@ export function additionalColumns({ onEdit, onDelete }: ColumnsProps): ColumnDef
       },
     },
     {
+      accessorKey: 'active',
+      header: 'Ativo',
+      cell: ({ row }) => <Badge variant={row.getValue('active') ? 'success' : 'outline'}>{row.getValue('active') ? 'Sim' : 'Não'}</Badge>,
+    },
+    {
       accessorKey: '_id',
       header: 'Ações',
       cell: ({ row }) => {
@@ -173,6 +198,12 @@ export function additionalCategoryColumns({ onEdit, onDelete }: ColumnsProps): C
     {
       accessorKey: 'description',
       header: 'Descrição',
+      enableHiding: true,
+    },
+    {
+      accessorKey: 'active',
+      header: 'Ativo',
+      cell: ({ row }) => <Badge variant={row.getValue('active') ? 'success' : 'outline'}>{row.getValue('active') ? 'Sim' : 'Não'}</Badge>,
     },
     {
       accessorKey: '_id',
