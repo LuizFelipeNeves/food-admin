@@ -12,9 +12,10 @@ interface TimeInputProps {
   value: TimeValue
   onChange: (value: TimeValue) => void
   disabled?: boolean
+  className?: string
 }
 
-export function TimeInput({ value, onChange, disabled }: TimeInputProps) {
+export function TimeInput({ value, onChange, disabled, className }: TimeInputProps) {
   const [localValue, setLocalValue] = useState(value)
 
   const handleHoursChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -38,24 +39,26 @@ export function TimeInput({ value, onChange, disabled }: TimeInputProps) {
   }
 
   return (
-    <div className="flex items-center gap-1">
-      <Input
-        type="text"
-        value={localValue.hours}
-        onChange={handleHoursChange}
-        className="w-12 px-1 text-center"
-        maxLength={2}
-        disabled={disabled}
-      />
-      <span>:</span>
-      <Input
-        type="text"
-        value={localValue.minutes}
-        onChange={handleMinutesChange}
-        className="w-12 px-1 text-center"
-        maxLength={2}
-        disabled={disabled}
-      />
+    <div className={className}>
+      <div className="flex items-center gap-1">
+        <Input
+          type="text"
+          value={localValue.hours}
+          onChange={handleHoursChange}
+          className="w-12 px-1 text-center"
+          maxLength={2}
+          disabled={disabled}
+        />
+        <span>:</span>
+        <Input
+          type="text"
+          value={localValue.minutes}
+          onChange={handleMinutesChange}
+          className="w-12 px-1 text-center"
+          maxLength={2}
+          disabled={disabled}
+        />
+      </div>
     </div>
   )
 }

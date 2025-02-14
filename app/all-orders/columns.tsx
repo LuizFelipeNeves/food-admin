@@ -3,7 +3,7 @@
 import { ColumnDef } from '@tanstack/react-table'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { MoreHorizontal, Eye } from 'lucide-react'
+import { MoreHorizontal, Eye, Phone } from 'lucide-react'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,14 +19,62 @@ export const columns: ColumnDef<Order>[] = [
   {
     accessorKey: 'orderNumber',
     header: 'Número',
+    cell: ({ row }) => {
+      const orderNumber = row.getValue('orderNumber') as string
+      const customer = row.original.customer
+      
+      return (
+        <div className="space-y-1">
+          <div className="font-medium">{orderNumber}</div>
+          <div className="text-sm text-muted-foreground hidden md:block">
+            {customer.name}
+          </div>
+        </div>
+      )
+    },
   },
   {
     accessorKey: 'customer.name',
     header: 'Cliente',
+    cell: ({ row }) => {
+      const customer = row.original.customer
+      return (
+        <div className="flex items-center gap-2">
+          <span className="truncate">{customer.name}</span>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 hidden md:inline-flex"
+            onClick={() => window.open(`tel:${customer.phone}`)}
+          >
+            <Phone className="h-4 w-4" />
+          </Button>
+        </div>
+      )
+    },
+    enableHiding: true,
   },
   {
-    accessorKey: 'customer.phone',
+    id: 'phone',
+    accessorFn: row => row.customer.phone,
     header: 'Telefone',
+    cell: ({ row }) => {
+      const phone = row.original.customer.phone
+      return (
+        <div className="flex items-center gap-2">
+          <span className="hidden md:inline">{phone}</span>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 md:hidden"
+            onClick={() => window.open(`tel:${phone}`)}
+          >
+            <Phone className="h-4 w-4" />
+          </Button>
+        </div>
+      )
+    },
+    enableHiding: true,
   },
   {
     accessorKey: 'orderDate',
@@ -36,6 +84,7 @@ export const columns: ColumnDef<Order>[] = [
         locale: ptBR,
       })
     },
+    enableHiding: true,
   },
   {
     accessorKey: 'status',
@@ -61,7 +110,7 @@ export const columns: ColumnDef<Order>[] = [
   },
   {
     accessorKey: 'payment',
-    header: 'Status do Pagamento',
+    header: 'Pagamento',
     cell: ({ row }) => {
       const payment = row.getValue('payment') as Order['payment']
       const status = payment.status
@@ -95,7 +144,7 @@ export const columns: ColumnDef<Order>[] = [
   },
   {
     accessorKey: '_id',
-    header: 'Ações',
+    header: '',
     cell: ({ row, table }) => {
       const order = row.original
       const meta = table.options.meta as { openOrderDetails: (order: Order) => void }

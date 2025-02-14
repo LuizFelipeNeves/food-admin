@@ -12,13 +12,14 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
-import { Search, Plus, MoreHorizontal } from 'lucide-react';
+import { Search, Plus, MoreHorizontal, Phone } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { useMediaQuery } from '@/hooks/use-media-query';
 
 const customers = [
   {
@@ -48,12 +49,19 @@ const customers = [
 ];
 
 export default function CustomersPage() {
+  const isMobile = useMediaQuery('(max-width: 768px)');
+
   return (
     <Layout>
-      <div className="flex-1 space-y-4 p-4 md:p-8">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold tracking-tight">Clientes</h1>
-          <Button>
+      <div className="flex-1 space-y-4 p-4 md:p-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Clientes</h1>
+            <p className="text-sm text-muted-foreground">
+              Gerencie seus clientes e visualize seus pedidos
+            </p>
+          </div>
+          <Button className="w-full sm:w-auto">
             <Plus className="mr-2 h-4 w-4" />
             Novo Cliente
           </Button>
@@ -68,30 +76,59 @@ export default function CustomersPage() {
               </div>
             </div>
 
-            <div className="rounded-md border">
+            <div className="rounded-md border overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Nome</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Telefone</TableHead>
-                    <TableHead>Total de Pedidos</TableHead>
-                    <TableHead>Último Pedido</TableHead>
+                    <TableHead>Cliente</TableHead>
+                    {!isMobile && <TableHead>Email</TableHead>}
+                    <TableHead>Contato</TableHead>
+                    <TableHead className="text-right">Pedidos</TableHead>
+                    {!isMobile && <TableHead>Último Pedido</TableHead>}
                     <TableHead className="w-[50px]"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {customers.map((customer) => (
                     <TableRow key={customer._id}>
-                      <TableCell className="font-medium">{customer.name}</TableCell>
-                      <TableCell>{customer.email}</TableCell>
-                      <TableCell>{customer.phone}</TableCell>
-                      <TableCell>{customer.totalOrders}</TableCell>
-                      <TableCell>{new Date(customer.lastOrder).toLocaleDateString()}</TableCell>
+                      <TableCell>
+                        <div className="space-y-1">
+                          <div className="font-medium">{customer.name}</div>
+                          {isMobile && (
+                            <div className="text-sm text-muted-foreground truncate">
+                              {customer.email}
+                            </div>
+                          )}
+                        </div>
+                      </TableCell>
+                      {!isMobile && <TableCell>{customer.email}</TableCell>}
+                      <TableCell>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => window.open(`tel:${customer.phone}`)}
+                        >
+                          <Phone className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="space-y-1">
+                          <div>{customer.totalOrders}</div>
+                          {isMobile && (
+                            <div className="text-sm text-muted-foreground">
+                              {new Date(customer.lastOrder).toLocaleDateString()}
+                            </div>
+                          )}
+                        </div>
+                      </TableCell>
+                      {!isMobile && (
+                        <TableCell>{new Date(customer.lastOrder).toLocaleDateString()}</TableCell>
+                      )}
                       <TableCell>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon">
+                            <Button variant="ghost" size="icon" className="h-8 w-8">
                               <MoreHorizontal className="h-4 w-4" />
                             </Button>
                           </DropdownMenuTrigger>

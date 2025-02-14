@@ -10,9 +10,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Plus } from 'lucide-react'
 import { OrderDetails } from '@/components/orders/order-details'
+import { useMediaQuery } from '@/hooks/use-media-query'
 
 export default function AllOrdersPage() {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
+  const isMobile = useMediaQuery('(max-width: 768px)')
+  
   const totalOrders = mockOrders.length
   const pendingOrders = mockOrders.filter(order => order.payment.status === 'pending').length
   const completedOrders = mockOrders.filter(order => order.status === 'completed').length
@@ -23,25 +26,30 @@ export default function AllOrdersPage() {
     return acc
   }, 0)
 
+  const visibleColumns = columns.filter(column => {
+    if (!isMobile) return true
+    return !column.enableHiding
+  })
+
   return (
     <Layout>
       <div className="flex flex-col h-full">
         <div className="flex-none space-y-4 p-4 md:p-6">
-          <div className="flex items-center justify-between">
-            <div className="space-y-2">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="space-y-1">
               <h1 className="text-2xl font-bold tracking-tight">Pedidos</h1>
               <p className="text-sm text-muted-foreground">
                 Visualize e gerencie todos os pedidos em um só lugar
               </p>
             </div>
 
-            <Button>
+            <Button className="w-full sm:w-auto">
               <Plus className="mr-2 h-4 w-4" />
               Novo Pedido
             </Button>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Total de Pedidos</CardTitle>
@@ -53,7 +61,7 @@ export default function AllOrdersPage() {
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Pagamentos Pendentes</CardTitle>
+                <CardTitle className="text-sm font-medium">Pendentes</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{pendingOrders}</div>
@@ -62,7 +70,7 @@ export default function AllOrdersPage() {
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Pedidos Concluídos</CardTitle>
+                <CardTitle className="text-sm font-medium">Concluídos</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{completedOrders}</div>
@@ -88,7 +96,7 @@ export default function AllOrdersPage() {
         </div>
         <div className="flex-1 p-4 md:p-6">
           <DataTable
-            columns={columns}
+            columns={visibleColumns}
             data={mockOrders}
             meta={{
               openOrderDetails: (order: Order) => setSelectedOrder(order),
@@ -101,5 +109,5 @@ export default function AllOrdersPage() {
         onClose={() => setSelectedOrder(null)}
       />
     </Layout>
-  );
+  )
 }

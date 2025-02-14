@@ -11,10 +11,12 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { trpc as api } from '@/app/_trpc/client'
 import { useEffect } from 'react'
 import toast from 'react-hot-toast'
+import { Loader2 } from 'lucide-react'
 
 const businessFormSchema = z.object({
   businessName: z.string().min(2, 'Nome muito curto'),
@@ -36,7 +38,7 @@ export function BusinessSettings({ storeId }: { storeId: string }) {
     },
   })
 
-  const { data: businessData } = api.settings.getBusiness.useQuery({ storeId })
+  const { data: businessData, isLoading } = api.settings.getBusiness.useQuery({ storeId })
   const updateBusiness = api.settings.updateBusiness.useMutation({
     onSuccess: () => {
       toast.success('Informações da empresa atualizadas com sucesso', {
@@ -68,8 +70,16 @@ export function BusinessSettings({ storeId }: { storeId: string }) {
     updateBusiness.mutate({ ...values, storeId })
   }
 
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    )
+  }
+
   return (
-    <div className="grid gap-4 py-4">
+    <div className="grid gap-4">
       <Card>
         <CardHeader>
           <CardTitle>Dados da Empresa</CardTitle>
@@ -80,19 +90,35 @@ export function BusinessSettings({ storeId }: { storeId: string }) {
         <CardContent>
           <Form {...businessForm}>
             <form onSubmit={businessForm.handleSubmit(onBusinessSubmit)} className="space-y-4">
-              <FormField
-                control={businessForm.control}
-                name="businessName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Nome da Empresa</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Sua empresa" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <div className="grid gap-4 sm:grid-cols-2">
+                <FormField
+                  control={businessForm.control}
+                  name="businessName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Nome da Empresa</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Sua empresa" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={businessForm.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl>
+                        <Input placeholder="email@exemplo.com" {...field} disabled />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
 
               <FormField
                 control={businessForm.control}
@@ -101,56 +127,63 @@ export function BusinessSettings({ storeId }: { storeId: string }) {
                   <FormItem>
                     <FormLabel>Descrição da Empresa</FormLabel>
                     <FormControl>
-                      <Input placeholder="Descrição da empresa" {...field} />
+                      <Textarea 
+                        placeholder="Descreva seu estabelecimento..." 
+                        className="min-h-[100px]" 
+                        {...field} 
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
 
-              <FormField
-                control={businessForm.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email</FormLabel>
-                    <FormControl>
-                      <Input placeholder="email@exemplo.com" {...field} disabled />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <div className="grid gap-4 sm:grid-cols-2">
+                <FormField
+                  control={businessForm.control}
+                  name="phone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Telefone</FormLabel>
+                      <FormControl>
+                        <Input placeholder="(00) 00000-0000" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              <FormField
-                control={businessForm.control}
-                name="phone"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Telefone</FormLabel>
-                    <FormControl>
-                      <Input placeholder="(00) 00000-0000" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                <FormField
+                  control={businessForm.control}
+                  name="address"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Endereço</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Rua, número, bairro" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
 
-              <FormField
-                control={businessForm.control}
-                name="address"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Endereço</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Rua, número, bairro" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <Button type="submit">Salvar Alterações</Button>
+              <div className="flex justify-end">
+                <Button 
+                  type="submit" 
+                  disabled={updateBusiness.isLoading || !businessForm.formState.isDirty}
+                  className="w-full sm:w-auto"
+                >
+                  {updateBusiness.isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Salvando...
+                    </>
+                  ) : (
+                    'Salvar Alterações'
+                  )}
+                </Button>
+              </div>
             </form>
           </Form>
         </CardContent>

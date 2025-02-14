@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { TimeInput } from '@/components/ui/time-input'
 import { trpc as api } from '@/app/_trpc/client'
 import toast from 'react-hot-toast'
+import { Loader2, Clock } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 const daysOfWeek = [
   { _id: 'monday', label: 'Segunda-feira' },
@@ -37,7 +39,7 @@ export function BusinessHours({ storeId }: { storeId: string }) {
     { day: 'sunday', enabled: true, hours: { from: { hour: 8, minute: 0 }, to: { hour: 22, minute: 0 } } }
   ])
 
-  const { data: hoursData } = api.settings.getBusinessHours.useQuery({ storeId })
+  const { data: hoursData, isLoading } = api.settings.getBusinessHours.useQuery({ storeId })
   const updateBusinessHours = api.settings.updateBusinessHours.useMutation({
     onSuccess: () => {
       toast.success('Horários atualizados com sucesso', {
@@ -86,61 +88,91 @@ export function BusinessHours({ storeId }: { storeId: string }) {
     }))
   }
 
-  return (
-    <Card className="p-4 sm:p-6">
-      <div className="space-y-4">
-        <div className="grid gap-6 pt-4">
-          {daysOfWeek.map((day) => {
-            const dayHours = businessHours.find(h => h.day === day._id)
-            if (!dayHours) return null
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    )
+  }
 
-            return (
-              <div key={day._id} className="space-y-3 sm:space-y-0 sm:grid sm:grid-cols-[180px_1fr] sm:items-center sm:gap-4">
-                <div className="flex items-center justify-center sm:justify-start">
-                  <Label className="font-medium">{day.label}</Label>
-                </div>
-                <div className="flex flex-col sm:flex-row items-center sm:items-center gap-4">
-                  <div className="flex items-center justify-center gap-4">
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Horário de Funcionamento</CardTitle>
+        <CardDescription>
+          Configure os horários de funcionamento do seu estabelecimento
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-6">
+          <div className="grid gap-6">
+            {daysOfWeek.map((day) => {
+              const dayHours = businessHours.find(h => h.day === day._id)
+              if (!dayHours) return null
+
+              return (
+                <div 
+                  key={day._id} 
+                  className={cn(
+                    "space-y-3 sm:space-y-0 sm:grid sm:grid-cols-[180px_1fr] sm:items-center sm:gap-4 p-4 rounded-lg border transition-colors",
+                    dayHours.enabled && "border-primary"
+                  )}
+                >
+                  <div className="flex items-center justify-between sm:justify-start gap-2">
+                    <Label className="font-medium">{day.label}</Label>
+                    <Clock className="h-4 w-4 text-muted-foreground sm:hidden" />
+                  </div>
+                  <div className="flex flex-col sm:flex-row items-center gap-4">
                     <Switch
                       checked={dayHours.enabled}
                       onCheckedChange={(checked) => handleHourChange(day._id, 'enabled', checked)}
                     />
-                  </div>
-                  <div className="flex items-center justify-center gap-2">
-                    <TimeInput
-                      value={{
-                        hours: dayHours.hours.from.hour.toString().padStart(2, '0'),
-                        minutes: dayHours.hours.from.minute.toString().padStart(2, '0')
-                      }}
-                      onChange={(value) => handleHourChange(day._id, 'from', value)}
-                      disabled={!dayHours.enabled}
-                    />
-                    <span className="text-sm text-muted-foreground">às</span>
-                    <TimeInput
-                      value={{
-                        hours: dayHours.hours.to.hour.toString().padStart(2, '0'),
-                        minutes: dayHours.hours.to.minute.toString().padStart(2, '0')
-                      }}
-                      onChange={(value) => handleHourChange(day._id, 'to', value)}
-                      disabled={!dayHours.enabled}
-                    />
+                    <div className="flex items-center gap-2 w-full sm:w-auto">
+                      <TimeInput
+                        value={{
+                          hours: dayHours.hours.from.hour.toString().padStart(2, '0'),
+                          minutes: dayHours.hours.from.minute.toString().padStart(2, '0')
+                        }}
+                        onChange={(value) => handleHourChange(day._id, 'from', value)}
+                        disabled={!dayHours.enabled}
+                        className="w-full sm:w-auto"
+                      />
+                      <span className="text-sm text-muted-foreground">às</span>
+                      <TimeInput
+                        value={{
+                          hours: dayHours.hours.to.hour.toString().padStart(2, '0'),
+                          minutes: dayHours.hours.to.minute.toString().padStart(2, '0')
+                        }}
+                        onChange={(value) => handleHourChange(day._id, 'to', value)}
+                        disabled={!dayHours.enabled}
+                        className="w-full sm:w-auto"
+                      />
+                    </div>
                   </div>
                 </div>
-              </div>
-            )
-          })}
-        </div>
+              )
+            })}
+          </div>
 
-        <Button
-          className="w-full sm:w-auto mt-6"
-          onClick={() => {
-            updateBusinessHours.mutate({ businessHours, storeId })
-          }}
-          disabled={updateBusinessHours.isLoading}
-        >
-          {updateBusinessHours.isLoading ? "Salvando..." : "Salvar Horários"}
-        </Button>
-      </div>
+          <div className="flex justify-end">
+            <Button
+              onClick={() => updateBusinessHours.mutate({ businessHours, storeId })}
+              disabled={updateBusinessHours.isLoading}
+              className="w-full sm:w-auto"
+            >
+              {updateBusinessHours.isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Salvando...
+                </>
+              ) : (
+                'Salvar Horários'
+              )}
+            </Button>
+          </div>
+        </div>
+      </CardContent>
     </Card>
   )
 }
