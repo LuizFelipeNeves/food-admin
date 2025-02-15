@@ -31,8 +31,10 @@ export const productsRouter = router({
       image: z.string().optional(),
       category: z.string(),
       store: z.string(),
+      stock: z.number().min(0),
       additionals: z.array(z.string()).optional(),
       additionalGroups: z.array(z.string()).optional(),
+      active: z.boolean()
     }))
     .mutation(async ({ input }) => {
       const product = new Item({
@@ -54,8 +56,11 @@ export const productsRouter = router({
       discountPercentage: z.number().min(0),
       image: z.string().optional(),
       category: z.string(),
+      store: z.string(),
+      stock: z.number().min(0),
       additionals: z.array(z.string()).optional(),
       additionalGroups: z.array(z.string()).optional(),
+      active: z.boolean()
     }))
     .mutation(async ({ input }) => {
       const { _id, ...updateData } = input;
@@ -63,6 +68,7 @@ export const productsRouter = router({
         new mongoose.Types.ObjectId(_id),
         {
           ...updateData,
+          store: new mongoose.Types.ObjectId(updateData.store),
           additionals: updateData.additionals?.map(_id => new mongoose.Types.ObjectId(_id)),
           additionalGroups: updateData.additionalGroups?.map(_id => new mongoose.Types.ObjectId(_id))
         },

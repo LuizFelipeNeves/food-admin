@@ -7,16 +7,18 @@ import { PencilIcon, TrashIcon } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarImage } from '@/components/ui/avatar'
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu'
+import { MoreHorizontal, Edit, Trash } from 'lucide-react'
 
-interface ActionCellProps {
+interface ActionCellProps<T> {
   row: any;
-  onEdit: (item: any) => void;
+  onEdit: (item: T) => void;
   onDelete: (id: string) => void;
 }
 
-function ActionCell({ row, onEdit, onDelete }: ActionCellProps) {
+const ActionCell = <T,>({ row, onEdit, onDelete }: ActionCellProps<T>) => {
   return (
-    <div className="flex items-center justify-end gap-2">
+    <div className="flex items-center gap-2">
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
@@ -34,7 +36,6 @@ function ActionCell({ row, onEdit, onDelete }: ActionCellProps) {
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
-
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
@@ -88,6 +89,22 @@ export function productColumns({ onEdit, onDelete }: ColumnsProps): ColumnDef<Pr
       },
     },
     {
+      accessorKey: 'discountPercentage',
+      header: 'Desconto (%)',
+      cell: ({ row }) => {
+        const discount = parseFloat(row.getValue('discountPercentage'))
+        return discount ? `${discount}%` : '-'
+      },
+    },
+    {
+      accessorKey: 'stock',
+      header: 'Estoque',
+      cell: ({ row }) => {
+        const stock = parseFloat(row.getValue('stock'))
+        return stock || '-'
+      },
+    },
+    {
       accessorKey: 'category',
       header: 'Categoria',
       enableHiding: true,
@@ -95,11 +112,6 @@ export function productColumns({ onEdit, onDelete }: ColumnsProps): ColumnDef<Pr
     {
       accessorKey: 'description',
       header: 'Descrição',
-      enableHiding: true,
-    },
-    {
-      accessorKey: 'stock',
-      header: 'Estoque',
       enableHiding: true,
     },
     {
@@ -221,3 +233,45 @@ export function additionalCategoryColumns({ onEdit, onDelete }: ColumnsProps): C
     },
   ]
 }
+
+export const additionalGroupColumns = ({ onEdit, onDelete }: ColumnsProps) => [
+  {
+    accessorKey: "name",
+    header: "Nome",
+  },
+  {
+    accessorKey: "minQuantity",
+    header: "Min.",
+  },
+  {
+    accessorKey: "maxQuantity",
+    header: "Max.",
+  },
+  {
+    id: "actions",
+    cell: ({ row }: { row: any }) => {
+      const item = row.original
+
+      return (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="h-8 w-8 p-0">
+              <span className="sr-only">Open menu</span>
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => onEdit(item)}>
+              <Edit className="mr-2 h-4 w-4" />
+              Editar
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onDelete(item._id)}>
+              <Trash className="mr-2 h-4 w-4" />
+              Excluir
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )
+    },
+  },
+]

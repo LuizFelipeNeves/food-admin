@@ -30,7 +30,7 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
-import { Additional, AdditionalCategory } from '@/data/products'
+import { Additional, AdditionalGroup } from '@/data/products'
 
 const additionalSchema = z.object({
   name: z.string().min(2, 'Nome muito curto'),
@@ -44,7 +44,7 @@ interface AdditionalDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   additional: Additional | null
-  categories: AdditionalCategory[]
+  additionalGroups: AdditionalGroup[]
   onSave: (data: Additional) => void
 }
 
@@ -52,7 +52,7 @@ export function AdditionalDialog({
   open,
   onOpenChange,
   additional,
-  categories,
+  additionalGroups,
   onSave,
 }: AdditionalDialogProps) {
   const form = useForm<z.infer<typeof additionalSchema>>({
@@ -168,9 +168,9 @@ export function AdditionalDialog({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {categories.map((category) => (
-                          <SelectItem key={category._id} value={category._id}>
-                            {category.name}
+                        {additionalGroups.map((group) => (
+                          <SelectItem key={group._id} value={group._id as string}>
+                            {group.name}
                           </SelectItem>
                         ))}
                       </SelectContent>

@@ -67,6 +67,7 @@ const itemSchema = new mongoose.Schema(
     price: { type: Number, required: true, min: 0 },
     image: { type: String, trim: true },
     category: { type: String, required: true },
+    stock: { type: Number, required: true, min: 0 },
     store: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Store",
@@ -133,6 +134,8 @@ const additionalSchema = new mongoose.Schema(
 const additionalGroupSchema = new mongoose.Schema(
   {
     name: { type: String, required: true },
+    active: { type: Boolean, required: true },
+    description: { type: String, trim: true },
     additionals: [
       {
         type: mongoose.Schema.Types.ObjectId,
@@ -140,37 +143,16 @@ const additionalGroupSchema = new mongoose.Schema(
         required: true,
       },
     ],
-    store: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Store",
-      required: true,
-    },
-  },
-  { timestamps: true }
-);
-
-const additionalCategorySchema = new mongoose.Schema(
-  {
-    name: { type: String, required: true, trim: true },
-    store: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Store",
-      required: true,
-    },
     minQuantity: { type: Number, required: true, min: 0, default: 0 },
     maxQuantity: { type: Number, required: true, min: 0, default: 1 },
-    additionals: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Additional",
-        required: true,
-      },
-    ],
+    store: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Store",
+      required: true,
+    },
   },
   { timestamps: true }
 );
-
-additionalCategorySchema.index({ store: 1 });
 
 const userSchema = new mongoose.Schema(
   {
@@ -265,7 +247,6 @@ export const Store = mongoose.models.Store || mongoose.model('Store', storeSchem
 export const Category = mongoose.models.Category || mongoose.model('Category', categorySchema);
 export const Item = mongoose.models.Item || mongoose.model('Item', itemSchema);
 export const Additional = mongoose.models.Additional || mongoose.model('Additional', additionalSchema);
-export const AdditionalCategory = mongoose.models.AdditionalCategory || mongoose.model('AdditionalCategory', additionalCategorySchema);
 export const AdditionalGroup = mongoose.models.AdditionalGroup || mongoose.model('AdditionalGroup', additionalGroupSchema);
 export const Promotion = mongoose.models.Promotion || mongoose.model('Promotion', promotionSchema);
 export const User = mongoose.models.User || mongoose.model('User', userSchema);

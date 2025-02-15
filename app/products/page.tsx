@@ -5,24 +5,19 @@ import { Layout } from '@/components/layout/layout'
 import { DataTable } from '@/components/ui/data-table'
 import { Button } from '@/components/ui/button'
 import { Plus } from 'lucide-react'
-import type { 
-  Product as IProduct,
-  ProductCategory as IProductCategory,
-  Additional as IAdditional,
-  AdditionalCategory as IAdditionalCategory
-} from '@/data/products'
+import { Product, ProductCategory, Additional, AdditionalGroup } from '@/data/products'
 import { 
   productColumns, 
   productCategoryColumns,
   additionalColumns,
-  additionalCategoryColumns 
+  additionalGroupColumns 
 } from './columns'
 import { ProductDialog } from '@/components/products/product-dialog'
 import { CategoryDialog } from '@/components/products/category-dialog'
 import { AdditionalDialog } from '@/components/products/additional-dialog'
-import { AdditionalCategoryDialog } from '@/components/products/additional-category-dialog'
+import { AdditionalGroupDialog } from '@/components/products/additional-group-dialog'
 import { DeleteDialog } from '@/components/products/delete-dialog'
-import { useToast } from '@/components/ui/use-toast'
+import toast from 'react-hot-toast'
 import { trpc } from '@/app/_trpc/client'
 import { Input } from '@/components/ui/input'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
@@ -43,39 +38,8 @@ interface DeleteDialogState {
   type: string;
 }
 
-type Product = IProduct & {
-  _id: string;
-  name: string;
-  description?: string;
-  price: number;
-  active: boolean;
-  category: string;
-  additionals?: string[];
-  additionalGroups?: string[];
-}
-
-type Category = IProductCategory & {
-  _id: string;
-  name: string;
-  active: boolean;
-}
-
-type Additional = IAdditional & {
-  _id: string;
-  name: string;
-  price: number;
-  active: boolean;
-}
-
-type AdditionalCategory = IAdditionalCategory & {
-  _id: string;
-  name: string;
-  additionals: string[];
-  active: boolean;
-}
-
 export default function ProductsPage() {
-  const { toast } = useToast()
+  const utils = trpc.useUtils()
   const [activeTab, setActiveTab] = useState<string>('products')
   const [table, setTable] = useState<Table<any> | null>(null)
   
@@ -105,173 +69,150 @@ export default function ProductsPage() {
     }
   });
 
-  const { data: additionalCategories, isLoading: additionalCategoriesIsLoading } = trpc.additionalCategories.list.useQuery({
+  const { data: additionalGroups, isLoading: additionalGroupsIsLoading } = trpc.additionalCategories.list.useQuery({
     storeId,
   }, {
     onSuccess: (data) => {
-      console.log('Additional Categories loaded:', data);
+      console.log('Additional Groups loaded:', data);
     }
   });
 
   const createProduct = trpc.products.create.useMutation({
-    onSuccess: () => {
-      toast({
-        title: 'Success',
-        description: 'Product created successfully',
-      });
+    onSuccess: (data) => {
+      toast.success(`Produto "${data.name}" criado com sucesso!`);
+      utils.products.list.invalidate({ storeId });
     },
+    onError: () => {
+      toast.error('Erro ao criar produto');
+    }
   });
 
   const updateProduct = trpc.products.update.useMutation({
-    onSuccess: () => {
-      toast({
-        title: 'Success',
-        description: 'Product updated successfully',
-      });
+    onSuccess: (data) => {
+      toast.success(`Produto "${data.name}" atualizado com sucesso!`);
+      utils.products.list.invalidate({ storeId });
     },
+    onError: () => {
+      toast.error('Erro ao atualizar produto');
+    }
   });
 
   const deleteProduct = trpc.products.delete.useMutation({
     onSuccess: () => {
-      toast({
-        title: 'Success',
-        description: 'Product deleted successfully',
-      });
+      toast.success('Produto excluído com sucesso!');
+      utils.products.list.invalidate({ storeId });
     },
+    onError: () => {
+      toast.error('Erro ao excluir produto');
+    }
   });
 
   const createCategory = trpc.productCategories.create.useMutation({
-    onSuccess: () => {
-      toast({
-        title: 'Success',
-        description: 'Category created successfully',
-      });
+    onSuccess: (data) => {
+      toast.success(`Categoria "${data.name}" criada com sucesso!`);
+      utils.productCategories.list.invalidate({ storeId });
     },
+    onError: () => {
+      toast.error('Erro ao criar categoria');
+    }
   });
 
   const updateCategory = trpc.productCategories.update.useMutation({
-    onSuccess: () => {
-      toast({
-        title: 'Success',
-        description: 'Category updated successfully',
-      });
+    onSuccess: (data) => {
+      toast.success(`Categoria "${data.name}" atualizada com sucesso!`);
+      utils.productCategories.list.invalidate({ storeId });
     },
+    onError: () => {
+      toast.error('Erro ao atualizar categoria');
+    }
   });
 
   const deleteCategory = trpc.productCategories.delete.useMutation({
     onSuccess: () => {
-      toast({
-        title: 'Success',
-        description: 'Category deleted successfully',
-      });
+      toast.success('Categoria excluída com sucesso!');
+      utils.productCategories.list.invalidate({ storeId });
     },
+    onError: () => {
+      toast.error('Erro ao excluir categoria');
+    }
   });
 
   const createAdditional = trpc.additionals.create.useMutation({
-    onSuccess: () => {
-      toast({
-        title: 'Success',
-        description: 'Additional created successfully',
-      });
+    onSuccess: (data) => {
+      toast.success(`Adicional "${data.name}" criado com sucesso!`);
+      utils.additionals.list.invalidate({ storeId });
     },
+    onError: () => {
+      toast.error('Erro ao criar adicional');
+    }
   });
 
   const updateAdditional = trpc.additionals.update.useMutation({
-    onSuccess: () => {
-      toast({
-        title: 'Success',
-        description: 'Additional updated successfully',
-      });
+    onSuccess: (data) => {
+      toast.success(`Adicional "${data.name}" atualizado com sucesso!`);
+      utils.additionals.list.invalidate({ storeId });
     },
+    onError: () => {
+      toast.error('Erro ao atualizar adicional');
+    }
   });
 
   const deleteAdditional = trpc.additionals.delete.useMutation({
     onSuccess: () => {
-      toast({
-        title: 'Success',
-        description: 'Additional deleted successfully',
-      });
+      toast.success('Adicional excluído com sucesso!');
+      utils.additionals.list.invalidate({ storeId });
     },
-  });
-
-  const createAdditionalCategory = trpc.additionalCategories.create.useMutation({
-    onSuccess: () => {
-      toast({
-        title: 'Success',
-        description: 'Additional category created successfully',
-      });
-    },
-  });
-
-  const updateAdditionalCategory = trpc.additionalCategories.update.useMutation({
-    onSuccess: () => {
-      toast({
-        title: 'Success',
-        description: 'Additional category updated successfully',
-      });
-    },
-  });
-
-  const deleteAdditionalCategory = trpc.additionalCategories.delete.useMutation({
-    onSuccess: () => {
-      toast({
-        title: 'Success',
-        description: 'Additional category deleted successfully',
-      });
-    },
-  });
-
-  // Estados para controle dos modais
-  const [productDialog, setProductDialog] = useState<{ open: boolean; item: Product | undefined }>({ open: false, item: undefined })
-  const [categoryDialog, setCategoryDialog] = useState<{ open: boolean; item: Category | null }>({ open: false, item: null })
-  const [additionalDialog, setAdditionalDialog] = useState<{ open: boolean; item: Additional | null }>({ open: false, item: null })
-  const [additionalCategoryDialog, setAdditionalCategoryDialog] = useState<{ open: boolean; item: AdditionalCategory | null }>({ open: false, item: null })
-  const [deleteDialog, setDeleteDialog] = useState<DeleteDialogState>({ open: false, id: '', type: '', })
-
-  const handleNewItem = () => {
-    switch (activeTab) {
-      case 'products':
-        setProductDialog({ open: true, item: undefined })
-        break
-      case 'categories':
-        setCategoryDialog({ open: true, item: null })
-        break
-      case 'additionals':
-        setAdditionalDialog({ open: true, item: null })
-        break
-      case 'additional-categories':
-        setAdditionalCategoryDialog({ open: true, item: null })
-        break
+    onError: () => {
+      toast.error('Erro ao excluir adicional');
     }
-  }
+  });
 
-  const handleEditItem = (item: any) => {
-    switch (activeTab) {
-      case 'products':
-        setProductDialog({ open: true, item })
-        break
-      case 'categories':
-        setCategoryDialog({ open: true, item })
-        break
-      case 'additionals':
-        setAdditionalDialog({ open: true, item })
-        break
-      case 'additional-categories':
-        setAdditionalCategoryDialog({ open: true, item })
-        break
+  const createAdditionalGroup = trpc.additionalCategories.create.useMutation({
+    onSuccess: (data) => {
+      toast.success(`Grupo de adicionais "${data.name}" criado com sucesso!`);
+      utils.additionalCategories.list.invalidate({ storeId });
+    },
+    onError: () => {
+      toast.error('Erro ao criar grupo de adicionais');
     }
-  }
+  });
+
+  const updateAdditionalGroup = trpc.additionalCategories.update.useMutation({
+    onSuccess: (data) => {
+      toast.success(`Grupo de adicionais "${data.name}" atualizado com sucesso!`);
+      utils.additionalCategories.list.invalidate({ storeId });
+    },
+    onError: () => {
+      toast.error('Erro ao atualizar grupo de adicionais');
+    }
+  });
+
+  const deleteAdditionalGroup = trpc.additionalCategories.delete.useMutation({
+    onSuccess: () => {
+      toast.success('Grupo de adicionais excluído com sucesso!');
+      utils.additionalCategories.list.invalidate({ storeId });
+    },
+    onError: () => {
+      toast.error('Erro ao excluir grupo de adicionais');
+    }
+  });
 
   const handleSaveProduct = async (data: any) => {
-    if (productDialog.item) {
-      await updateProduct.mutate({
-        _id: productDialog.item._id,
-        ...data,
-      });
-    } else {
-      await createProduct.mutate(data);
+    try {
+      if (productDialog.item) {
+        await updateProduct.mutateAsync({
+          _id: productDialog.item._id,
+          ...data,
+          store: storeId
+        });
+      } else {
+        await createProduct.mutateAsync(data);
+      }
+      setProductDialog({ open: false, item: null });
+    } catch (error) {
+      console.error('Error saving product:', error);
+      toast.error('Erro ao salvar produto');
     }
-    setProductDialog({ open: false, item: undefined });
   };
 
   const handleSaveCategory = async (data: any) => {
@@ -298,17 +239,61 @@ export default function ProductsPage() {
     setAdditionalDialog({ open: false, item: null });
   };
 
-  const handleSaveAdditionalCategory = async (data: any) => {
-    if (additionalCategoryDialog.item) {
-      await updateAdditionalCategory.mutate({
-        _id: additionalCategoryDialog.item._id,
+  const handleSaveAdditionalGroup = async (data: any) => {
+    if (additionalGroupDialog.item) {
+      await updateAdditionalGroup.mutate({
+        _id: additionalGroupDialog.item._id,
         ...data,
       });
     } else {
-      await createAdditionalCategory.mutate(data);
+      await createAdditionalGroup.mutate(data);
     }
-    setAdditionalCategoryDialog({ open: false, item: null });
+    setAdditionalGroupDialog({ open: false, item: null });
   };
+
+  // Estados para controle dos modais
+  const [productDialog, setProductDialog] = useState<DialogState<Product | null>>({
+    open: false,
+    item: null,
+  })
+  const [categoryDialog, setCategoryDialog] = useState<{ open: boolean; item: ProductCategory | null }>({ open: false, item: null })
+  const [additionalDialog, setAdditionalDialog] = useState<{ open: boolean; item: Additional | null }>({ open: false, item: null })
+  const [additionalGroupDialog, setAdditionalGroupDialog] = useState<{ open: boolean; item: AdditionalGroup | null }>({ open: false, item: null })
+  const [deleteDialog, setDeleteDialog] = useState<DeleteDialogState>({ open: false, id: '', type: '', })
+
+  const handleNewItem = () => {
+    switch (activeTab) {
+      case 'products':
+        setProductDialog({ open: true, item: null })
+        break
+      case 'categories':
+        setCategoryDialog({ open: true, item: null })
+        break
+      case 'additionals':
+        setAdditionalDialog({ open: true, item: null })
+        break
+      case 'additional-groups':
+        setAdditionalGroupDialog({ open: true, item: null })
+        break
+    }
+  }
+
+  const handleEditItem = (type: string, item: any) => {
+    switch (type) {
+      case 'products':
+        setProductDialog({ open: true, item })
+        break
+      case 'categories':
+        setCategoryDialog({ open: true, item })
+        break
+      case 'additionals':
+        setAdditionalDialog({ open: true, item })
+        break
+      case 'additional-groups':
+        setAdditionalGroupDialog({ open: true, item })
+        break
+    }
+  }
 
   const handleDeleteItem = (id: string) => {
     let type = ''
@@ -333,10 +318,10 @@ export default function ProductsPage() {
           deleteAdditional.mutate({ _id: id });
         }
         break
-      case 'additional-categories':
-        type = 'additional-category'
+      case 'additional-groups':
+        type = 'additional-group'
         onConfirm = () => {
-          deleteAdditionalCategory.mutate({ _id: id });
+          deleteAdditionalGroup.mutate({ _id: id });
         }
         break
     }
@@ -356,7 +341,7 @@ export default function ProductsPage() {
         return 'Nova Categoria'
       case 'additionals':
         return 'Novo Adicional'
-      case 'additional-categories':
+      case 'additional-groups':
         return 'Nova Categoria de Adicional'
       default:
         return 'Novo'
@@ -388,10 +373,10 @@ export default function ProductsPage() {
         description = 'Tem certeza que deseja excluir este adicional?';
         onConfirm = () => deleteAdditional.mutate({ _id: deleteDialog.id });
         break;
-      case 'additional-category':
+      case 'additional-group':
         title = 'Excluir Categoria de Adicionais';
         description = 'Tem certeza que deseja excluir esta categoria de adicionais?';
-        onConfirm = () => deleteAdditionalCategory.mutate({ _id: deleteDialog.id });
+        onConfirm = () => deleteAdditionalGroup.mutate({ _id: deleteDialog.id });
         break;
     }
 
@@ -412,7 +397,7 @@ export default function ProductsPage() {
                 {activeTab === "products" && "Produtos"}
                 {activeTab === "categories" && "Categorias"}
                 {activeTab === "additionals" && "Adicionais"}
-                {activeTab === "additional-categories" && "Categorias de Adicionais"}
+                {activeTab === "additional-groups" && "Categorias de Adicionais"}
               </h2>
             </div>
 
@@ -423,7 +408,7 @@ export default function ProductsPage() {
                     <TabsTrigger value="products" className="flex-1 sm:flex-none">Produtos</TabsTrigger>
                     <TabsTrigger value="categories" className="flex-1 sm:flex-none">Categorias</TabsTrigger>
                     <TabsTrigger value="additionals" className="flex-1 sm:flex-none">Adicionais</TabsTrigger>
-                    <TabsTrigger value="additional-categories" className="flex-1 sm:flex-none whitespace-nowrap">Cat. Adicionais</TabsTrigger>
+                    <TabsTrigger value="additional-groups" className="flex-1 sm:flex-none whitespace-nowrap">Cat. Adicionais</TabsTrigger>
                   </TabsList>
                 </div>
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-2">
@@ -436,8 +421,8 @@ export default function ProductsPage() {
                         className="w-full sm:w-[180px]"
                       />
                       <Button 
-                        onClick={() => setProductDialog({ open: true, item: undefined })} 
-                        disabled={!categories || !additionalCategories}
+                        onClick={() => setProductDialog({ open: true, item: null })} 
+                        disabled={!categories || !additionalGroups}
                         className="w-full sm:w-auto whitespace-nowrap"
                       >
                         <Plus className="mr-2 h-4 w-4" /> Novo Produto
@@ -476,7 +461,7 @@ export default function ProductsPage() {
                       </Button>
                     </>
                   )}
-                  {activeTab === "additional-categories" && (
+                  {activeTab === "additional-groups" && (
                     <>
                       <Input
                         placeholder="Filtrar categorias..."
@@ -485,7 +470,7 @@ export default function ProductsPage() {
                         className="w-full sm:w-[180px]"
                       />
                       <Button 
-                        onClick={() => setAdditionalCategoryDialog({ open: true, item: null })}
+                        onClick={() => setAdditionalGroupDialog({ open: true, item: null })}
                         className="w-full sm:w-auto whitespace-nowrap"
                       >
                         <Plus className="mr-2 h-4 w-4" /> Nova Categoria
@@ -504,7 +489,7 @@ export default function ProductsPage() {
                       </div>
                     ) : products && products.length > 0 ? (
                       <DataTable
-                        columns={productColumns({ onEdit: handleEditItem, onDelete: handleDeleteItem })}
+                        columns={productColumns({ onEdit: (item) => handleEditItem('products', item), onDelete: handleDeleteItem })}
                         data={products}
                         onTableChange={handleTableChange}
                       />
@@ -524,7 +509,7 @@ export default function ProductsPage() {
                       </div>
                     ) : categories && categories.length > 0 ? (
                       <DataTable
-                        columns={productCategoryColumns({ onEdit: handleEditItem, onDelete: handleDeleteItem })}
+                        columns={productCategoryColumns({ onEdit: (item) => handleEditItem('categories', item), onDelete: handleDeleteItem })}
                         data={categories}
                         onTableChange={handleTableChange}
                       />
@@ -544,7 +529,7 @@ export default function ProductsPage() {
                       </div>
                     ) : additionals && additionals.length > 0 ? (
                       <DataTable
-                        columns={additionalColumns({ onEdit: handleEditItem, onDelete: handleDeleteItem })}
+                        columns={additionalColumns({ onEdit: (item) => handleEditItem('additionals', item), onDelete: handleDeleteItem })}
                         data={additionals}
                         onTableChange={handleTableChange}
                       />
@@ -556,16 +541,16 @@ export default function ProductsPage() {
                   </div>
                 </TabsContent>
 
-                <TabsContent value="additional-categories" className="h-full">
+                <TabsContent value="additional-groups" className="h-full">
                   <div className="space-y-4 h-full">
-                    {additionalCategoriesIsLoading ? (
+                    {additionalGroupsIsLoading ? (
                       <div className="w-full h-24 flex items-center justify-center">
                         <span className="text-muted-foreground">Carregando categorias...</span>
                       </div>
-                    ) : additionalCategories && additionalCategories.length > 0 ? (
+                    ) : additionalGroups && additionalGroups.length > 0 ? (
                       <DataTable
-                        columns={additionalCategoryColumns({ onEdit: handleEditItem, onDelete: handleDeleteItem })}
-                        data={additionalCategories}
+                        columns={additionalGroupColumns({ onEdit: (item) => handleEditItem('additional-groups', item), onDelete: handleDeleteItem })}
+                        data={additionalGroups}
                         onTableChange={handleTableChange}
                       />
                     ) : (
@@ -583,10 +568,10 @@ export default function ProductsPage() {
 
       <ProductDialog 
         open={productDialog.open} 
-        onOpenChange={(open) => setProductDialog({ open, item: undefined })}
-        product={productDialog.item}
+        onOpenChange={(open) => setProductDialog({ open, item: null })}
+        product={productDialog.item || null}
         categories={categories || []}
-        additionalCategories={additionalCategories || []}
+        additionalGroups={additionalGroups || []}
         onSave={handleSaveProduct}
       />
       <CategoryDialog 
@@ -599,15 +584,16 @@ export default function ProductsPage() {
         open={additionalDialog.open} 
         onOpenChange={(open) => setAdditionalDialog({ open, item: null })}
         additional={additionalDialog.item}
-        categories={additionalCategories || []}
+        additionalGroups={additionalGroups || []}
         onSave={handleSaveAdditional}
       />
-      <AdditionalCategoryDialog 
-        open={additionalCategoryDialog.open} 
-        onOpenChange={(open) => setAdditionalCategoryDialog({ open, item: null })}
-        category={additionalCategoryDialog.item}
+      <AdditionalGroupDialog 
+        open={additionalGroupDialog.open} 
+        onOpenChange={(open) => setAdditionalGroupDialog({ open, item: null })}
+        category={additionalGroupDialog.item}
         additionals={additionals || []}
-        onSave={handleSaveAdditionalCategory}
+        onSave={handleSaveAdditionalGroup}
+        storeId={storeId}
       />
       <DeleteDialog 
         {...deleteDialog}

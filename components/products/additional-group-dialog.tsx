@@ -18,6 +18,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from '@/components/ui/form'
 import {
   Select,
@@ -30,9 +31,9 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
-import { AdditionalCategory, Additional } from '@/data/products'
+import { AdditionalGroup, Additional } from '@/data/products'
 
-const additionalCategorySchema = z.object({
+const additionalGroupSchema = z.object({
   _id: z.string().optional(),
   name: z.string().min(2, 'Nome muito curto'),
   description: z.string(),
@@ -42,27 +43,31 @@ const additionalCategorySchema = z.object({
   additionals: z.array(z.string()),
 })
 
-interface AdditionalCategoryDialogProps {
+interface AdditionalGroupDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  category: AdditionalCategory | null
+  category: AdditionalGroup | null
   additionals: Additional[]
-  onSave: (data: AdditionalCategory) => void
+  onSave: (data: AdditionalGroup) => void
+  storeId: string
 }
 
-export function AdditionalCategoryDialog({
+export function AdditionalGroupDialog({
   open,
   onOpenChange,
   category,
   additionals,
   onSave,
-}: AdditionalCategoryDialogProps) {
-  const form = useForm<z.infer<typeof additionalCategorySchema>>({
-    resolver: zodResolver(additionalCategorySchema),
+  storeId
+}: AdditionalGroupDialogProps) {
+  const form = useForm<z.infer<typeof additionalGroupSchema>>({
+    resolver: zodResolver(additionalGroupSchema),
     defaultValues: {
       name: category?.name || '',
+      description: category?.description || '',
       minQuantity: category?.minQuantity?.toString() || '0',
       maxQuantity: category?.maxQuantity?.toString() || '1',
+      active: category?.active ?? true,
       additionals: category?.additionals || [],
     },
   })
@@ -71,20 +76,28 @@ export function AdditionalCategoryDialog({
     if (category) {
       form.reset({
         name: category.name,
+        description: category.description || '',
         minQuantity: category.minQuantity.toString(),
         maxQuantity: category.maxQuantity.toString(),
+        active: category.active,
         additionals: category.additionals,
+      })
+    } else {
+      form.reset({
+        name: '',
+        description: '',
+        minQuantity: '0',
+        maxQuantity: '1',
+        active: true,
+        additionals: [],
       })
     }
   }, [category, form])
 
-  function onSubmit(values: z.infer<typeof additionalCategorySchema>) {
-    if (!category) {
-      return
-    }
-
+  function onSubmit(values: z.infer<typeof additionalGroupSchema>) {
     onSave({
-      _id: category._id,
+      _id: category?._id,
+      store: storeId,
       ...values,
       minQuantity: parseInt(values.minQuantity),
       maxQuantity: parseInt(values.maxQuantity),
@@ -96,9 +109,9 @@ export function AdditionalCategoryDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>{category ? 'Editar' : 'Nova'} Categoria de Adicionais</DialogTitle>
+          <DialogTitle>{category ? 'Editar' : 'Nova'} Grupo de Adicionais</DialogTitle>
           <DialogDescription>
-            {category ? 'Edite os dados da categoria' : 'Adicione uma nova categoria de adicionais'}
+            {category ? 'Edite os dados do grupo' : 'Adicione um novo grupo de adicionais'}
           </DialogDescription>
         </DialogHeader>
 
@@ -111,7 +124,7 @@ export function AdditionalCategoryDialog({
                 <FormItem>
                   <FormLabel>Nome</FormLabel>
                   <FormControl>
-                    <Input placeholder="Nome da categoria" {...field} />
+                    <Input placeholder="Nome do grupo" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -125,7 +138,7 @@ export function AdditionalCategoryDialog({
                 <FormItem>
                   <FormLabel>Descrição</FormLabel>
                   <FormControl>
-                    <Textarea placeholder="Descrição da categoria" {...field} />
+                    <Textarea placeholder="Descrição do grupo" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -174,6 +187,27 @@ export function AdditionalCategoryDialog({
 
             <FormField
               control={form.control}
+              name="active"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                  <div className="space-y-0.5">
+                    <FormLabel className="text-base">Ativo</FormLabel>
+                    <FormDescription>
+                      Grupo disponível para seleção
+                    </FormDescription>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
               name="additionals"
               render={({ field }) => (
                 <FormItem>
@@ -209,27 +243,6 @@ export function AdditionalCategoryDialog({
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="active"
-              render={({ field }) => (
-                <FormItem className="flex items-center justify-between rounded-lg border p-4">
-                  <div className="space-y-0.5">
-                    <FormLabel>Ativo</FormLabel>
-                    <div className="text-sm text-muted-foreground">
-                      Categoria disponível para uso
-                    </div>
-                  </div>
-                  <FormControl>
-                    <Switch
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-
             <div className="flex justify-end space-x-4 pt-4">
               <Button
                 type="button"
@@ -239,7 +252,7 @@ export function AdditionalCategoryDialog({
                 Cancelar
               </Button>
               <Button type="submit">
-                {category ? 'Salvar' : 'Criar'} Categoria
+                {category ? 'Salvar' : 'Criar'} Grupo
               </Button>
             </div>
           </form>

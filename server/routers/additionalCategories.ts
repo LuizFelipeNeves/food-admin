@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { router, publicProcedure } from '../trpc';
-import { AdditionalCategory } from '../../models';
+import { AdditionalGroup } from '../../models';
 import mongoose from 'mongoose';
 
 export const additionalCategoriesRouter = router({
@@ -9,7 +9,7 @@ export const additionalCategoriesRouter = router({
       storeId: z.string(),
     }))
     .query(async ({ input }) => {
-      return await AdditionalCategory.find({ 
+      return await AdditionalGroup.find({ 
         store: new mongoose.Types.ObjectId(input.storeId)
       })
         .sort({ name: 1 });
@@ -23,7 +23,7 @@ export const additionalCategoriesRouter = router({
       maxQuantity: z.number().min(0),
     }))
     .mutation(async ({ input }) => {
-      const category = new AdditionalCategory({
+      const category = new AdditionalGroup({
         ...input,
         store: new mongoose.Types.ObjectId(input.store)
       });
@@ -40,7 +40,7 @@ export const additionalCategoriesRouter = router({
     }))
     .mutation(async ({ input }) => {
       const { _id, ...updateData } = input;
-      const category = await AdditionalCategory.findByIdAndUpdate(
+      const category = await AdditionalGroup.findByIdAndUpdate(
         new mongoose.Types.ObjectId(_id),
         updateData,
         { new: true }
@@ -53,7 +53,7 @@ export const additionalCategoriesRouter = router({
       _id: z.string(),
     }))
     .mutation(async ({ input }) => {
-      await AdditionalCategory.findByIdAndDelete(new mongoose.Types.ObjectId(input._id));
+      await AdditionalGroup.findByIdAndDelete(new mongoose.Types.ObjectId(input._id));
       return { success: true };
     }),
 });

@@ -51,6 +51,14 @@ const customers = [
 export default function CustomersPage() {
   const isMobile = useMediaQuery('(max-width: 768px)');
 
+  const formatDate = (date: string) => {
+    return new Date(date).toLocaleDateString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
+  };
+
   return (
     <Layout>
       <div className="flex-1 space-y-4 p-4 md:p-6">
@@ -117,13 +125,13 @@ export default function CustomersPage() {
                           <div>{customer.totalOrders}</div>
                           {isMobile && (
                             <div className="text-sm text-muted-foreground">
-                              {new Date(customer.lastOrder).toLocaleDateString()}
+                              {formatDate(customer.lastOrder)}
                             </div>
                           )}
                         </div>
                       </TableCell>
                       {!isMobile && (
-                        <TableCell>{new Date(customer.lastOrder).toLocaleDateString()}</TableCell>
+                        <TableCell>{formatDate(customer.lastOrder)}</TableCell>
                       )}
                       <TableCell>
                         <DropdownMenu>

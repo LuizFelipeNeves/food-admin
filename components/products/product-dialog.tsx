@@ -29,7 +29,7 @@ import {
 } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { ProductCategory, AdditionalCategory } from '@/data/products'
+import { ProductCategory, AdditionalGroup, Product } from '@/data/products'
 import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
 
@@ -37,30 +37,20 @@ const productSchema = z.object({
   name: z.string().min(2, 'Nome muito curto'),
   description: z.string(),
   price: z.string().refine((val) => !isNaN(Number(val)), 'Preço inválido'),
+  discountPercentage: z.string().refine((val) => !isNaN(Number(val)) && Number(val) >= 0 && Number(val) <= 100, 'Desconto inválido'),
+  stock: z.string().refine((val) => !isNaN(Number(val)) && Number(val) >= 0, 'Estoque inválido'),
   categoryId: z.string().min(1, 'Selecione uma categoria'),
   subcategoryId: z.string().optional(),
+  additionalGroups: z.array(z.string()).optional().default([]),
   active: z.boolean(),
-  additionalCategories: z.array(z.string()),
 })
-
-interface Product {
-  _id: string;
-  name: string;
-  description?: string;
-  price: number;
-  active: boolean;
-  categoryId: string;
-  subcategoryId?: string;
-  additionalCategories?: string[];
-  additionals?: string[];
-}
 
 interface ProductDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  product?: Product;
+  product: Product | null;
   categories: ProductCategory[];
-  additionalCategories: AdditionalCategory[];
+  additionalGroups: AdditionalGroup[];
   onSave: (product: Product) => void;
 }
 
@@ -69,7 +59,7 @@ export function ProductDialog({
   onOpenChange,
   product,
   categories,
-  additionalCategories,
+  additionalGroups,
   onSave,
 }: ProductDialogProps) {
   const form = useForm<z.infer<typeof productSchema>>({
@@ -77,11 +67,13 @@ export function ProductDialog({
     defaultValues: {
       name: product?.name || '',
       description: product?.description || '',
-      price: product?.price.toString() || '',
+      price: (product?.price || 0).toString(),
+      discountPercentage: (product?.discountPercentage || 0).toString(),
+      stock: (product?.stock || 0).toString(),
       categoryId: product?.categoryId || '',
       subcategoryId: product?.subcategoryId || '',
+      additionalGroups: product?.additionalGroups || [],
       active: product?.active ?? true,
-      additionalCategories: product?.additionalCategories || [],
     },
   })
 
@@ -90,38 +82,47 @@ export function ProductDialog({
       form.reset({
         name: product.name,
         description: product.description || '',
-        price: product.price.toString(),
+        price: String(product.price),
+        discountPercentage: String(product.discountPercentage),
+        stock: String(product.stock),
         categoryId: product.categoryId,
         subcategoryId: product.subcategoryId || '',
+        additionalGroups: product.additionalGroups || [],
         active: product.active,
-        additionalCategories: product.additionalCategories || [],
       })
     } else {
       form.reset({
         name: '',
         description: '',
-        price: '',
+        price: '0',
+        discountPercentage: '0',
+        stock: '0',
         categoryId: '',
         subcategoryId: '',
+        additionalGroups: [],
         active: true,
-        additionalCategories: [],
       })
     }
   }, [product, form])
 
   const onSubmit = async (data: z.infer<typeof productSchema>) => {
-    onSave({
-      _id: product?._id || Math.random().toString(36).substring(7),
+    const formattedData = {
+      ...(product?._id ? { _id: product._id } : {}),
       name: data.name,
       description: data.description,
-      price: parseFloat(data.price),
+      price: Number(data.price),
+      discountPercentage: Number(data.discountPercentage),
+      stock: Number(data.stock),
+      category: data.categoryId,
       categoryId: data.categoryId,
-      subcategoryId: data.subcategoryId,
+      subcategoryId: data.subcategoryId || undefined,
+      additionals: [],
+      additionalGroups: data.additionalGroups || [],
+      store: product?.store || '',
       active: data.active,
-      additionalCategories: data.additionalCategories,
-      additionals: product?.additionals || [],
-    })
-    onOpenChange(false)
+      image: product?.image
+    }
+    onSave(formattedData as Product)
   }
 
   return (
@@ -180,6 +181,34 @@ export function ProductDialog({
 
             <FormField
               control={form.control}
+              name="discountPercentage"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Desconto (%)</FormLabel>
+                  <FormControl>
+                    <Input type="number" step="0.01" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="stock"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Estoque</FormLabel>
+                  <FormControl>
+                    <Input type="number" step="1" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
               name="categoryId"
               render={({ field }) => (
                 <FormItem>
@@ -205,13 +234,13 @@ export function ProductDialog({
 
             <FormField
               control={form.control}
-              name="additionalCategories"
+              name="additionalGroups"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Categorias de Adicionais</FormLabel>
+                  <FormLabel>Grupos de Adicionais</FormLabel>
                   <Select
                     onValueChange={(value) => {
-                      const currentValues = field.value || []
+                      const currentValues = field.value ?? []
                       if (currentValues.includes(value)) {
                         field.onChange(currentValues.filter((v) => v !== value))
                       } else {
@@ -221,31 +250,33 @@ export function ProductDialog({
                   >
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Selecione as categorias" />
+                        <SelectValue placeholder="Selecione os grupos de adicionais" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {additionalCategories.map((category) => (
-                        <SelectItem key={category._id} value={category._id}>
-                          {category.name}
-                        </SelectItem>
+                      {additionalGroups.map((group) => (
+                        group._id ? (
+                          <SelectItem key={group._id} value={group._id}>
+                            {group.name}
+                          </SelectItem>
+                        ) : null
                       ))}
                     </SelectContent>
                   </Select>
                   <div className="flex flex-wrap gap-2 mt-2">
-                    {field.value?.map((categoryId) => {
-                      const category = additionalCategories.find((c) => c._id === categoryId)
-                      if (!category) return null
+                    {(field.value ?? []).map((groupId) => {
+                      const group = additionalGroups.find((g) => g._id === groupId)
+                      if (!group) return null
                       return (
                         <div
-                          key={categoryId}
+                          key={groupId}
                           className="flex items-center gap-1 bg-secondary text-secondary-foreground px-2 py-1 rounded-md"
                         >
-                          <span>{category.name}</span>
+                          <span>{group.name}</span>
                           <button
                             type="button"
                             onClick={() => {
-                              field.onChange(field.value?.filter((v) => v !== categoryId))
+                              field.onChange((field.value ?? []).filter((v) => v !== groupId))
                             }}
                             className="text-sm hover:text-destructive"
                           >
