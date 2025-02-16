@@ -68,8 +68,13 @@ const itemSchema = new mongoose.Schema(
     discountPercentage: { type: Number, required: true, min: 0 },
     price: { type: Number, required: true, min: 0 },
     image: { type: String, trim: true },
-    category: { type: String, required: true },
+    category: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Category",
+      required: true,
+    },
     stock: { type: Number, required: true, min: 0 },
+    active: { type: Boolean, default: true },
     store: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Store",

@@ -42,9 +42,9 @@ const productSchema = z.object({
   stock: z.string().min(1, 'Estoque é obrigatório').refine((val) => !isNaN(Number(val)) && Number(val) >= 0, 'Quantidade inválida'),
   active: z.boolean(),
   category: z.object({
-    value: z.string(),
+    value: z.string().min(1, 'Selecione uma categoria'),
     label: z.string()
-  }),
+  }).refine((data) => data.value !== '', 'Selecione uma categoria'),
   additionalGroups: z.array(z.object({
     value: z.string(),
     label: z.string()
@@ -99,7 +99,11 @@ export function ProductDialog({
 
   useEffect(() => {
     if (product) {
-      const category = categories.find(c => c._id === product.category)
+      // Encontra e mapeia a categoria do produto
+      const category = categories.find(c => c._id === product.category._id)
+      console.log('category', category, product.category)
+
+      // Mapeia os grupos de adicionais
       const selectedGroups = product.additionalGroups?.map(id => {
         const group = additionalGroups.find(g => g._id === id)
         return group ? {
@@ -108,6 +112,7 @@ export function ProductDialog({
         } : null
       }).filter(Boolean) as Option[]
 
+      // Reset do formulário com os valores corretos
       form.reset({
         name: product.name,
         description: product.description || '',
@@ -262,7 +267,7 @@ export function ProductDialog({
               <FormField
                 control={form.control}
                 name="category"
-                render={({ field }) => (
+                render={({ field, fieldState }) => (
                   <FormItem>
                     <FormLabel>Categoria</FormLabel>
                     <FormControl>
@@ -276,7 +281,7 @@ export function ProductDialog({
                           })
                         }}
                       >
-                        <SelectTrigger>
+                        <SelectTrigger className={fieldState.error ? 'border-destructive' : ''}>
                           <SelectValue placeholder="Selecione uma categoria" />
                         </SelectTrigger>
                         <SelectContent>
@@ -288,7 +293,7 @@ export function ProductDialog({
                         </SelectContent>
                       </Select>
                     </FormControl>
-                    <FormMessage />
+                    <FormMessage className="text-red-500" />
                   </FormItem>
                 )}
               />

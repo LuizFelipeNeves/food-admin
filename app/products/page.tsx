@@ -279,23 +279,6 @@ export default function ProductsPage() {
   const [additionalGroupDialog, setAdditionalGroupDialog] = useState<{ open: boolean; item: AdditionalGroup | null }>({ open: false, item: null })
   const [deleteDialog, setDeleteDialog] = useState<DeleteDialogState>({ open: false, id: '', type: '', })
 
-  const handleNewItem = () => {
-    switch (activeTab) {
-      case 'products':
-        setProductDialog({ open: true, item: null })
-        break
-      case 'categories':
-        setCategoryDialog({ open: true, item: null })
-        break
-      case 'additionals':
-        setAdditionalDialog({ open: true, item: null })
-        break
-      case 'additional-groups':
-        setAdditionalGroupDialog({ open: true, item: null })
-        break
-    }
-  }
-
   const handleEditItem = (type: string, item: any) => {
     switch (type) {
       case 'products':
@@ -349,21 +332,6 @@ export default function ProductsPage() {
       id,
       type,
     })
-  }
-
-  const getAddButtonText = () => {
-    switch (activeTab) {
-      case 'products':
-        return 'Novo Produto'
-      case 'categories':
-        return 'Nova Categoria'
-      case 'additionals':
-        return 'Novo Adicional'
-      case 'additional-groups':
-        return 'Nova Categoria de Adicional'
-      default:
-        return 'Novo'
-    }
   }
 
   const handleTableChange = (newTable: Table<any>) => {

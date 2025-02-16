@@ -17,8 +17,7 @@ export const productsRouter = router({
         query.category = input.category;
       }
       return await Item.find(query)
-        .populate('additionals')
-        .populate('additionalGroups')
+        .populate('category')
         .sort({ createdAt: -1 });
     }),
 
@@ -40,6 +39,7 @@ export const productsRouter = router({
       const product = new Item({
         ...input,
         store: new mongoose.Types.ObjectId(input.store),
+        category: new mongoose.Types.ObjectId(input.category),
         additionals: input.additionals?.map(_id => new mongoose.Types.ObjectId(_id)),
         additionalGroups: input.additionalGroups?.map(_id => new mongoose.Types.ObjectId(_id))
       });
@@ -69,6 +69,7 @@ export const productsRouter = router({
         {
           ...updateData,
           store: new mongoose.Types.ObjectId(updateData.store),
+          category: new mongoose.Types.ObjectId(updateData.category),
           additionals: updateData.additionals?.map(_id => new mongoose.Types.ObjectId(_id)),
           additionalGroups: updateData.additionalGroups?.map(_id => new mongoose.Types.ObjectId(_id))
         },

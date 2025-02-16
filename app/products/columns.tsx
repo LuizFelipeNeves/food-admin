@@ -106,6 +106,9 @@ export function productColumns({ onEdit, onDelete }: ColumnsProps): ColumnDef<Pr
       accessorKey: 'category',
       header: 'Categoria',
       enableHiding: true,
+      cell: ({ row }) => {
+        return row.getValue('name')
+      },
     },
     {
       accessorKey: 'description',

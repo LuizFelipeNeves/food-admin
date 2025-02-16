@@ -6,7 +6,7 @@ export interface Product {
   discountPercentage: number;
   stock: number;
   image?: string;
-  category: string;
+  category: Category;
   store: string;
   additionals: string[];
   additionalGroups: string[];
