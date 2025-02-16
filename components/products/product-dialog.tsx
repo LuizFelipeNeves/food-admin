@@ -2,12 +2,13 @@
 
 import { useEffect } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useForm } from 'react-hook-form'
+import { useForm, FormProvider } from 'react-hook-form'
 import * as z from 'zod'
 import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
@@ -20,6 +21,12 @@ import {
   FormMessage,
   FormDescription,
 } from '@/components/ui/form'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+import { ProductCategory, AdditionalGroup, Product } from '@/data/products'
+import { Textarea } from '@/components/ui/textarea'
+import { Switch } from '@/components/ui/switch'
+import { MultiSelect, Option } from "@/components/ui/multi-select"
 import {
   Select,
   SelectContent,
@@ -27,30 +34,42 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Input } from '@/components/ui/input'
-import { Button } from '@/components/ui/button'
-import { ProductCategory, AdditionalGroup, Product } from '@/data/products'
-import { Textarea } from '@/components/ui/textarea'
-import { Switch } from '@/components/ui/switch'
 
 const productSchema = z.object({
   name: z.string().min(2, 'Nome muito curto'),
   description: z.string(),
-  price: z.string().refine((val) => !isNaN(Number(val)), 'Preço inválido'),
-  discountPercentage: z.string().refine((val) => !isNaN(Number(val)) && Number(val) >= 0 && Number(val) <= 100, 'Desconto inválido'),
-  stock: z.string().refine((val) => !isNaN(Number(val)) && Number(val) >= 0, 'Estoque inválido'),
-  category: z.string().min(1, 'Selecione uma categoria'),
-  additionalGroups: z.array(z.string()).optional().default([]),
+  price: z.string().min(1, 'Preço é obrigatório').refine((val) => !isNaN(Number(val)) && Number(val) >= 0, 'Preço inválido'),
+  stock: z.string().min(1, 'Estoque é obrigatório').refine((val) => !isNaN(Number(val)) && Number(val) >= 0, 'Quantidade inválida'),
   active: z.boolean(),
+  category: z.object({
+    value: z.string(),
+    label: z.string()
+  }),
+  additionalGroups: z.array(z.object({
+    value: z.string(),
+    label: z.string()
+  })),
 })
 
 interface ProductDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  product: Product | null;
-  categories: ProductCategory[];
-  additionalGroups: AdditionalGroup[];
-  onSave: (product: Product) => void;
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  product: Product | null
+  categories: ProductCategory[]
+  additionalGroups: AdditionalGroup[]
+  onSave: (data: {
+    _id?: string
+    name: string
+    description: string
+    price: number
+    stock: number
+    active: boolean
+    category: string
+    additionalGroups: string[]
+    store: string
+    discountPercentage: number
+    additionals: string[]
+  }) => void
 }
 
 export function ProductDialog({
@@ -64,266 +83,277 @@ export function ProductDialog({
   const form = useForm<z.infer<typeof productSchema>>({
     resolver: zodResolver(productSchema),
     defaultValues: {
-      name: product?.name || '',
-      description: product?.description || '',
-      price: (product?.price || 0).toString(),
-      discountPercentage: (product?.discountPercentage || 0).toString(),
-      stock: (product?.stock || 0).toString(),
-      category: product?.category || '',
-      additionalGroups: product?.additionalGroups || [],
-      active: product?.active ?? true,
+      name: '',
+      description: '',
+      price: '0',
+      stock: '0',
+      active: true,
+      category: {
+        value: '',
+        label: ''
+      },
+      additionalGroups: [],
     },
+    mode: 'onChange'
   })
 
   useEffect(() => {
     if (product) {
+      const category = categories.find(c => c._id === product.category)
+      const selectedGroups = product.additionalGroups?.map(id => {
+        const group = additionalGroups.find(g => g._id === id)
+        return group ? {
+          value: group._id,
+          label: group.name
+        } : null
+      }).filter(Boolean) as Option[]
+
       form.reset({
         name: product.name,
         description: product.description || '',
-        price: String(product.price),
-        discountPercentage: String(product.discountPercentage),
-        stock: String(product.stock),
-        category: product.category,
-        additionalGroups: product.additionalGroups || [],
+        price: product.price.toString(),
+        stock: product.stock?.toString() || '0',
         active: product.active,
+        category: category ? {
+          value: category._id,
+          label: category.name
+        } : {
+          value: '',
+          label: ''
+        },
+        additionalGroups: selectedGroups,
       })
     } else {
       form.reset({
         name: '',
         description: '',
         price: '0',
-        discountPercentage: '0',
         stock: '0',
-        category: '',
-        additionalGroups: [],
         active: true,
+        category: {
+          value: '',
+          label: ''
+        },
+        additionalGroups: [],
       })
     }
-  }, [product, form])
+  }, [product, categories, additionalGroups, form])
 
-  const onSubmit = async (data: z.infer<typeof productSchema>) => {
-    const formattedData = {
-      ...(product?._id ? { _id: product._id } : {}),
-      name: data.name,
-      description: data.description,
-      price: Number(data.price),
-      discountPercentage: Number(data.discountPercentage),
-      stock: Number(data.stock),
-      category: data.category,
-      additionalGroups: data.additionalGroups || [],
+  function onSubmit(values: z.infer<typeof productSchema>) {
+    onSave({
+      _id: product?._id,
+      name: values.name,
+      description: values.description,
+      price: Number(values.price),
+      stock: Number(values.stock),
+      active: values.active,
+      category: values.category.value,
+      additionalGroups: values.additionalGroups.map(g => g.value),
       store: product?.store || '',
-      active: data.active,
-      image: product?.image
-    }
-    onSave(formattedData as Product)
+      discountPercentage: 0,
+      additionals: [],
+    })
+    form.reset()
+    onOpenChange(false)
   }
+
+  const categoryOptions = categories
+    .filter(category => category._id)
+    .map(category => ({
+      value: category._id as string,
+      label: category.name
+    }))
+
+  const additionalGroupOptions = additionalGroups
+    .filter(group => group._id)
+    .map(group => ({
+      value: group._id as string,
+      label: group.name
+    }))
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-[700px] max-h-[85vh]">
         <DialogHeader>
-          <DialogTitle>{product ? 'Editar Produto' : 'Novo Produto'}</DialogTitle>
-          <DialogDescription>
-            {product ? 'Edite as informações do produto.' : 'Adicione um novo produto ao catálogo.'}
-          </DialogDescription>
+          <DialogTitle>{product ? 'Editar' : 'Criar'} Produto</DialogTitle>
         </DialogHeader>
-
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Nome</FormLabel>
-                  <FormControl>
-                    <Input {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Descrição</FormLabel>
-                  <FormControl>
-                    <Textarea {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="price"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Preço</FormLabel>
-                  <FormControl>
-                    <Input type="number" step="0.01" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="discountPercentage"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Desconto (%)</FormLabel>
-                  <FormControl>
-                    <Input type="number" step="0.01" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="stock"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Estoque</FormLabel>
-                  <FormControl>
-                    <Input type="number" step="1" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="category"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Categoria</FormLabel>
-                  <Select
-                    value={field.value}
-                    onValueChange={field.onChange}
-                  >
+        <div className="overflow-y-auto pr-2">
+          <FormProvider {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nome</FormLabel>
                     <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione uma categoria" />
-                      </SelectTrigger>
+                      <Input placeholder="Nome do produto" {...field} />
                     </FormControl>
-                    <SelectContent>
-                      {categories.map((category) => (
-                        category._id ? (
-                          <SelectItem key={category._id} value={category._id}>
-                            {category.name}
-                          </SelectItem>
-                        ) : null
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-            <FormField
-              control={form.control}
-              name="additionalGroups"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Grupos de Adicionais</FormLabel>
-                  <Select
-                    onValueChange={(value) => {
-                      const currentValues = field.value ?? []
-                      if (currentValues.includes(value)) {
-                        field.onChange(currentValues.filter((v) => v !== value))
-                      } else {
-                        field.onChange([...currentValues, value])
-                      }
-                    }}
-                  >
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Descrição</FormLabel>
                     <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione os grupos de adicionais" />
-                      </SelectTrigger>
+                      <Textarea placeholder="Descrição do produto" {...field} />
                     </FormControl>
-                    <SelectContent>
-                      {additionalGroups.map((group) => (
-                        group._id ? (
-                          <SelectItem key={group._id} value={group._id}>
-                            {group.name}
-                          </SelectItem>
-                        ) : null
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {(field.value ?? []).map((groupId) => {
-                      const group = additionalGroups.find((g) => g._id === groupId)
-                      if (!group) return null
-                      return (
-                        <div
-                          key={groupId}
-                          className="flex items-center gap-1 bg-secondary text-secondary-foreground px-2 py-1 rounded-md"
-                        >
-                          <span>{group.name}</span>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              field.onChange((field.value ?? []).filter((v) => v !== groupId))
-                            }}
-                            className="text-sm hover:text-destructive"
-                          >
-                            ×
-                          </button>
-                        </div>
-                      )
-                    })}
-                  </div>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-            <FormField
-              control={form.control}
-              name="active"
-              render={({ field }) => (
-                <FormItem className="flex items-center justify-between rounded-lg border p-4">
-                  <div className="space-y-0.5">
-                    <FormLabel>Ativo</FormLabel>
-                    <FormDescription>
-                      Produto disponível para venda
-                    </FormDescription>
-                  </div>
-                  <FormControl>
-                    <Switch
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="price"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Preço</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          placeholder="0.00"
+                          {...field}
+                          onChange={(e) => {
+                            const value = e.target.value
+                            field.onChange(value)
+                            form.trigger('price')
+                          }}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-            <div className="flex justify-end space-x-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-              >
-                Cancelar
-              </Button>
-              <Button type="submit">
-                {product ? 'Salvar' : 'Criar'}
-              </Button>
-            </div>
-          </form>
-        </Form>
+                <FormField
+                  control={form.control}
+                  name="stock"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Estoque</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min="0"
+                          placeholder="0"
+                          {...field}
+                          onChange={(e) => {
+                            const value = e.target.value
+                            field.onChange(value)
+                            form.trigger('stock')
+                          }}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <FormField
+                control={form.control}
+                name="category"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Categoria</FormLabel>
+                    <FormControl>
+                      <Select
+                        value={field.value.value}
+                        onValueChange={(value) => {
+                          const category = categories.find(c => c._id === value)
+                          field.onChange({
+                            value,
+                            label: category?.name || ''
+                          })
+                        }}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione uma categoria" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {categoryOptions.map((option) => (
+                            <SelectItem key={option.value} value={option.value as string}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="additionalGroups"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Grupos de Adicionais</FormLabel>
+                    <FormControl>
+                      <MultiSelect
+                        options={additionalGroupOptions}
+                        selected={field.value}
+                        onChange={field.onChange}
+                        placeholder="Selecione os grupos..."
+                        emptyMessage="Nenhum grupo encontrado."
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="active"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>
+                        Ativo
+                      </FormLabel>
+                      <FormDescription>
+                        Este produto está disponível para venda
+                      </FormDescription>
+                    </div>
+                  </FormItem>
+                )}
+              />
+
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    form.reset()
+                    onOpenChange(false)
+                  }}
+                  type="button"
+                >
+                  Cancelar
+                </Button>
+                <Button type="submit">
+                  {product ? 'Salvar' : 'Criar'} Produto
+                </Button>
+              </DialogFooter>
+            </form>
+          </FormProvider>
+        </div>
       </DialogContent>
     </Dialog>
   )

@@ -1,7 +1,7 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useForm } from 'react-hook-form'
+import { useForm, FormProvider } from 'react-hook-form'
 import { useEffect } from 'react'
 import * as z from 'zod'
 import {
@@ -20,27 +20,19 @@ import {
   FormMessage,
   FormDescription,
 } from '@/components/ui/form'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
+import { MultiSelect, Option } from "@/components/ui/multi-select"
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
 import { AdditionalGroup, Additional } from '@/data/products'
 
 const additionalGroupSchema = z.object({
-  _id: z.string().optional(),
   name: z.string().min(2, 'Nome muito curto'),
-  description: z.string(),
-  minQuantity: z.string().refine((val) => !isNaN(Number(val)), 'Quantidade inválida'),
-  maxQuantity: z.string().refine((val) => !isNaN(Number(val)), 'Quantidade inválida'),
+  additionals: z.array(z.object({
+    value: z.string(),
+    label: z.string()
+  })),
   active: z.boolean(),
-  additionals: z.array(z.string()),
 })
 
 interface AdditionalGroupDialogProps {
@@ -48,7 +40,15 @@ interface AdditionalGroupDialogProps {
   onOpenChange: (open: boolean) => void
   category: AdditionalGroup | null
   additionals: Additional[]
-  onSave: (data: AdditionalGroup) => void
+  onSave: (data: {
+    _id?: string
+    name: string
+    additionals: string[]
+    active: boolean
+    store: string
+    minQuantity: number
+    maxQuantity: number
+  }) => void
   storeId: string
 }
 
@@ -63,101 +63,94 @@ export function AdditionalGroupDialog({
   const form = useForm<z.infer<typeof additionalGroupSchema>>({
     resolver: zodResolver(additionalGroupSchema),
     defaultValues: {
-      name: category?.name || '',
-      description: category?.description || '',
-      minQuantity: category?.minQuantity?.toString() || '0',
-      maxQuantity: category?.maxQuantity?.toString() || '1',
-      active: category?.active || true,
-      additionals: category?.additionals || [],
+      name: '',
+      additionals: [],
+      active: true,
     },
+    mode: 'onChange'
   })
 
   useEffect(() => {
     if (category) {
+      const selectedAdditionals = category.additionals?.map(id => {
+        const additional = additionals.find(a => a._id === id)
+        return additional ? {
+          value: additional._id,
+          label: additional.name
+        } : null
+      }).filter(Boolean) as Option[]
+
       form.reset({
         name: category.name,
-        description: category.description || '',
-        minQuantity: category.minQuantity.toString(),
-        maxQuantity: category.maxQuantity.toString(),
+        additionals: selectedAdditionals,
         active: category.active,
-        additionals: category.additionals,
       })
     } else {
       form.reset({
         name: '',
-        description: '',
-        minQuantity: '0',
-        maxQuantity: '1',
-        active: true,
         additionals: [],
+        active: true,
       })
     }
-  }, [category, form])
+  }, [category, additionals, form])
 
   function onSubmit(values: z.infer<typeof additionalGroupSchema>) {
     onSave({
       _id: category?._id,
+      name: values.name,
+      additionals: values.additionals.map(a => a.value),
+      active: values.active,
       store: storeId,
-      ...values,
-      minQuantity: parseInt(values.minQuantity),
-      maxQuantity: parseInt(values.maxQuantity),
+      minQuantity: 0,
+      maxQuantity: 1,
     })
+    form.reset()
     onOpenChange(false)
   }
 
+  const additionalOptions = additionals
+    .filter(additional => additional._id)
+    .map(additional => ({
+      value: additional._id as string,
+      label: additional.name
+    }))
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="sm:max-w-[700px] max-h-[85vh]">
         <DialogHeader>
-          <DialogTitle>{category ? 'Editar' : 'Nova'} Grupo de Adicionais</DialogTitle>
-          <DialogDescription>
-            {category ? 'Edite os dados do grupo' : 'Adicione um novo grupo de adicionais'}
-          </DialogDescription>
+          <DialogTitle>{category ? 'Editar' : 'Criar'} Grupo de Adicionais</DialogTitle>
         </DialogHeader>
-
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Nome</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Nome do grupo" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Descrição</FormLabel>
-                  <FormControl>
-                    <Textarea placeholder="Descrição do grupo" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className="grid grid-cols-2 gap-4">
+        <div className="overflow-y-auto pr-2">
+          <FormProvider {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <FormField
                 control={form.control}
-                name="minQuantity"
+                name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Quantidade Mínima</FormLabel>
+                    <FormLabel>Nome</FormLabel>
                     <FormControl>
-                      <Input
-                        type="number"
-                        min="0"
-                        placeholder="0"
-                        {...field}
+                      <Input placeholder="Nome do grupo" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="additionals"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Adicionais Disponíveis</FormLabel>
+                    <FormControl>
+                      <MultiSelect
+                        options={additionalOptions}
+                        selected={field.value}
+                        onChange={field.onChange}
+                        placeholder="Selecione os adicionais..."
+                        emptyMessage="Nenhum adicional encontrado."
                       />
                     </FormControl>
                     <FormMessage />
@@ -167,96 +160,45 @@ export function AdditionalGroupDialog({
 
               <FormField
                 control={form.control}
-                name="maxQuantity"
+                name="active"
                 render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Quantidade Máxima</FormLabel>
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
                     <FormControl>
-                      <Input
-                        type="number"
-                        min="1"
-                        placeholder="1"
-                        {...field}
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
                       />
                     </FormControl>
-                    <FormMessage />
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>
+                        Ativo
+                      </FormLabel>
+                      <FormDescription>
+                        Este grupo de adicionais está disponível para seleção
+                      </FormDescription>
+                    </div>
                   </FormItem>
                 )}
               />
-            </div>
 
-            <FormField
-              control={form.control}
-              name="active"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                  <div className="space-y-0.5">
-                    <FormLabel className="text-base">Ativo</FormLabel>
-                    <FormDescription>
-                      Grupo disponível para seleção
-                    </FormDescription>
-                  </div>
-                  <FormControl>
-                    <Switch
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="additionals"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Adicionais Disponíveis</FormLabel>
-                  <Select
-                    onValueChange={(value) => {
-                      const current = new Set(field.value)
-                      if (current.has(value)) {
-                        current.delete(value)
-                      } else {
-                        current.add(value)
-                      }
-                      field.onChange(Array.from(current))
-                    }}
-                    value={field.value[field.value.length - 1] || ''}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione os adicionais" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {additionals.map((additional) => (
-                        <SelectItem key={additional._id} value={additional._id ?? ''}>
-                          {additional.name}
-                          {additional._id && field.value.includes(additional._id) && ' ✓'}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className="flex justify-end space-x-4 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-              >
-                Cancelar
-              </Button>
-              <Button type="submit">
-                {category ? 'Salvar' : 'Criar'} Grupo
-              </Button>
-            </div>
-          </form>
-        </Form>
+              <div className="flex justify-end space-x-4 pt-4">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    form.reset()
+                    onOpenChange(false)
+                  }}
+                  type="button"
+                >
+                  Cancelar
+                </Button>
+                <Button type="submit">
+                  {category ? 'Salvar' : 'Criar'} Grupo
+                </Button>
+              </div>
+            </form>
+          </FormProvider>
+        </div>
       </DialogContent>
     </Dialog>
   )
