@@ -67,7 +67,7 @@ export function AdditionalGroupDialog({
       description: category?.description || '',
       minQuantity: category?.minQuantity?.toString() || '0',
       maxQuantity: category?.maxQuantity?.toString() || '1',
-      active: category?.active ?? true,
+      active: category?.active || true,
       additionals: category?.additionals || [],
     },
   })
@@ -231,9 +231,9 @@ export function AdditionalGroupDialog({
                     </FormControl>
                     <SelectContent>
                       {additionals.map((additional) => (
-                        <SelectItem key={additional._id} value={additional._id}>
+                        <SelectItem key={additional._id} value={additional._id ?? ''}>
                           {additional.name}
-                          {field.value.includes(additional._id) && ' ✓'}
+                          {additional._id && field.value.includes(additional._id) && ' ✓'}
                         </SelectItem>
                       ))}
                     </SelectContent>

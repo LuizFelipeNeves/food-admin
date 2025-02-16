@@ -19,6 +19,8 @@ export const categoriesRouter = router({
     .input(z.object({
       name: z.string(),
       store: z.string(),
+      description: z.string().optional(),
+      active: z.boolean().optional(),
     }))
     .mutation(async ({ input }) => {
       const category = new Category({
@@ -33,6 +35,8 @@ export const categoriesRouter = router({
     .input(z.object({
       _id: z.string(),
       name: z.string(),
+      description: z.string().optional(),
+      active: z.boolean().optional(),
     }))
     .mutation(async ({ input }) => {
       const { _id, ...updateData } = input;

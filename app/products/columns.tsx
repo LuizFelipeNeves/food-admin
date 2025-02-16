@@ -1,14 +1,12 @@
 'use client'
 
 import { ColumnDef } from '@tanstack/react-table'
-import { Product, Category, Additional, AdditionalGroup } from '@/types'
+import { Product, ProductCategory, Additional, AdditionalGroup } from '@/data/products'
 import { Button } from '@/components/ui/button'
 import { PencilIcon, TrashIcon } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarImage } from '@/components/ui/avatar'
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu'
-import { MoreHorizontal, Edit, Trash } from 'lucide-react'
 
 interface ActionCellProps<T> {
   row: any;
@@ -123,7 +121,6 @@ export function productColumns({ onEdit, onDelete }: ColumnsProps): ColumnDef<Pr
       accessorKey: '_id',
       header: 'Ações',
       cell: ({ row }) => {
-        const item = row.original
         return (
           <div className="text-right">
             <ActionCell row={row} onEdit={onEdit} onDelete={onDelete} />
@@ -134,7 +131,7 @@ export function productColumns({ onEdit, onDelete }: ColumnsProps): ColumnDef<Pr
   ]
 }
 
-export function productCategoryColumns({ onEdit, onDelete }: ColumnsProps): ColumnDef<Category>[] {
+export function productCategoryColumns({ onEdit, onDelete }: ColumnsProps): ColumnDef<ProductCategory>[] {
   return [
     {
       accessorKey: 'name',
@@ -154,7 +151,6 @@ export function productCategoryColumns({ onEdit, onDelete }: ColumnsProps): Colu
       accessorKey: '_id',
       header: 'Ações',
       cell: ({ row }) => {
-        const item = row.original
         return (
           <div className="text-right">
             <ActionCell row={row} onEdit={onEdit} onDelete={onDelete} />
@@ -184,6 +180,14 @@ export function additionalColumns({ onEdit, onDelete }: ColumnsProps): ColumnDef
       },
     },
     {
+      accessorKey: 'stock',
+      header: 'Estoque',
+      cell: ({ row }) => {
+        const stock = parseInt(row.getValue('stock'))
+        return stock || '-'
+      },
+    },
+    {
       accessorKey: 'active',
       header: 'Ativo',
       cell: ({ row }) => <Badge variant={row.getValue('active') ? 'success' : 'outline'}>{row.getValue('active') ? 'Sim' : 'Não'}</Badge>,
@@ -192,7 +196,6 @@ export function additionalColumns({ onEdit, onDelete }: ColumnsProps): ColumnDef
       accessorKey: '_id',
       header: 'Ações',
       cell: ({ row }) => {
-        const item = row.original
         return (
           <div className="text-right">
             <ActionCell row={row} onEdit={onEdit} onDelete={onDelete} />
@@ -223,7 +226,6 @@ export function additionalCategoryColumns({ onEdit, onDelete }: ColumnsProps): C
       accessorKey: '_id',
       header: 'Ações',
       cell: ({ row }) => {
-        const item = row.original
         return (
           <div className="text-right">
             <ActionCell row={row} onEdit={onEdit} onDelete={onDelete} />
@@ -249,28 +251,12 @@ export const additionalGroupColumns = ({ onEdit, onDelete }: ColumnsProps) => [
   },
   {
     id: "actions",
+    header: "Ações",
     cell: ({ row }: { row: any }) => {
-      const item = row.original
-
       return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Open menu</span>
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => onEdit(item)}>
-              <Edit className="mr-2 h-4 w-4" />
-              Editar
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onDelete(item._id)}>
-              <Trash className="mr-2 h-4 w-4" />
-              Excluir
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <div className="text-right">
+            <ActionCell row={row} onEdit={onEdit} onDelete={onDelete} />
+          </div>
       )
     },
   },

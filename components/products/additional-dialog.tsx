@@ -19,24 +19,25 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
-import { Additional, AdditionalGroup } from '@/data/products'
+import { Additional } from '@/data/products'
 
 const additionalSchema = z.object({
   name: z.string().min(2, 'Nome muito curto'),
-  description: z.string(),
-  price: z.string().refine((val) => !isNaN(Number(val)), 'Preço inválido'),
-  categoryId: z.string().min(1, 'Selecione uma categoria'),
+  price: z.string()
+    .min(1, 'Preço é obrigatório')
+    .refine(
+      (val) => !isNaN(Number(val)) && Number(val) >= 0, 
+      'Preço deve ser maior ou igual a 0'
+    ),
+  stock: z.string()
+    .min(1, 'Estoque é obrigatório')
+    .refine(
+      (val) => !isNaN(Number(val)) && Number(val) >= 0, 
+      'Estoque deve ser maior ou igual a 0'
+    ),
   active: z.boolean(),
 })
 
@@ -44,7 +45,6 @@ interface AdditionalDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   additional: Additional | null
-  additionalGroups: AdditionalGroup[]
   onSave: (data: Additional) => void
 }
 
@@ -52,42 +52,49 @@ export function AdditionalDialog({
   open,
   onOpenChange,
   additional,
-  additionalGroups,
   onSave,
 }: AdditionalDialogProps) {
   const form = useForm<z.infer<typeof additionalSchema>>({
     resolver: zodResolver(additionalSchema),
     defaultValues: {
-      name: additional?.name || '',
-      description: additional?.description || '',
-      price: additional?.price?.toString() || '',
-      categoryId: additional?.categoryId || '',
-      active: additional?.active ?? true,
+      name: '',
+      price: '0',
+      stock: '0',
+      active: true,
     },
+    mode: 'onChange'
   })
 
   useEffect(() => {
     if (additional) {
       form.reset({
         name: additional.name,
-        description: additional.description,
         price: additional.price.toString(),
-        categoryId: additional.categoryId,
         active: additional.active,
+        stock: additional.stock?.toString() || '0',
+      })
+    } else {
+      form.reset({
+        name: '',
+        price: '0',
+        stock: '0',
+        active: true,
       })
     }
   }, [additional, form])
 
   function onSubmit(values: z.infer<typeof additionalSchema>) {
-    if (!additional) {
-      return
-    }
-
+    if (!form.formState.isValid) return;
+    
     onSave({
       _id: additional?._id,
-      ...values,
-      price: parseFloat(values.price),
+      name: values.name,
+      price: Number(values.price),
+      stock: Number(values.stock),
+      active: values.active,
     })
+    
+    form.reset()
     onOpenChange(false)
   }
 
@@ -117,20 +124,6 @@ export function AdditionalDialog({
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Descrição</FormLabel>
-                  <FormControl>
-                    <Textarea placeholder="Descrição do adicional" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
@@ -141,10 +134,15 @@ export function AdditionalDialog({
                     <FormControl>
                       <Input
                         type="number"
-                        step="0.01"
                         min="0"
-                        placeholder="0,00"
+                        step="0.01"
+                        placeholder="0.00"
                         {...field}
+                        onChange={(e) => {
+                          const value = e.target.value
+                          field.onChange(value)
+                          form.trigger('price')
+                        }}
                       />
                     </FormControl>
                     <FormMessage />
@@ -154,27 +152,23 @@ export function AdditionalDialog({
 
               <FormField
                 control={form.control}
-                name="categoryId"
+                name="stock"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Categoria</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      value={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione uma categoria" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {additionalGroups.map((group) => (
-                          <SelectItem key={group._id} value={group._id as string}>
-                            {group.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <FormLabel>Estoque</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        min="0"
+                        placeholder="0"
+                        {...field}
+                        onChange={(e) => {
+                          const value = e.target.value
+                          field.onChange(value)
+                          form.trigger('stock')
+                        }}
+                      />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}

@@ -13,28 +13,27 @@ export interface Product {
   active: boolean;
 }
 
-export interface ProductCategory {
-  _id: string
-  name: string
-  description: string
-  active: boolean
-  subcategories: ProductSubcategory[]
+export interface Category {
+  _id: string;
+  name: string;
+  store: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
-export interface ProductSubcategory {
-  _id: string
+export interface ProductCategory {
+  _id?: string
   name: string
   description: string
-  categoryId: string
   active: boolean
+  store: string
 }
 
 export interface Additional {
-  _id: string
+  _id?: string
   name: string
-  description: string
   price: number
-  categoryId: string
+  stock: number
   active: boolean
 }
 

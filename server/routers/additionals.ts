@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { router, publicProcedure } from '../trpc';
 import { Additional } from '../../models';
+import mongoose from 'mongoose';
 
 export const additionalsRouter = router({
   list: publicProcedure
@@ -15,13 +16,16 @@ export const additionalsRouter = router({
   create: publicProcedure
     .input(z.object({
       name: z.string(),
-      description: z.string().optional(),
-      price: z.number().min(0),
-      category: z.string(),
+      price: z.number(),
+      stock: z.number(),
+      active: z.boolean(),
       store: z.string(),
     }))
     .mutation(async ({ input }) => {
-      const additional = new Additional(input);
+      const additional = new Additional({
+        ...input,
+        store: new mongoose.Types.ObjectId(input.store),
+      });
       await additional.save();
       return additional;
     }),
@@ -30,9 +34,9 @@ export const additionalsRouter = router({
     .input(z.object({
       _id: z.string(),
       name: z.string(),
-      description: z.string().optional(),
       price: z.number().min(0),
-      category: z.string(),
+      stock: z.number().min(0),
+      active: z.boolean(),
     }))
     .mutation(async ({ input }) => {
       const { _id, ...updateData } = input;

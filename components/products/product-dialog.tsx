@@ -39,8 +39,7 @@ const productSchema = z.object({
   price: z.string().refine((val) => !isNaN(Number(val)), 'Preço inválido'),
   discountPercentage: z.string().refine((val) => !isNaN(Number(val)) && Number(val) >= 0 && Number(val) <= 100, 'Desconto inválido'),
   stock: z.string().refine((val) => !isNaN(Number(val)) && Number(val) >= 0, 'Estoque inválido'),
-  categoryId: z.string().min(1, 'Selecione uma categoria'),
-  subcategoryId: z.string().optional(),
+  category: z.string().min(1, 'Selecione uma categoria'),
   additionalGroups: z.array(z.string()).optional().default([]),
   active: z.boolean(),
 })
@@ -70,8 +69,7 @@ export function ProductDialog({
       price: (product?.price || 0).toString(),
       discountPercentage: (product?.discountPercentage || 0).toString(),
       stock: (product?.stock || 0).toString(),
-      categoryId: product?.categoryId || '',
-      subcategoryId: product?.subcategoryId || '',
+      category: product?.category || '',
       additionalGroups: product?.additionalGroups || [],
       active: product?.active ?? true,
     },
@@ -85,8 +83,7 @@ export function ProductDialog({
         price: String(product.price),
         discountPercentage: String(product.discountPercentage),
         stock: String(product.stock),
-        categoryId: product.categoryId,
-        subcategoryId: product.subcategoryId || '',
+        category: product.category,
         additionalGroups: product.additionalGroups || [],
         active: product.active,
       })
@@ -97,8 +94,7 @@ export function ProductDialog({
         price: '0',
         discountPercentage: '0',
         stock: '0',
-        categoryId: '',
-        subcategoryId: '',
+        category: '',
         additionalGroups: [],
         active: true,
       })
@@ -113,10 +109,7 @@ export function ProductDialog({
       price: Number(data.price),
       discountPercentage: Number(data.discountPercentage),
       stock: Number(data.stock),
-      category: data.categoryId,
-      categoryId: data.categoryId,
-      subcategoryId: data.subcategoryId || undefined,
-      additionals: [],
+      category: data.category,
       additionalGroups: data.additionalGroups || [],
       store: product?.store || '',
       active: data.active,
@@ -209,11 +202,14 @@ export function ProductDialog({
 
             <FormField
               control={form.control}
-              name="categoryId"
+              name="category"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Categoria</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select
+                    value={field.value}
+                    onValueChange={field.onChange}
+                  >
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione uma categoria" />
@@ -221,9 +217,11 @@ export function ProductDialog({
                     </FormControl>
                     <SelectContent>
                       {categories.map((category) => (
-                        <SelectItem key={category._id} value={category._id}>
-                          {category.name}
-                        </SelectItem>
+                        category._id ? (
+                          <SelectItem key={category._id} value={category._id}>
+                            {category.name}
+                          </SelectItem>
+                        ) : null
                       ))}
                     </SelectContent>
                   </Select>

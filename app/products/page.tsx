@@ -6,11 +6,11 @@ import { DataTable } from '@/components/ui/data-table'
 import { Button } from '@/components/ui/button'
 import { Plus } from 'lucide-react'
 import { Product, ProductCategory, Additional, AdditionalGroup } from '@/data/products'
-import { 
-  productColumns, 
+import {
+  productColumns,
   productCategoryColumns,
   additionalColumns,
-  additionalGroupColumns 
+  additionalGroupColumns
 } from './columns'
 import { ProductDialog } from '@/components/products/product-dialog'
 import { CategoryDialog } from '@/components/products/category-dialog'
@@ -22,6 +22,7 @@ import { trpc } from '@/app/_trpc/client'
 import { Input } from '@/components/ui/input'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Table } from '@tanstack/react-table'
+import { cn } from '@/lib/utils'
 
 // Enable server-side rendering for this page
 export const dynamic = 'auto';
@@ -42,39 +43,23 @@ export default function ProductsPage() {
   const utils = trpc.useUtils()
   const [activeTab, setActiveTab] = useState<string>('products')
   const [table, setTable] = useState<Table<any> | null>(null)
-  
+
   const storeId = '67a05b53927e38337439322f';
 
   const { data: products, isLoading: productsIsLoading } = trpc.products.list.useQuery({
     storeId,
-  }, {
-    onSuccess: (data) => {
-      console.log('Products loaded:', data);
-    }
   });
 
   const { data: categories, isLoading: categoriesIsLoading } = trpc.productCategories.list.useQuery({
     storeId,
-  }, {
-    onSuccess: (data) => {
-      console.log('Categories loaded:', data);
-    }
   });
 
   const { data: additionals, isLoading: additionalsIsLoading } = trpc.additionals.list.useQuery({
     storeId,
-  }, {
-    onSuccess: (data) => {
-      console.log('Additionals loaded:', data);
-    }
   });
 
   const { data: additionalGroups, isLoading: additionalGroupsIsLoading } = trpc.additionalCategories.list.useQuery({
     storeId,
-  }, {
-    onSuccess: (data) => {
-      console.log('Additional Groups loaded:', data);
-    }
   });
 
   const createProduct = trpc.products.create.useMutation({
@@ -206,9 +191,13 @@ export default function ProductsPage() {
           store: storeId
         });
       } else {
-        await createProduct.mutateAsync(data);
+        await createProduct.mutateAsync({
+          ...data,
+          store: storeId
+        });
       }
       setProductDialog({ open: false, item: null });
+      utils.products.list.invalidate({ storeId });
     } catch (error) {
       console.error('Error saving product:', error);
       toast.error('Erro ao salvar produto');
@@ -216,39 +205,68 @@ export default function ProductsPage() {
   };
 
   const handleSaveCategory = async (data: any) => {
-    if (categoryDialog.item) {
-      await updateCategory.mutate({
-        _id: categoryDialog.item._id,
-        ...data,
-      });
-    } else {
-      await createCategory.mutate(data);
+    try {
+      if (categoryDialog.item) {
+        await updateCategory.mutateAsync({
+          _id: categoryDialog.item._id,
+          ...data,
+        });
+      } else {
+        await createCategory.mutateAsync({
+          ...data,
+          store: storeId
+        });
+      }
+      setCategoryDialog({ open: false, item: null });
+      utils.productCategories.list.invalidate({ storeId });
+    } catch (error) {
+      console.error('Error saving category:', error);
+      toast.error('Erro ao salvar categoria');
     }
-    setCategoryDialog({ open: false, item: null });
   };
 
   const handleSaveAdditional = async (data: any) => {
-    if (additionalDialog.item) {
-      await updateAdditional.mutate({
-        _id: additionalDialog.item._id,
-        ...data,
-      });
-    } else {
-      await createAdditional.mutate(data);
+    try {
+      if (additionalDialog.item) {
+        await updateAdditional.mutateAsync({
+          _id: additionalDialog.item._id,
+          store: storeId,
+          ...data,
+        });
+      } else {
+        await createAdditional.mutateAsync({
+          ...data,
+          store: storeId
+        });
+      }
+      setAdditionalDialog({ open: false, item: null });
+      utils.additionals.list.invalidate({ storeId });
+    } catch (error) {
+      console.error('Error saving additional:', error);
+      toast.error('Erro ao salvar adicional');
     }
-    setAdditionalDialog({ open: false, item: null });
   };
 
   const handleSaveAdditionalGroup = async (data: any) => {
-    if (additionalGroupDialog.item) {
-      await updateAdditionalGroup.mutate({
-        _id: additionalGroupDialog.item._id,
-        ...data,
-      });
-    } else {
-      await createAdditionalGroup.mutate(data);
+    try {
+      if (additionalGroupDialog.item) {
+        await updateAdditionalGroup.mutateAsync({
+          _id: additionalGroupDialog.item._id,
+          store: storeId,
+          ...data,
+        });
+      } else {
+        await createAdditionalGroup.mutateAsync({
+          ...data,
+          store: storeId
+        });
+      }
+      setAdditionalGroupDialog({ open: false, item: null });
+      utils.additionalCategories.list.invalidate({ storeId });
+    } catch (error) {
+      console.error('Error saving additional group:', error);
+      toast.error('Erro ao salvar grupo de adicionais');
     }
-    setAdditionalGroupDialog({ open: false, item: null });
   };
 
   // Estados para controle dos modais
@@ -297,7 +315,7 @@ export default function ProductsPage() {
 
   const handleDeleteItem = (id: string) => {
     let type = ''
-    let onConfirm = () => {}
+    let onConfirm = () => { }
 
     switch (activeTab) {
       case 'products':
@@ -355,7 +373,7 @@ export default function ProductsPage() {
   const getDeleteDialogProps = () => {
     let title = '';
     let description = '';
-    let onConfirm = () => {};
+    let onConfirm = () => { };
 
     switch (deleteDialog.type) {
       case 'product':
@@ -387,6 +405,13 @@ export default function ProductsPage() {
     };
   };
 
+  const tabs = {
+    products: 'Produtos',
+    additionals: 'Adicionais',
+    categories: 'Categorias de Produtos',
+    'additional-groups': 'Grupos de Adicionais',
+  }
+
   return (
     <Layout>
       <div className="flex-1 overflow-hidden">
@@ -394,10 +419,7 @@ export default function ProductsPage() {
           <div className="flex-none space-y-4 p-8 pb-4">
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-bold tracking-tight">
-                {activeTab === "products" && "Produtos"}
-                {activeTab === "categories" && "Categorias"}
-                {activeTab === "additionals" && "Adicionais"}
-                {activeTab === "additional-groups" && "Categorias de Adicionais"}
+                {tabs[activeTab as keyof typeof tabs] as string}
               </h2>
             </div>
 
@@ -405,10 +427,9 @@ export default function ProductsPage() {
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
                 <div className="w-full sm:w-auto overflow-x-auto">
                   <TabsList className="w-full sm:w-auto">
-                    <TabsTrigger value="products" className="flex-1 sm:flex-none">Produtos</TabsTrigger>
-                    <TabsTrigger value="categories" className="flex-1 sm:flex-none">Categorias</TabsTrigger>
-                    <TabsTrigger value="additionals" className="flex-1 sm:flex-none">Adicionais</TabsTrigger>
-                    <TabsTrigger value="additional-groups" className="flex-1 sm:flex-none whitespace-nowrap">Cat. Adicionais</TabsTrigger>
+                    {Object.keys(tabs).map((key, tIndex) => (
+                      <TabsTrigger key={key} value={key} className={cn("flex-1 sm:flex-none", tIndex === Object.keys(tabs).length - 1 && "whitespace-nowrap")}> {tabs[key as keyof typeof tabs]} </TabsTrigger>
+                    ))}
                   </TabsList>
                 </div>
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-2">
@@ -420,8 +441,8 @@ export default function ProductsPage() {
                         onChange={(event) => table?.getColumn('name')?.setFilterValue(event.target.value)}
                         className="w-full sm:w-[180px]"
                       />
-                      <Button 
-                        onClick={() => setProductDialog({ open: true, item: null })} 
+                      <Button
+                        onClick={() => setProductDialog({ open: true, item: null })}
                         disabled={!categories || !additionalGroups}
                         className="w-full sm:w-auto whitespace-nowrap"
                       >
@@ -437,7 +458,7 @@ export default function ProductsPage() {
                         onChange={(event) => table?.getColumn('name')?.setFilterValue(event.target.value)}
                         className="w-full sm:w-[180px]"
                       />
-                      <Button 
+                      <Button
                         onClick={() => setCategoryDialog({ open: true, item: null })}
                         className="w-full sm:w-auto whitespace-nowrap"
                       >
@@ -453,7 +474,7 @@ export default function ProductsPage() {
                         onChange={(event) => table?.getColumn('name')?.setFilterValue(event.target.value)}
                         className="w-full sm:w-[180px]"
                       />
-                      <Button 
+                      <Button
                         onClick={() => setAdditionalDialog({ open: true, item: null })}
                         className="w-full sm:w-auto whitespace-nowrap"
                       >
@@ -469,11 +490,11 @@ export default function ProductsPage() {
                         onChange={(event) => table?.getColumn('name')?.setFilterValue(event.target.value)}
                         className="w-full sm:w-[180px]"
                       />
-                      <Button 
+                      <Button
                         onClick={() => setAdditionalGroupDialog({ open: true, item: null })}
                         className="w-full sm:w-auto whitespace-nowrap"
                       >
-                        <Plus className="mr-2 h-4 w-4" /> Nova Categoria
+                        <Plus className="mr-2 h-4 w-4" /> Novo Grupo
                       </Button>
                     </>
                   )}
@@ -566,36 +587,35 @@ export default function ProductsPage() {
         </div>
       </div>
 
-      <ProductDialog 
-        open={productDialog.open} 
+      <ProductDialog
+        open={productDialog.open}
         onOpenChange={(open) => setProductDialog({ open, item: null })}
         product={productDialog.item || null}
         categories={categories || []}
         additionalGroups={additionalGroups || []}
         onSave={handleSaveProduct}
       />
-      <CategoryDialog 
-        open={categoryDialog.open} 
+      <CategoryDialog
+        open={categoryDialog.open}
         onOpenChange={(open) => setCategoryDialog({ open, item: null })}
         category={categoryDialog.item}
         onSave={handleSaveCategory}
       />
-      <AdditionalDialog 
-        open={additionalDialog.open} 
+      <AdditionalDialog
+        open={additionalDialog.open}
         onOpenChange={(open) => setAdditionalDialog({ open, item: null })}
         additional={additionalDialog.item}
-        additionalGroups={additionalGroups || []}
         onSave={handleSaveAdditional}
       />
-      <AdditionalGroupDialog 
-        open={additionalGroupDialog.open} 
+      <AdditionalGroupDialog
+        open={additionalGroupDialog.open}
         onOpenChange={(open) => setAdditionalGroupDialog({ open, item: null })}
         category={additionalGroupDialog.item}
         additionals={additionals || []}
         onSave={handleSaveAdditionalGroup}
         storeId={storeId}
       />
-      <DeleteDialog 
+      <DeleteDialog
         {...deleteDialog}
         {...getDeleteDialogProps()}
         onOpenChange={(open) => setDeleteDialog({ ...deleteDialog, open })}

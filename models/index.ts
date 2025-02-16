@@ -53,6 +53,8 @@ const storeSchema = new mongoose.Schema(
  */
 const categorySchema = new mongoose.Schema({
   name: { type: String, required: true, trim: true },
+  active: { type: Boolean, default: true },
+  description: { type: String, trim: true },
   store: { type: mongoose.Schema.Types.ObjectId, ref: "Store", required: true },
 });
 
@@ -120,8 +122,10 @@ const promotionSchema = new mongoose.Schema(
 
 const additionalSchema = new mongoose.Schema(
   {
-    name: { type: String, required: true, trim: true },
+    name: { type: String, required: true },
     price: { type: Number, required: true, min: 0 },
+    stock: { type: Number, required: true, min: 0 },
+    active: { type: Boolean, default: true },
     store: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Store",
@@ -134,7 +138,7 @@ const additionalSchema = new mongoose.Schema(
 const additionalGroupSchema = new mongoose.Schema(
   {
     name: { type: String, required: true },
-    active: { type: Boolean, required: true },
+    active: { type: Boolean, default: true },
     description: { type: String, trim: true },
     additionals: [
       {
@@ -143,8 +147,8 @@ const additionalGroupSchema = new mongoose.Schema(
         required: true,
       },
     ],
-    minQuantity: { type: Number, required: true, min: 0, default: 0 },
-    maxQuantity: { type: Number, required: true, min: 0, default: 1 },
+    minQuantity: { type: Number, min: 0, default: 0 },
+    maxQuantity: { type: Number, min: 0, default: 1 },
     store: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Store",
