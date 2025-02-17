@@ -32,14 +32,11 @@ export function Timeline({ events }: TimelineProps) {
       {events?.map((event, index) => {
         const Icon = statusIcons[event.status]
         const isFirst = index === 0
-        const isLast = index === events.length - 1
 
         return (
           <div
             key={event._id}
-            className={cn("relative min-h-[2rem]", {
-              "pb-6": !isLast,
-            })}
+            className="relative min-h-[2rem]"
           >
             <div
               className={cn(

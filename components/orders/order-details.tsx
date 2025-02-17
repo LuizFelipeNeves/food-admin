@@ -61,7 +61,7 @@ export function OrderDetails({ order, open, onOpenChange }: OrderDetailsProps) {
             <h3 className="font-semibold mb-4">Dados do Cliente</h3>
             <div className="grid gap-4">
               <div>
-                <div className="text-sm font-medium">Nome</div>
+                <div className="text-sm font-medium pb-2">Nome</div>
                 <div>{order.user.name}</div>
               </div>
 
@@ -75,7 +75,7 @@ export function OrderDetails({ order, open, onOpenChange }: OrderDetailsProps) {
                 </div>
 
                 <div>
-                  <div className="text-sm font-medium flex items-center gap-2">
+                  <div className="text-sm font-medium flex items-center gap-2 pb-2">
                     <Mail className="h-4 w-4" />
                     Email
                   </div>
@@ -84,7 +84,7 @@ export function OrderDetails({ order, open, onOpenChange }: OrderDetailsProps) {
               </div>
 
               <div>
-                <div className="text-sm font-medium flex items-center gap-2">
+                <div className="text-sm font-medium flex items-center gap-2 pb-2">
                   <MapPin className="h-4 w-4" />
                   Endereço de Entrega
                 </div>
@@ -176,7 +176,7 @@ export function OrderDetails({ order, open, onOpenChange }: OrderDetailsProps) {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <div className="text-sm font-medium flex items-center gap-2">
+                  <div className="text-sm font-medium flex items-center gap-2 pb-2">
                     <CreditCard className="h-4 w-4" />
                     Forma de Pagamento
                   </div>
@@ -188,21 +188,13 @@ export function OrderDetails({ order, open, onOpenChange }: OrderDetailsProps) {
                     }
                   </div>
                 </div>
-
-                <div>
-                  <div className="text-sm font-medium flex items-center gap-2">
-                    <Clock className="h-4 w-4" />
-                    Tempo de Preparo
-                  </div>
-                  <div className="text-sm">30-45 minutos</div>
-                </div>
               </div>
             </div>
           </Card>
 
-          {/* Status do Pedido */}
+          {/* Histórico do Pedido */}
           <Card className="p-4 md:p-6">
-            <h3 className="font-semibold mb-4">Status do Pedido</h3>
+            <h3 className="font-semibold mb-4">Histórico do Pedido</h3>
             <Timeline events={order.events} />
           </Card>
         </div>
