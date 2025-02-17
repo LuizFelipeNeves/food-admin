@@ -14,6 +14,7 @@ import {
 import { Order, PAYMENT_STATUS } from '@/types/order'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
+import { PAYMENT_METHOD_NAMES } from '@/constants/payments'
 
 interface TableMeta {
   onRowClick: (row: { original: Order }) => void
@@ -22,18 +23,14 @@ interface TableMeta {
 
 export const columns: ColumnDef<Order, any>[] = [
   {
-    accessorKey: 'orderNumber',
+    accessorKey: 'orderId',
     header: 'Número',
     cell: ({ row }) => {
-      const orderNumber = row.getValue('orderNumber') as string
-      const customer = row.original.user
+      const orderNumber = row.getValue('_id') as string
       
       return (
         <div className="space-y-1">
-          <div className="font-medium">{orderNumber}</div>
-          <div className="text-sm text-muted-foreground hidden md:block">
-            {customer.name}
-          </div>
+          <div className="font-medium">#{orderNumber.slice(-8).toUpperCase()}</div>
         </div>
       )
     },
@@ -114,8 +111,16 @@ export const columns: ColumnDef<Order, any>[] = [
     },
   },
   {
+    accessorKey: 'paymentMethod',
+    header: 'Forma de Pagamento',
+    cell: ({ row }) => {
+      const paymentMethod = row.getValue('paymentMethod') as Order['paymentMethod']
+      return PAYMENT_METHOD_NAMES[paymentMethod] || paymentMethod
+    },
+  },
+  {
     accessorKey: 'paymentStatus',
-    header: 'Pagamento',
+    header: 'Status Pagamento',
     cell: ({ row }) => {
       const status = row.getValue('paymentStatus') as keyof typeof PAYMENT_STATUS
       return (

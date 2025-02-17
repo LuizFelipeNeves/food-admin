@@ -163,7 +163,7 @@ export function KanbanBoard() {
 
                                   <div className="mt-1">
                                     <div className="text-xs font-medium">
-                                      #{order._id.slice(-5)}
+                                      #{order._id.slice(-8).toUpperCase()}
                                     </div>
                                     <div className="text-[11px] text-muted-foreground truncate">
                                       {order.user.name}

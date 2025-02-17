@@ -7,57 +7,7 @@ import { Save, Loader2, CreditCard, Banknote, QrCode, CreditCardIcon } from 'luc
 import { trpc as api } from '@/app/_trpc/client'
 import toast from 'react-hot-toast'
 import { cn } from '@/lib/utils'
-
-const paymentsDefault = [
-  {
-    id: "money",
-    name: "Dinheiro",
-    description: "Aceitar pagamento via Dinheiro",
-    icon: Banknote,
-  },
-  {
-    id: "pix",
-    name: "Pix",
-    description: "Aceitar pagamento via PIX",
-    icon: QrCode,
-  },
-  {
-    id: "credit",
-    name: "Cartão de Crédito",
-    description: "Aceitar pagamento via Cartão de Crédito",
-    icon: CreditCard,
-  },
-  {
-    id: "debit",
-    name: "Cartão de Débito",
-    description: "Aceitar pagamento via Cartão de Débito",
-    icon: CreditCardIcon,
-  },
-  {
-    id: "vrRefeicao",
-    name: "Vale Refeição",
-    description: "Aceitar pagamento via Vale Refeição",
-    icon: CreditCard,
-  },
-  {
-    id: "ticketRefeicao",
-    name: "Ticket Refeição",
-    description: "Aceitar pagamento via Ticket Refeição",
-    icon: CreditCard,
-  },
-  {
-    id: "aleloRefeicao",
-    name: "Alelo Refeição",
-    description: "Aceitar pagamento via Alelo Refeição",
-    icon: CreditCard,
-  },
-  {
-    id: "sodexoRefeicao",
-    name: "Sodexo Refeição",
-    description: "Aceitar pagamento via Sodexo Refeição",
-    icon: CreditCard,
-  }
-]
+import { PAYMENTS } from '@/constants/payments'
 
 export function PaymentSettings({ storeId }: { storeId: string }) {
   const [paymentMethods, setPaymentMethods] = useState<string[]>([])
@@ -114,7 +64,7 @@ export function PaymentSettings({ storeId }: { storeId: string }) {
           <div className="space-y-4">
             <h3 className="text-sm font-medium leading-none">Cartões e Dinheiro</h3>
             <div className="grid gap-4 sm:grid-cols-2">
-              {paymentsDefault.slice(0, 4).map((payment) => (
+              {PAYMENTS.slice(0, 4).map((payment) => (
                 <div key={payment.id} className="flex flex-col">
                   <div className={cn(
                     "flex items-start gap-4 p-4 border rounded-lg transition-colors",
@@ -142,7 +92,7 @@ export function PaymentSettings({ storeId }: { storeId: string }) {
           <div className="space-y-4">
             <h3 className="text-sm font-medium leading-none">Vale Refeição</h3>
             <div className="grid gap-4 sm:grid-cols-2">
-              {paymentsDefault.slice(4).map((payment) => (
+              {PAYMENTS.slice(4).map((payment) => (
                 <div key={payment.id} className="flex flex-col">
                   <div className={cn(
                     "flex items-start gap-4 p-4 border rounded-lg transition-colors",
