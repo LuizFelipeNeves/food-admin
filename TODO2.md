@@ -1,22 +1,14 @@
 # TODO v2
 
-## Core - Categorias e Adicionais
-- [ ] Terminar telas de Categoria
-- [ ] Terminar telas de Adicionais
-- [ ] Terminar telas de Cat Adicionais
-
 ## Core - Produtos
 - [ ] Carregar imagem do produto na tela de produtos
 - [ ] Upload da foto do produto
+- [ ] Ordenação na tela de Produtos
 - [ ] Adicionar campos no projeto do cardápio digital
   - [ ] Estoque
   - [ ] Ativo
   - [ ] Filtrar os produtos ativos
 - [ ] Implementar revalidação do cardápio digital quando atualizar dados
-- [ ] Terminar modal de cadastro de produto
-- [ ] Remover os três pontos das ações
-- [ ] Colocar os ícones de edição e excluir com tooltip
-- [ ] Ordenação na tela de Produtos
 
 ## Core - Pedidos
 - [ ] Criar api de listagem de pedidos geral

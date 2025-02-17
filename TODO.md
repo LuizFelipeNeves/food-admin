@@ -1,5 +1,5 @@
-Ajustar o model de empresa para salvar os campos de notificações, criar router e aplicar na tela de Settings aba notificações.
-Melhorar a responsividade da tela de Roadmap, adicionar rolagem na lista, Migrar de Fluxo para Kanban.
+Migrar de Fluxo para Kanban.
+showFreeShippingBanner
 Carregar assinatura atual na tela de Assinatura,
 Integrar com algum gateway de Pagamento, pagamento com cartão, boleto. 
 Criar api de downgrade e upgrade de plano.
@@ -24,7 +24,6 @@ Upload da foto do produto
 
 
 Terminar modal de cadastro de produto
-Tela de produtos remover os três pontos das ações e colocar os ícones de edição e excluir com tooltip, 
 
 Terminar telas de Categoria, Adicionais, Cat Adicionais.
 

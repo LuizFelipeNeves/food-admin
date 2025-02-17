@@ -1,60 +1,93 @@
-'use client'
+"use client";
 
-import { useState } from "react"
-import { DragDropContext, Draggable, Droppable } from "@hello-pangea/dnd"
-import { Card } from "../ui/card"
-import { Badge } from "../ui/badge"
-import { Clock, MoreVertical, CreditCard } from "lucide-react"
+import { useState } from "react";
+import { DragDropContext, Draggable, Droppable } from "@hello-pangea/dnd";
+import { Card } from "../ui/card";
+import { Badge } from "../ui/badge";
+import { Clock, MoreVertical, CreditCard } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "../ui/dropdown-menu"
-import { mockOrders, COLUMNS, PAYMENT_METHODS, type Order } from "@/data/orders"
-import { OrderDetails } from "../orders/order-details"
+} from "../ui/dropdown-menu";
+import { COLUMNS, PAYMENT_METHODS, type Order } from "@/types/order";
+import { OrderDetails } from "../orders/order-details";
+import { trpc as api } from "@/app/_trpc/client";
+import { useToast } from "../ui/use-toast";
+import { Skeleton } from "../ui/skeleton";
 
 export function KanbanBoard() {
-  const [orders, setOrders] = useState<Order[]>(mockOrders)
-  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const { toast } = useToast();
+  const utils = api.useUtils();
+
+  const { data: orders = [], isLoading } = api.orders.getKanbanOrders.useQuery(
+    undefined,
+    {
+      refetchInterval: 5000,
+      onError: () => {
+        toast({
+          variant: "destructive",
+          title: "Erro",
+          description: "Não foi possível carregar os pedidos",
+        });
+      },
+    }
+  );
+
+  const { mutate: updateStatus } = api.orders.updateStatus.useMutation({
+    onMutate: async ({ orderId, status }) => {
+      // Cancelar queries em andamento
+      await utils.orders.getKanbanOrders.cancel();
+
+      // Snapshot do estado anterior
+      const previousOrders = utils.orders.getKanbanOrders.getData();
+
+      // Atualizar a ordem otimisticamente
+      utils.orders.getKanbanOrders.setData(undefined, (old) => {
+        if (!old) return previousOrders;
+        return old.map((order) =>
+          order._id === orderId ? { ...order, status } : order
+        );
+      });
+
+      return { previousOrders };
+    },
+    onError: (err, variables, context) => {
+      // Reverter para o estado anterior em caso de erro
+      if (context?.previousOrders) {
+        utils.orders.getKanbanOrders.setData(undefined, context.previousOrders);
+      }
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Não foi possível atualizar o status do pedido",
+      });
+    },
+    onSettled: () => {
+      // Revalidar os dados após a mutação
+      utils.orders.getKanbanOrders.invalidate();
+    },
+  });
 
   const onDragEnd = (result: any) => {
-    if (!result.destination) return
+    if (!result.destination) return;
 
-    const { source, destination } = result
+    const { source, destination } = result;
 
-    const reorderedOrders = Array.from(orders)
-    const [movedOrder] = reorderedOrders.splice(source.index, 1)
-    
-    // Atualizar o status do pedido para a nova coluna
-    movedOrder.status = destination.droppableId as Order['status']
-    
-    // Adicionar evento de mudança de status
-    const event = {
-      _id: String(movedOrder.events.length + 1),
-      date: new Date().toString(),
-      description: getStatusDescription(movedOrder.status),
+    if (source.droppableId === destination.droppableId) {
+      return;
+    }
+
+    updateStatus({
+      orderId: result.draggableId,
       status: destination.droppableId,
-    }
-    movedOrder.events.push(event)
+    });
+  };
 
-    // Inserir o item na nova posição
-    reorderedOrders.splice(destination.index, 0, movedOrder)
-
-    setOrders(reorderedOrders)
-  }
-
-  const getStatusDescription = (status: Order['status']) => {
-    const statusMap = {
-      new: 'Pedido recebido',
-      confirmed: 'Pedido confirmado',
-      preparing: 'Pedido em preparo',
-      ready: 'Pedido pronto',
-      delivering: 'Pedido em entrega',
-      completed: 'Pedido concluído',
-    }
-
-    return statusMap[status]
+  if (isLoading) {
+    return <KanbanSkeleton />;
   }
 
   return (
@@ -96,14 +129,16 @@ export function KanbanBoard() {
                                   {...provided.draggableProps}
                                   {...provided.dragHandleProps}
                                   className={`p-2 bg-background border shadow-sm hover:shadow-md transition-all ${
-                                    snapshot.isDragging ? "rotate-2 shadow-lg" : ""
+                                    snapshot.isDragging
+                                      ? "rotate-2 shadow-lg"
+                                      : ""
                                   }`}
                                 >
                                   <div className="flex items-center justify-between gap-1">
                                     <div className="flex items-center gap-1">
                                       <Clock className="h-3 w-3 text-muted-foreground" />
                                       <span className="text-[11px] text-muted-foreground">
-                                        {order.orderDate.substring(11, 16)}
+                                        {order.createdAt.substring(11, 16)}
                                       </span>
                                     </div>
                                     <DropdownMenu>
@@ -113,7 +148,13 @@ export function KanbanBoard() {
                                         </button>
                                       </DropdownMenuTrigger>
                                       <DropdownMenuContent align="end">
-                                        <DropdownMenuItem onClick={() => setSelectedOrder(order)}>
+                                        <DropdownMenuItem
+                                          onClick={() =>
+                                            setSelectedOrder(
+                                              order as unknown as Order
+                                            )
+                                          }
+                                        >
                                           Ver detalhes
                                         </DropdownMenuItem>
                                       </DropdownMenuContent>
@@ -121,9 +162,11 @@ export function KanbanBoard() {
                                   </div>
 
                                   <div className="mt-1">
-                                    <div className="text-xs font-medium">#{order.orderNumber}</div>
+                                    <div className="text-xs font-medium">
+                                      #{order._id.slice(-5)}
+                                    </div>
                                     <div className="text-[11px] text-muted-foreground truncate">
-                                      {order.customer.name}
+                                      {order.user.name}
                                     </div>
                                   </div>
 
@@ -131,19 +174,30 @@ export function KanbanBoard() {
                                     <div className="flex items-center gap-1">
                                       <CreditCard className="h-3 w-3 text-muted-foreground" />
                                       <span className="text-muted-foreground">
-                                        {PAYMENT_METHODS[order.payment.method].label}
+                                        {
+                                          PAYMENT_METHODS[
+                                            order.paymentMethod as keyof typeof PAYMENT_METHODS
+                                          ]?.label
+                                        }
                                       </span>
                                     </div>
                                     <div className="font-medium">
-                                      {new Intl.NumberFormat('pt-BR', {
-                                        style: 'currency',
-                                        currency: 'BRL',
+                                      {new Intl.NumberFormat("pt-BR", {
+                                        style: "currency",
+                                        currency: "BRL",
                                       }).format(order.total)}
                                     </div>
                                   </div>
 
                                   <div className="mt-1 line-clamp-1 text-[11px] text-muted-foreground">
-                                    {order.items.map((item) => `${item.quantity}x ${item.name}`).join(', ')}
+                                    {order.items
+                                      .map(
+                                        (item: {
+                                          quantity: number;
+                                          name: string;
+                                        }) => `${item.quantity}x ${item.name}`
+                                      )
+                                      .join(", ")}
                                   </div>
                                 </Card>
                               )}
@@ -166,5 +220,26 @@ export function KanbanBoard() {
         onOpenChange={(open) => !open && setSelectedOrder(null)}
       />
     </>
-  )
+  );
+}
+
+function KanbanSkeleton() {
+  return (
+    <div className="flex gap-3 h-full">
+      {Object.values(COLUMNS).map((column) => (
+        <div key={column.id} className="w-[250px]">
+          <div className={`p-2 rounded-t-lg ${column.color}`}>
+            <Skeleton className="h-5 w-24" />
+          </div>
+          <div className="p-1.5 bg-muted/50 rounded-b-lg">
+            <div className="space-y-2">
+              {[1, 2, 3].map((n) => (
+                <Skeleton key={n} className="h-24 w-full" />
+              ))}
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 }

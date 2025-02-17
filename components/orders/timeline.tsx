@@ -1,39 +1,67 @@
-import { OrderEvent } from "@/data/orders"
 import { cn } from "@/lib/utils"
-import { CheckCircle2, Circle } from "lucide-react"
+import { OrderEvent } from "@/types/order"
+import { format } from "date-fns"
+import { ptBR } from "date-fns/locale"
+import {
+  CheckCircle2,
+  Clock,
+  PackageCheck,
+  PackageOpen,
+  PackageSearch,
+  Truck,
+} from "lucide-react"
 
 interface TimelineProps {
   events: OrderEvent[]
 }
 
+const statusIcons = {
+  new: Clock,
+  confirmed: PackageSearch,
+  preparing: PackageOpen,
+  ready: PackageCheck,
+  delivering: Truck,
+  completed: CheckCircle2,
+  pending: Clock,
+}
+
 export function Timeline({ events }: TimelineProps) {
   return (
-    <div className="space-y-4">
-      {events.map((event, index) => (
-        <div key={event._id} className="flex gap-3">
-          <div className="flex flex-col items-center">
-            <div className="w-2.5 h-2.5">
-              {index === events.length - 1 ? (
-                <CheckCircle2 className="w-4 h-4 text-primary" />
-              ) : (
-                <Circle className="w-4 h-4 text-muted-foreground" />
+    <div className="relative pl-8 space-y-6">
+      <div className="absolute top-2 bottom-2 left-3 w-px bg-border" />
+      {events?.map((event, index) => {
+        const Icon = statusIcons[event.status]
+        const isFirst = index === 0
+        const isLast = index === events.length - 1
+
+        return (
+          <div
+            key={event._id}
+            className={cn("relative min-h-[2rem]", {
+              "pb-6": !isLast,
+            })}
+          >
+            <div
+              className={cn(
+                "absolute -left-5 p-1 rounded-full border bg-background",
+                {
+                  "ring-2 ring-primary": isFirst,
+                }
               )}
+            >
+              <Icon className="h-4 w-4" />
             </div>
-            {index !== events.length - 1 && (
-              <div className="w-px h-full bg-border" />
-            )}
-          </div>
-          <div className="pb-4">
-            <div className="text-sm text-muted-foreground">
-              {new Date(event.date).toLocaleTimeString('pt-BR', {
-                hour: '2-digit',
-                minute: '2-digit'
-              })}
+            <div className="flex flex-col gap-1 pl-6">
+              <p className="text-sm font-medium leading-relaxed">{event.description}</p>
+              <time className="text-sm text-muted-foreground">
+                {format(new Date(event.date), "dd 'de' MMMM 'às' HH:mm", {
+                  locale: ptBR,
+                })}
+              </time>
             </div>
-            <div className="font-medium">{event.description}</div>
           </div>
-        </div>
-      ))}
+        )
+      })}
     </div>
   )
 }

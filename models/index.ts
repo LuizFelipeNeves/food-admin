@@ -215,6 +215,7 @@ const orderSchema = new mongoose.Schema(
       required: false
     },
     paymentMethod: { type: String, required: true },
+    paymentStatus: { type: String, default: "pending" },
     change: { type: String },
     observation: { type: String },
     items: [
@@ -237,8 +238,15 @@ const orderSchema = new mongoose.Schema(
       ref: "Store",
       required: true,
     },
+    deliveryFee: { type: Number, required: true, default: 0 },
+    subtotal: { type: Number, required: true, default: 0 },
     total: { type: Number, required: true },
     status: { type: String, required: true },
+    events: [{
+      date: { type: Date, required: true },
+      status: { type: String, required: true },
+      description: { type: String, required: true },
+    }]
   },
   { timestamps: true }
 );

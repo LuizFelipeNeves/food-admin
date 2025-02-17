@@ -1,30 +1,39 @@
 'use client'
 
-import { SetStateAction, useState } from 'react'
+import { useState } from 'react'
 import { Layout } from '@/components/layout/layout'
 import { OrderFilters } from '@/components/orders/order-filters'
 import { DataTable } from '@/components/ui/data-table'
 import { columns } from './columns'
-import { mockOrders, type Order } from '@/data/orders'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Plus } from 'lucide-react'
 import { OrderDetails } from '@/components/orders/order-details'
 import { useMediaQuery } from '@/hooks/use-media-query'
+import { trpc } from '@/app/_trpc/client'
+import { type Order } from '@/types/order'
+
+type OrderStats = {
+  totalOrders: number
+  pendingOrders: number
+  completedOrders: number
+  totalRevenue: number
+}
+
+const defaultStats: OrderStats = {
+  totalOrders: 0,
+  pendingOrders: 0,
+  completedOrders: 0,
+  totalRevenue: 0
+}
 
 export default function AllOrdersPage() {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
   const isMobile = useMediaQuery('(max-width: 768px)')
   
-  const totalOrders = mockOrders.length
-  const pendingOrders = mockOrders.filter(order => order.payment.status === 'pending').length
-  const completedOrders = mockOrders.filter(order => order.status === 'completed').length
-  const totalRevenue = mockOrders.reduce((acc, order) => {
-    if (order.payment.status === 'approved') {
-      return acc + order.total
-    }
-    return acc
-  }, 0)
+  const { data: rawOrders } = trpc.orders.getAll.useQuery()
+  const { data: stats = defaultStats } = trpc.orders.getStats.useQuery()
+  const orders = rawOrders as Order[] | undefined
 
   const visibleColumns = columns.filter(column => {
     if (!isMobile) return true
@@ -55,7 +64,7 @@ export default function AllOrdersPage() {
                 <CardTitle className="text-sm font-medium">Total de Pedidos</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{totalOrders}</div>
+                <div className="text-2xl font-bold">{stats.totalOrders}</div>
               </CardContent>
             </Card>
 
@@ -64,7 +73,7 @@ export default function AllOrdersPage() {
                 <CardTitle className="text-sm font-medium">Pendentes</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{pendingOrders}</div>
+                <div className="text-2xl font-bold">{stats.pendingOrders}</div>
               </CardContent>
             </Card>
 
@@ -73,7 +82,7 @@ export default function AllOrdersPage() {
                 <CardTitle className="text-sm font-medium">Concluídos</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{completedOrders}</div>
+                <div className="text-2xl font-bold">{stats.completedOrders}</div>
               </CardContent>
             </Card>
 
@@ -86,7 +95,7 @@ export default function AllOrdersPage() {
                   {new Intl.NumberFormat('pt-BR', {
                     style: 'currency',
                     currency: 'BRL',
-                  }).format(totalRevenue)}
+                  }).format(stats.totalRevenue)}
                 </div>
               </CardContent>
             </Card>
@@ -97,11 +106,11 @@ export default function AllOrdersPage() {
 
         <div className="flex-1 min-h-0 p-4 md:p-6">
           <div className="h-full overflow-auto rounded-md border">
-            <DataTable
+            <DataTable<Order, { onRowClick: (row: { original: Order }) => void; selectedRow: Order | null }>
               columns={visibleColumns}
-              data={mockOrders}
+              data={orders ?? []}
               meta={{
-                onRowClick: (row: { original: SetStateAction<Order | null> }) => setSelectedOrder(row.original),
+                onRowClick: (row: { original: Order }) => setSelectedOrder(row.original),
                 selectedRow: selectedOrder,
               }}
             />
