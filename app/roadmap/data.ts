@@ -63,8 +63,8 @@ export const roadmapData: RoadmapItem[] = [
   {
     id: '6',
     title: 'Sistema de Pedidos',
-    description: 'APIs de listagem geral e Kanban de pedidos',
-    status: 'done',
+    description: 'Modal de Criar Pedido',
+    status: 'planned',
     quarter: 'Q1',
     year: 2025,
     category: 'core',
