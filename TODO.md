@@ -1,5 +1,6 @@
 Migrar de Fluxo para Kanban.
 showFreeShippingBanner
+Calcular Taxa de entrega e subtotal no cardapio digital
 Carregar assinatura atual na tela de Assinatura,
 Integrar com algum gateway de Pagamento, pagamento com cartão, boleto. 
 Criar api de downgrade e upgrade de plano.
