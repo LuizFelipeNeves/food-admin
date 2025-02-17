@@ -12,9 +12,9 @@ export type RoadmapItem = {
 export const roadmapData: RoadmapItem[] = [
   {
     id: '1',
-    title: 'Notificações e Settings',
-    description: 'Ajustar model de empresa, campos de notificações e router',
-    status: 'done',
+    title: 'Salvar Preço',
+    description: 'Salvar price nos itens na criação do pedido',
+    status: 'planned',
     quarter: 'Q1',
     year: 2025,
     category: 'core',
@@ -42,8 +42,8 @@ export const roadmapData: RoadmapItem[] = [
   },
   {
     id: '4',
-    title: 'Interface de Produtos',
-    description: 'Modal de cadastro, ações com ícones e tooltips',
+    title: 'Taxa de Entrega, Subtotal',
+    description: 'Implementar cálculo de taxa de entrega e subtotal do pedido no cardápio digital',
     status: 'planned',
     quarter: 'Q1',
     year: 2025,
@@ -52,19 +52,19 @@ export const roadmapData: RoadmapItem[] = [
   },
   {
     id: '5',
-    title: 'Categorias e Adicionais',
-    description: 'Implementação das telas de categorias e adicionais',
+    title: 'Notificações Pusher',	
+    description: 'Implementar notificações em tempo real com Pusher',
     status: 'planned',
     quarter: 'Q1',
     year: 2025,
-    category: 'core',
-    priority: 'high',
+    category: 'integration',
+    priority: 'medium'
   },
   {
     id: '6',
     title: 'Sistema de Pedidos',
     description: 'APIs de listagem geral e Kanban de pedidos',
-    status: 'planned',
+    status: 'done',
     quarter: 'Q1',
     year: 2025,
     category: 'core',
