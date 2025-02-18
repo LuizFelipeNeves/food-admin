@@ -123,3 +123,13 @@ export const PAYMENT_STATUS = {
   approved: { label: 'Aprovado', color: 'green' },
   rejected: { label: 'Rejeitado', color: 'red' }
 }
+
+export interface IOrder {
+  paymentStatus: string;
+  paymentMethod: string;
+  observation: string;
+  events: Array<{
+      date: Date;
+      description: string;
+  }>;
+}

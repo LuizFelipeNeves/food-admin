@@ -16,9 +16,11 @@ import { OrderDetails } from "../orders/order-details";
 import { trpc as api } from "@/app/_trpc/client";
 import { useToast } from "../ui/use-toast";
 import { Skeleton } from "../ui/skeleton";
+import { EditOrderModal } from "../orders/edit-order-modal";
 
 export function KanbanBoard() {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [editingOrder, setEditingOrder] = useState<Order | null>(null);
   const { toast } = useToast();
   const utils = api.useUtils();
 
@@ -157,6 +159,13 @@ export function KanbanBoard() {
                                         >
                                           Ver detalhes
                                         </DropdownMenuItem>
+                                        <DropdownMenuItem
+                                          onClick={() => {
+                                            setEditingOrder(order as unknown as Order);
+                                          }}
+                                        >
+                                          Editar pedido
+                                        </DropdownMenuItem>
                                       </DropdownMenuContent>
                                     </DropdownMenu>
                                   </div>
@@ -218,6 +227,15 @@ export function KanbanBoard() {
         order={selectedOrder}
         open={!!selectedOrder}
         onOpenChange={(open) => !open && setSelectedOrder(null)}
+      />
+
+      <EditOrderModal
+        order={editingOrder}
+        open={!!editingOrder}
+        onOpenChange={(open) => !open && setEditingOrder(null)}
+        onOrderUpdated={() => {
+          utils.orders.getKanbanOrders.invalidate();
+        }}
       />
     </>
   );

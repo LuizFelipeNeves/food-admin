@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Layout } from '@/components/layout/layout'
 import { OrderFilters } from '@/components/orders/order-filters'
 import { DataTable } from '@/components/ui/data-table'
@@ -12,6 +12,7 @@ import { OrderDetails } from '@/components/orders/order-details'
 import { useMediaQuery } from '@/hooks/use-media-query'
 import { trpc } from '@/app/_trpc/client'
 import { type Order } from '@/types/order'
+import { EditOrderModal } from '@/components/orders/edit-order-modal'
 
 type OrderStats = {
   totalOrders: number
@@ -29,9 +30,19 @@ const defaultStats: OrderStats = {
 
 export default function AllOrdersPage() {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
+  const [editingOrder, setEditingOrder] = useState<Order | null>(null)
   const isMobile = useMediaQuery('(max-width: 768px)')
+
+  useEffect(() => {
+    const handleEditOrder = (event: CustomEvent<Order>) => {
+      setEditingOrder(event.detail)
+    }
+
+    window.addEventListener('edit-order', handleEditOrder as EventListener)
+    return () => window.removeEventListener('edit-order', handleEditOrder as EventListener)
+  }, [])
   
-  const { data: rawOrders } = trpc.orders.getAll.useQuery()
+  const { data: rawOrders, refetch } = trpc.orders.getAll.useQuery()
   const { data: stats = defaultStats } = trpc.orders.getStats.useQuery()
   const orders = rawOrders as Order[] | undefined
 
@@ -122,6 +133,16 @@ export default function AllOrdersPage() {
         order={selectedOrder}
         open={!!selectedOrder}
         onOpenChange={(open) => !open && setSelectedOrder(null)}
+      />
+
+      <EditOrderModal
+        order={editingOrder}
+        open={!!editingOrder}
+        onOpenChange={(open) => !open && setEditingOrder(null)}
+        onOrderUpdated={() => {
+          refetch()
+          setEditingOrder(null)
+        }}
       />
     </Layout>
   )

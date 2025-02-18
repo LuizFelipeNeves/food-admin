@@ -218,6 +218,7 @@ const orderSchema = new mongoose.Schema(
     paymentStatus: { type: String, default: "pending" },
     change: { type: String },
     observation: { type: String },
+    annotations: { type: String },
     items: [
       {
         _id: { type: String, required: true },
@@ -270,3 +271,13 @@ export const Promotion = mongoose.models.Promotion || mongoose.model('Promotion'
 export const User = mongoose.models.User || mongoose.model('User', userSchema);
 export const UserAddress = mongoose.models.UserAddress || mongoose.model('UserAddress', userAddressSchema);
 export const Order = mongoose.models.Order || mongoose.model('Order', orderSchema);
+
+export interface IOrder {
+  paymentStatus: string;
+  paymentMethod: string;
+  observation: string;
+  events: Array<{
+      date: Date;
+      description: string;
+  }>;
+}
