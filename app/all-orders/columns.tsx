@@ -22,12 +22,13 @@ export const columns: ColumnDef<Order>[] = [
   {
     accessorKey: 'orderId',
     header: 'Número',
+    accessorFn: (row) => row._id,
     cell: ({ row }) => {
-      const orderNumber = row.getValue('_id') as string
+      const orderNumber = row.getValue('orderId') as string
       
       return (
         <div className="space-y-1">
-          <div className="font-medium">#{orderNumber.slice(-8).toUpperCase()}</div>
+          <div className="font-medium">#{orderNumber?.slice(-8).toUpperCase()}</div>
         </div>
       )
     },
