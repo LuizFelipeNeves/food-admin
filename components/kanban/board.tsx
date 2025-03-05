@@ -27,7 +27,7 @@ export function KanbanBoard() {
   const { data: orders = [], isLoading } = api.orders.getKanbanOrders.useQuery(
     undefined,
     {
-      refetchInterval: 5000,
+      refetchInterval: 15000,
       onError: () => {
         toast({
           variant: "destructive",
@@ -56,7 +56,7 @@ export function KanbanBoard() {
 
       return { previousOrders };
     },
-    onError: (err, variables, context) => {
+    onError: (_err, _variables, context: any) => {
       // Reverter para o estado anterior em caso de erro
       if (context?.previousOrders) {
         utils.orders.getKanbanOrders.setData(undefined, context.previousOrders);
@@ -67,10 +67,15 @@ export function KanbanBoard() {
         description: "Não foi possível atualizar o status do pedido",
       });
     },
-    onSettled: () => {
-      // Revalidar os dados após a mutação
-      utils.orders.getKanbanOrders.invalidate();
-    },
+    onSuccess: (data: { order: any }) => {
+      // Atualizar o cache com o pedido retornado do servidor
+      utils.orders.getKanbanOrders.setData(undefined, (old) => {
+        if (!old) return [];
+        return old.map((oldOrder: any) => 
+          oldOrder._id === data.order._id ? data.order : oldOrder
+        );
+      });
+    }
   });
 
   const onDragEnd = (result: any) => {

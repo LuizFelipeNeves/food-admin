@@ -152,6 +152,8 @@ export const ordersRouter = router({
           throw new Error('Pedido não encontrado')
         }
 
+        const previousStatus = order.status
+
         const newEvent = {
           date: new Date(),
           status: input.status,
@@ -177,7 +179,11 @@ export const ordersRouter = router({
         .populate('user')
         .lean()
 
-        return updatedOrder
+        // Retorna o pedido atualizado para atualizar o cache
+        return {
+          previousStatus,
+          order: updatedOrder
+        }
       } catch (error) {
         console.error('Erro ao atualizar status do pedido:', error)
         throw new Error('Não foi possível atualizar o status do pedido')
