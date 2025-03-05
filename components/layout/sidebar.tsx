@@ -28,6 +28,12 @@ export const sidebarLinks = [
     color: 'text-sky-500',
   },
   {
+    title: 'PDV',
+    href: '/pos',
+    icon: CreditCard,
+    color: 'text-green-500',
+  },
+  {
     title: 'Pedidos',
     href: '/orders',
     icon: ShoppingCart,

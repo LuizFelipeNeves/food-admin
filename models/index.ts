@@ -219,13 +219,15 @@ const orderSchema = new mongoose.Schema(
     change: { type: String },
     observation: { type: String },
     annotations: { type: String },
+    source: { type: String, default: "app" },
     items: [
       {
-        _id: { type: String, required: true },
+        _id: { type: String, required: false },
         name: { type: String, required: true },
         price: { type: Number, required: true },
         quantity: { type: Number, required: true },
         notes: { type: String },
+        total: { type: Number },
         additionals: [
           {
             _id: { type: String, required: true },
