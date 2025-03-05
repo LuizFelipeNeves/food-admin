@@ -21,6 +21,24 @@ type OrderStats = {
   totalRevenue: number
 }
 
+type Filters = {
+  customerName?: string
+  date?: Date
+  paymentStatus?: string
+  paymentMethod?: string
+  orderStatus?: string
+}
+
+interface OrdersResponse {
+  data: Order[]
+  pagination: {
+    total: number
+    page: number
+    perPage: number
+    pageCount: number
+  }
+}
+
 const defaultStats: OrderStats = {
   totalOrders: 0,
   pendingOrders: 0,
@@ -31,6 +49,9 @@ const defaultStats: OrderStats = {
 export default function AllOrdersPage() {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
   const [editingOrder, setEditingOrder] = useState<Order | null>(null)
+  const [filters, setFilters] = useState<Filters>({})
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
   const isMobile = useMediaQuery('(max-width: 768px)')
 
   useEffect(() => {
@@ -42,14 +63,28 @@ export default function AllOrdersPage() {
     return () => window.removeEventListener('edit-order', handleEditOrder as EventListener)
   }, [])
   
-  const { data: rawOrders, refetch } = trpc.orders.getAll.useQuery()
-  const { data: stats = defaultStats } = trpc.orders.getStats.useQuery()
-  const orders = rawOrders as Order[] | undefined
+  const { data: ordersData, refetch, isLoading } = trpc.orders.getAll.useQuery({
+    ...filters,
+    page: currentPage,
+    perPage: pageSize
+  }) as { data: OrdersResponse | undefined, refetch: () => void, isLoading: boolean }
+
+  const { data: stats = defaultStats, isLoading: statsLoading } = trpc.orders.getStats.useQuery()
 
   const visibleColumns = columns.filter(column => {
     if (!isMobile) return true
     return !column.enableHiding
   })
+
+  // Reset para primeira página quando os filtros mudam
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [filters])
+
+  const handlePaginationChange = (page: number, pageSize: number) => {
+    setCurrentPage(page)
+    setPageSize(pageSize)
+  }
 
   return (
     <Layout>
@@ -75,7 +110,13 @@ export default function AllOrdersPage() {
                 <CardTitle className="text-sm font-medium">Total de Pedidos</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{stats.totalOrders}</div>
+                <div className="text-2xl font-bold">
+                  {statsLoading ? (
+                    <div className="animate-pulse h-8 w-16 bg-muted rounded" />
+                  ) : (
+                    stats.totalOrders
+                  )}
+                </div>
               </CardContent>
             </Card>
 
@@ -84,7 +125,13 @@ export default function AllOrdersPage() {
                 <CardTitle className="text-sm font-medium">Pendentes</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{stats.pendingOrders}</div>
+                <div className="text-2xl font-bold">
+                  {statsLoading ? (
+                    <div className="animate-pulse h-8 w-16 bg-muted rounded" />
+                  ) : (
+                    stats.pendingOrders
+                  )}
+                </div>
               </CardContent>
             </Card>
 
@@ -93,7 +140,13 @@ export default function AllOrdersPage() {
                 <CardTitle className="text-sm font-medium">Concluídos</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{stats.completedOrders}</div>
+                <div className="text-2xl font-bold">
+                  {statsLoading ? (
+                    <div className="animate-pulse h-8 w-16 bg-muted rounded" />
+                  ) : (
+                    stats.completedOrders
+                  )}
+                </div>
               </CardContent>
             </Card>
 
@@ -103,27 +156,35 @@ export default function AllOrdersPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {new Intl.NumberFormat('pt-BR', {
-                    style: 'currency',
-                    currency: 'BRL',
-                  }).format(stats.totalRevenue)}
+                  {statsLoading ? (
+                    <div className="animate-pulse h-8 w-24 bg-muted rounded" />
+                  ) : (
+                    new Intl.NumberFormat('pt-BR', {
+                      style: 'currency',
+                      currency: 'BRL',
+                    }).format(stats.totalRevenue)
+                  )}
                 </div>
               </CardContent>
             </Card>
           </div>
 
-          <OrderFilters />
+          <OrderFilters onFiltersChange={setFilters} />
         </div>
 
         <div className="flex-1 min-h-0 p-4 md:p-6">
           <div className="h-full overflow-auto rounded-md border">
             <DataTable<Order, { onRowClick: (row: { original: Order }) => void; selectedRow: Order | null }>
               columns={visibleColumns}
-              data={orders ?? []}
+              data={ordersData?.data ?? []}
               meta={{
                 onRowClick: (row: { original: Order }) => setSelectedOrder(row.original),
                 selectedRow: selectedOrder,
               }}
+              pageCount={ordersData?.pagination.pageCount ?? 1}
+              onPaginationChange={handlePaginationChange}
+              enablePagination
+              isLoading={isLoading}
             />
           </div>
         </div>

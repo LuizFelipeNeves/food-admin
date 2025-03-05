@@ -30,7 +30,7 @@ export function GenerateDataButton({ storeId }: { storeId: string }) {
           Gerando...
         </>
       ) : (
-        'Gerar Dados'
+        'Gerar Dados (7 dias)'
       )}
     </Button>
   );

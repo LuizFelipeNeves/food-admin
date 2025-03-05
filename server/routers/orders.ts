@@ -6,28 +6,84 @@ import { z } from 'zod'
 import { startOfDay, endOfDay, subDays, differenceInMinutes } from 'date-fns'
 
 export const ordersRouter = router({
-  getAll: publicProcedure.query(async () => {
-    try {
-      const now = new Date()
-      const startOfYesterday = startOfDay(subDays(now, 1))
-      const endOfToday = endOfDay(now)
+  getAll: publicProcedure
+    .input(z.object({
+      customerName: z.string().optional(),
+      date: z.date().or(z.string().transform(val => new Date(val))).optional(),
+      paymentStatus: z.string().optional(),
+      paymentMethod: z.string().optional(),
+      orderStatus: z.string().optional(),
+      page: z.number().default(1),
+      perPage: z.number().default(10),
+    }))
+    .query(async ({ input }) => {
+      try {
+        const now = new Date()
+        const startOfYesterday = startOfDay(subDays(now, 1))
+        const endOfToday = endOfDay(now)
 
-      const orders = await Order.find({
-        createdAt: { 
-          $gte: startOfYesterday,
-          $lte: endOfToday 
+        // Construir o filtro base
+        const filter: any = {
+          createdAt: { 
+            $gte: startOfYesterday,
+            $lte: endOfToday 
+          }
         }
-      })
-        .populate('user')
-        .sort({ createdAt: -1 })
-        .lean()
 
-      return orders
-    } catch (error) {
-      console.error('Erro ao buscar pedidos:', error)
-      throw new Error('Não foi possível carregar os pedidos')
-    }
-  }),
+        // Adicionar filtros condicionais
+        if (input.customerName) {
+          filter['user.name'] = { $regex: input.customerName, $options: 'i' }
+        }
+
+        if (input.date) {
+          const startOfDate = startOfDay(new Date(input.date))
+          const endOfDate = endOfDay(new Date(input.date))
+          filter.createdAt = {
+            $gte: startOfDate,
+            $lte: endOfDate
+          }
+        }
+
+        if (input.paymentStatus) {
+          filter.paymentStatus = input.paymentStatus
+        }
+
+        if (input.paymentMethod) {
+          filter.paymentMethod = input.paymentMethod
+        }
+
+        if (input.orderStatus) {
+          filter.status = input.orderStatus
+        }
+
+        // Calcular skip para paginação
+        const skip = (input.page - 1) * input.perPage
+
+        // Buscar total de registros
+        const total = await Order.countDocuments(filter)
+
+        // Buscar pedidos com paginação
+        const orders = await Order.find(filter)
+          .populate('user')
+          .sort({ createdAt: -1 })
+          .skip(skip)
+          .limit(input.perPage)
+          .lean()
+
+        return {
+          data: orders,
+          pagination: {
+            total,
+            page: input.page,
+            perPage: input.perPage,
+            pageCount: Math.ceil(total / input.perPage)
+          }
+        }
+      } catch (error) {
+        console.error('Erro ao buscar pedidos:', error)
+        throw new Error('Não foi possível carregar os pedidos')
+      }
+    }),
 
   getStats: publicProcedure.query(async () => {
     try {

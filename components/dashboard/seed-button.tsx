@@ -30,7 +30,7 @@ export function SeedButton() {
           Atualizando...
         </>
       ) : (
-        'Atualizar Dados'
+        'Corrigir Dados'
       )}
     </Button>
   );
