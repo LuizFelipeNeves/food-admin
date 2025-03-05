@@ -62,7 +62,7 @@ export function OrderDetails({ order, open, onOpenChange }: OrderDetailsProps) {
             <div className="grid gap-4">
               <div>
                 <div className="text-sm font-medium pb-2">Nome</div>
-                <div>{order.user.name}</div>
+                <div>{order.user?.name || 'Cliente não identificado' }</div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -71,7 +71,7 @@ export function OrderDetails({ order, open, onOpenChange }: OrderDetailsProps) {
                     <Phone className="h-4 w-4" />
                     Telefone
                   </div>
-                  <div>{order.user.phone}</div>
+                  <div>{order.user?.phone || 'Telefone não identificado'}</div>
                 </div>
 
                 <div>
@@ -79,7 +79,7 @@ export function OrderDetails({ order, open, onOpenChange }: OrderDetailsProps) {
                     <Mail className="h-4 w-4" />
                     Email
                   </div>
-                  <div className="break-all">{order.user.email}</div>
+                  <div className="break-all">{order.user?.email || 'Email não identificado'}</div>
                 </div>
               </div>
 

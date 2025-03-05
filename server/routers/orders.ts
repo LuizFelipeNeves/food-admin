@@ -3,11 +3,21 @@ import { Order } from '@/models'
 import { IOrder } from '@/types/order'
 import { getStatusDescription } from '@/utils/order-status'
 import { z } from 'zod'
+import { startOfDay, endOfDay, subDays, differenceInMinutes } from 'date-fns'
 
 export const ordersRouter = router({
   getAll: publicProcedure.query(async () => {
     try {
-      const orders = await Order.find()
+      const now = new Date()
+      const startOfYesterday = startOfDay(subDays(now, 1))
+      const endOfToday = endOfDay(now)
+
+      const orders = await Order.find({
+        createdAt: { 
+          $gte: startOfYesterday,
+          $lte: endOfToday 
+        }
+      })
         .populate('user')
         .sort({ createdAt: -1 })
         .lean()
@@ -52,12 +62,19 @@ export const ordersRouter = router({
 
   getKanbanOrders: publicProcedure.query(async () => {
     try {
-      const orders = await Order.find()
+      const now = new Date()
+      const startOfYesterday = startOfDay(subDays(now, 1))
+      const endOfToday = endOfDay(now)
+
+      const orders = await Order.find({
+        createdAt: { 
+          $gte: startOfYesterday,
+          $lte: endOfToday 
+        }
+      })
         .populate('user', 'name phone email')
         .sort({ createdAt: -1 })
         .lean()
-
-      console.log(orders)
 
       return orders
     } catch (error) {
@@ -74,18 +91,31 @@ export const ordersRouter = router({
     }))
     .mutation(async ({ input }) => {
       try {
+        const order = await Order.findById(input.orderId)
+        if (!order) {
+          throw new Error('Pedido não encontrado')
+        }
+
         const newEvent = {
           date: new Date(),
           status: input.status,
           description: getStatusDescription(input.status)
         }
 
+        const updateData: any = {
+          status: input.status,
+          $push: { events: newEvent }
+        }
+
+        // Calcula o tempo de entrega quando o status for completed
+        if (input.status === 'completed') {
+          const deliveryTime = differenceInMinutes(new Date(), order.createdAt)
+          updateData.deliveryTime = deliveryTime
+        }
+
         const updatedOrder = await Order.findByIdAndUpdate(
           input.orderId,
-          {
-            $set: { status: input.status },
-            $push: { events: newEvent }
-          },
+          updateData,
           { new: true }
         )
         .populate('user')

@@ -1,0 +1,229 @@
+---
+description: Guidelines for writing Next.js apps with shadcn/u
+globs: **/*.ts, **/*.tsx, **/*.js, **/*.jsx
+alwaysApply: false
+---
+# Next.js Dashboard Setup with Radix UI
+
+Follow these steps in order to create a modern dashboard application:
+
+1. Create Project and Install Dependencies
+   ```bash
+   # Create Next.js project
+   pnpm create next-app@latest
+   
+   # Install Radix UI core components
+   pnpm add @radix-ui/react-dialog
+   pnpm add @radix-ui/react-dropdown-menu
+   pnpm add @radix-ui/react-navigation-menu
+   pnpm add @radix-ui/react-separator
+   pnpm add @radix-ui/react-switch
+   pnpm add @radix-ui/themes
+   pnpm add @radix-ui/colors
+   ```
+
+2. Configure Project Structure
+   - Remove app/page.tsx (default demo page)
+   - Create following directory structure:
+     ```
+     app/
+     ├── layout.tsx
+     ├── page.tsx (dashboard page)
+     ├── loading.tsx
+     ├── error.tsx
+     └── components/
+         ├── ui/ (reusable components)
+         └── dashboard/
+             ├── header.tsx
+             ├── sidebar.tsx
+             ├── main.tsx
+             └── widgets/
+     ```
+
+3. Create Essential Components
+   Create reusable components wrapping Radix UI primitives:
+   ```tsx
+   // components/ui/Button.tsx
+   import * as React from 'react'
+   import { styled } from '@radix-ui/react-primitives'
+
+   export const Button = styled('button', {
+     // Base styles
+     display: 'inline-flex',
+     alignItems: 'center',
+     justifyContent: 'center',
+     borderRadius: '6px',
+     padding: '0 15px',
+     fontSize: '15px',
+     lineHeight: '1',
+     fontWeight: '500',
+     height: '35px',
+     
+     // Variants
+     variants: {
+       variant: {
+         default: {
+           backgroundColor: 'var(--color-primary)',
+           color: 'white',
+           '&:hover': { backgroundColor: 'var(--color-primary-dark)' },
+         },
+         outline: {
+           backgroundColor: 'transparent',
+           border: '1px solid var(--color-border)',
+           '&:hover': { backgroundColor: 'var(--color-hover)' },
+         },
+       },
+     },
+     
+     defaultVariants: {
+       variant: 'default',
+     },
+   })
+   ```
+
+4. Create Theme Provider
+   ```tsx
+   // components/theme-provider.tsx
+   import { Theme } from '@radix-ui/themes'
+   import '@radix-ui/themes/styles.css'
+
+   export function ThemeProvider({ children }: { children: React.ReactNode }) {
+     return (
+       <Theme
+         appearance="light"
+         accentColor="blue"
+         grayColor="slate"
+         radius="medium"
+         scaling="100%"
+       >
+         {children}
+       </Theme>
+     )
+   }
+   ```
+
+5. Implement Dashboard Layout Components
+   ```tsx
+   // components/dashboard/header.tsx
+   import * as NavigationMenu from '@radix-ui/react-navigation-menu'
+   
+   export function Header() {
+     return (
+       <header className="border-b">
+         <NavigationMenu.Root>
+           <NavigationMenu.List>
+             {/* Add navigation items */}
+           </NavigationMenu.List>
+         </NavigationMenu.Root>
+       </header>
+     )
+   }
+
+   // components/dashboard/sidebar.tsx
+   import * as Separator from '@radix-ui/react-separator'
+   
+   export function Sidebar() {
+     return (
+       <aside className="hidden md:block w-64 border-r">
+         <nav className="space-y-4 py-4">
+           {/* Add navigation items */}
+         </nav>
+       </aside>
+     )
+   }
+   ```
+
+6. Create Main Dashboard Page
+   ```tsx
+   // app/page.tsx
+   import { Header } from '@/components/dashboard/header'
+   import { Sidebar } from '@/components/dashboard/sidebar'
+   
+   export default function DashboardPage() {
+     return (
+       <div className="flex min-h-screen flex-col">
+         <Header />
+         <div className="flex flex-1">
+           <Sidebar />
+           <main className="flex-1 p-6">
+             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+               {/* Add dashboard widgets */}
+             </div>
+           </main>
+         </div>
+       </div>
+     )
+   }
+   ```
+
+7. Add Mobile Responsiveness
+   ```tsx
+   // components/ui/MobileMenu.tsx
+   import * as Dialog from '@radix-ui/react-dialog'
+   
+   export function MobileMenu() {
+     return (
+       <Dialog.Root>
+         <Dialog.Trigger>
+           {/* Menu button */}
+         </Dialog.Trigger>
+         <Dialog.Portal>
+           <Dialog.Content>
+             {/* Mobile navigation */}
+           </Dialog.Content>
+         </Dialog.Portal>
+       </Dialog.Root>
+     )
+   }
+   ```
+
+8. Implement Loading States
+   ```tsx
+   // app/loading.tsx
+   export default function Loading() {
+     return (
+       <div className="flex h-screen w-screen items-center justify-center">
+         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary" />
+       </div>
+     )
+   }
+   ```
+
+9. Follow Best Practices
+   - Use TypeScript for all components
+   - Create reusable components wrapping Radix primitives
+   - Keep styling consistent with CSS variables
+   - Use React Server Components by default
+   - Add client-side interactivity only when needed
+   - Implement proper error boundaries
+   - Follow accessibility guidelines (Radix is accessible by default)
+
+10. Performance Optimization
+    - Implement code splitting
+    - Use dynamic imports for heavy components
+    - Add Suspense boundaries
+    - Monitor bundle size
+    - Optimize images and assets
+
+11. Theme Configuration
+    ```tsx
+    // styles/theme.css
+    :root {
+      /* Use Radix Colors */
+      --color-primary: var(--blue-9);
+      --color-primary-dark: var(--blue-10);
+      --color-background: var(--slate-1);
+      --color-foreground: var(--slate-12);
+      --color-border: var(--slate-6);
+      --color-hover: var(--slate-3);
+    }
+    ```
+
+12. Testing Setup (Recommended)
+    - Add component tests with React Testing Library
+    - Implement E2E testing with Cypress or Playwright
+    - Test responsive behavior
+    - Verify theme switching
+    - Test loading states
+    - Test accessibility with axe-core 
+

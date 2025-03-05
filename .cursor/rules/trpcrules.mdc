@@ -1,0 +1,299 @@
+---
+description: Guia de Implementação tRPC
+globs: **/*.ts, **/*.tsx, **/*.js, **/*.jsx
+alwaysApply: false
+---
+# Guia de Implementação tRPC
+
+Este guia fornece a estrutura e boas práticas para implementação do tRPC em projetos Next.js.
+
+## 1. Estrutura de Arquivos
+
+```
+src/
+├── server/
+│   ├── trpc.ts
+│   ├── context.ts
+│   └── routers/
+│       ├── _app.ts
+│       ├── users.ts
+│       ├── products.ts
+│       └── orders.ts
+├── app/
+│   ├── _trpc/
+│   │   ├── client.ts
+│   │   └── Provider.tsx
+│   └── api/
+│       └── trpc/
+│           └── [trpc]/
+│               └── route.ts
+└── types/
+    └── trpc.ts
+```
+
+## 2. Configuração Base
+
+### A. Server (server/trpc.ts)
+```typescript
+import { initTRPC } from '@trpc/server';
+import { Context } from './context';
+
+const t = initTRPC.context<Context>().create();
+
+export const router = t.router;
+export const publicProcedure = t.procedure;
+```
+
+### B. Context (server/context.ts)
+```typescript
+import { connectDB } from '@/lib/db';
+
+export async function createContext({ req, res }) {
+  await connectDB();
+  return { 
+    req, 
+    res,
+    // Adicione dados globais aqui
+    // prisma, session, etc.
+  };
+}
+
+export type Context = Awaited<ReturnType<typeof createContext>>;
+```
+
+### C. Router Principal (server/routers/_app.ts)
+```typescript
+import { router } from '../trpc';
+import { usersRouter } from './users';
+import { productsRouter } from './products';
+import { ordersRouter } from './orders';
+
+export const appRouter = router({
+  users: usersRouter,
+  products: productsRouter,
+  orders: ordersRouter,
+});
+
+export type AppRouter = typeof appRouter;
+```
+
+## 3. Implementação de Routers
+
+### A. Estrutura Básica (exemplo: products.ts)
+```typescript
+import { z } from 'zod';
+import { router, publicProcedure } from '../trpc';
+import { ProductModel } from '@/models/product';
+
+export const productsRouter = router({
+  // Queries (leitura)
+  list: publicProcedure
+    .input(z.object({
+      storeId: z.string(),
+      limit: z.number().min(1).max(100).optional(),
+      cursor: z.string().optional(),
+    }))
+    .query(async ({ input, ctx }) => {
+      return await ProductModel.find({ storeId: input.storeId })
+        .limit(input.limit ?? 50)
+        .sort({ createdAt: -1 });
+    }),
+
+  // Mutations (escrita)
+  create: publicProcedure
+    .input(z.object({
+      name: z.string().min(2),
+      price: z.number().min(0),
+      description: z.string().optional(),
+      storeId: z.string(),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const product = new ProductModel(input);
+      await product.save();
+      return product;
+    }),
+});
+```
+
+## 4. Cliente
+
+### A. Setup (app/_trpc/client.ts)
+```typescript
+import { createTRPCReact } from '@trpc/react-query';
+import type { AppRouter } from '@/server/routers/_app';
+
+export const trpc = createTRPCReact<AppRouter>();
+```
+
+### B. Provider (app/_trpc/Provider.tsx)
+```typescript
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { httpBatchLink } from '@trpc/client';
+import { useState } from 'react';
+import { trpc } from './client';
+
+export function TRPCProvider({ children }: { children: React.ReactNode }) {
+  const [queryClient] = useState(() => new QueryClient());
+  const [trpcClient] = useState(() =>
+    trpc.createClient({
+      links: [
+        httpBatchLink({
+          url: '/api/trpc',
+        }),
+      ],
+    })
+  );
+
+  return (
+    <trpc.Provider client={trpcClient} queryClient={queryClient}>
+      <QueryClientProvider client={queryClient}>
+        {children}
+      </QueryClientProvider>
+    </trpc.Provider>
+  );
+}
+```
+
+## 5. Uso em Componentes
+
+### A. Queries
+```typescript
+'use client';
+
+export function ProductList() {
+  const { data, isLoading } = trpc.products.list.useQuery({
+    storeId: 'store-123',
+    limit: 10
+  });
+
+  if (isLoading) return <div>Carregando...</div>;
+  
+  return (
+    <ul>
+      {data?.map(product => (
+        <li key={product.id}>{product.name}</li>
+      ))}
+    </ul>
+  );
+}
+```
+
+### B. Mutations
+```typescript
+'use client';
+
+export function CreateProduct() {
+  const utils = trpc.useUtils();
+  const mutation = trpc.products.create.useMutation({
+    onSuccess: () => {
+      utils.products.list.invalidate();
+      toast.success('Produto criado!');
+    },
+    onError: (error) => {
+      toast.error(error.message);
+    }
+  });
+
+  const handleSubmit = (data: ProductFormData) => {
+    mutation.mutate({
+      name: data.name,
+      price: data.price,
+      storeId: 'store-123'
+    });
+  };
+}
+```
+
+## 6. Boas Práticas
+
+### A. Validação
+- Use Zod para validação de input
+- Defina schemas reutilizáveis
+- Valide tanto no cliente quanto no servidor
+
+### B. Organização
+- Um router por feature/domínio
+- Mantenha procedures pequenos e focados
+- Use composição para lógica compartilhada
+
+### C. Performance
+- Implemente paginação/cursor para listas
+- Use prefetch quando apropriado
+- Configure cache adequadamente
+- Use batching para múltiplas queries
+
+### D. Segurança
+- Implemente autenticação/autorização no contexto
+- Valide inputs rigorosamente
+- Use procedures protegidos quando necessário
+- Sanitize dados sensíveis
+
+### E. Error Handling
+- Use tipos de erro customizados
+- Trate erros específicos adequadamente
+- Forneça mensagens de erro úteis
+- Implemente logging apropriado
+
+### F. TypeScript
+- Mantenha tipos atualizados
+- Use inferência de tipos do tRPC
+- Evite `any` e `unknown`
+- Defina interfaces/types para modelos
+
+## 7. Exemplos Comuns
+
+### A. Paginação
+```typescript
+const listPaginated = publicProcedure
+  .input(z.object({
+    limit: z.number().min(1).max(100).default(10),
+    cursor: z.string().optional(),
+  }))
+  .query(async ({ input }) => {
+    const items = await ProductModel
+      .find()
+      .limit(input.limit + 1)
+      .sort({ createdAt: -1 });
+
+    let nextCursor: string | undefined;
+    if (items.length > input.limit) {
+      const nextItem = items.pop();
+      nextCursor = nextItem.id;
+    }
+
+    return {
+      items,
+      nextCursor,
+    };
+  });
+```
+
+### B. Relacionamentos
+```typescript
+const getWithRelations = publicProcedure
+  .input(z.object({
+    id: z.string(),
+  }))
+  .query(async ({ input }) => {
+    return await ProductModel
+      .findById(input.id)
+      .populate('category')
+      .populate('variants');
+  });
+```
+
+### C. Middleware
+```typescript
+const isAuthed = t.middleware(({ next, ctx }) => {
+  if (!ctx.session?.user) {
+    throw new TRPCError({ code: 'UNAUTHORIZED' });
+  }
+  return next({
+    ctx: {
+      session: ctx.session,
+    },
+  });
+});
+
+const protectedProcedure = t.procedure.use(isAuthed);
+``` 

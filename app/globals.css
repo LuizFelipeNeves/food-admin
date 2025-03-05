@@ -48,6 +48,16 @@
   --chart-3: 120 70% 50%; /* Verde */
   --chart-4: 120 80% 40%; /* Verde escuro */
   --chart-5: 120 90% 30%; /* Verde mais escuro */
+
+  /* RGB variables for charts */
+  --background-rgb: 255, 255, 255;
+  --foreground-rgb: 10, 10, 11;
+  --card-rgb: 255, 255, 255;
+  --card-foreground-rgb: 10, 10, 11;
+  --primary-rgb: 25, 25, 28;
+  --muted-rgb: 244, 244, 245;
+  --border-rgb: 229, 229, 230;
+  --ring-rgb: 25, 25, 28;
 }
 
 .dark {
@@ -86,6 +96,16 @@
   --default-200: 215.3 25% 26.7%;
   --default-100: 217.2 32.6% 17.5%;
   --default-50: 222.2 47.4% 11.2%;
+
+  /* RGB variables for charts */
+  --background-rgb: 10, 10, 11;
+  --foreground-rgb: 250, 250, 250;
+  --card-rgb: 10, 10, 11;
+  --card-foreground-rgb: 250, 250, 250;
+  --primary-rgb: 250, 250, 250;
+  --muted-rgb: 41, 41, 43;
+  --border-rgb: 41, 41, 43;
+  --ring-rgb: 213, 213, 214;
 }
 
 /* Classes utilitárias personalizadas */

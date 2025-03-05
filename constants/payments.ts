@@ -55,3 +55,5 @@ export const PAYMENT_METHOD_NAMES = PAYMENTS.reduce((acc, payment) => {
   acc[payment.id] = payment.name;
   return acc;
 }, {} as Record<string, string>);
+
+export type PaymentMethod = (typeof PAYMENTS)[number]['id'];

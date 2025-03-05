@@ -40,12 +40,12 @@ export const columns: ColumnDef<Order>[] = [
       const customer = row.original.user
       return (
         <div className="flex items-center gap-2">
-          <span className="truncate">{customer.name}</span>
+          <span className="truncate">{customer?.name || 'Cliente não identificado'}</span>
           <Button
             variant="ghost"
             size="icon"
             className="h-8 w-8 hidden md:inline-flex"
-            onClick={() => window.open(`tel:${customer.phone}`)}
+            onClick={() => window.open(`tel:${customer?.phone || 'Telefone não identificado'}`)}
           >
             <Phone className="h-4 w-4" />
           </Button>
@@ -59,10 +59,10 @@ export const columns: ColumnDef<Order>[] = [
     accessorFn: row => row.user.phone,
     header: 'Telefone',
     cell: ({ row }) => {
-      const phone = row.original.user.phone
+      const phone = row.original.user?.phone
       return (
         <div className="flex items-center gap-2">
-          <span className="hidden md:inline">{phone}</span>
+          <span className="hidden md:inline">{phone || 'Telefone não identificado'}</span>
           <Button
             variant="ghost"
             size="icon"
@@ -131,7 +131,7 @@ export const columns: ColumnDef<Order>[] = [
               : 'warning'
           }
         >
-          {PAYMENT_STATUS[status].label}
+          {PAYMENT_STATUS[status]?.label || 'Não identificado'}
         </Badge>
       )
     },

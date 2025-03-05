@@ -175,7 +175,7 @@ export function KanbanBoard() {
                                       #{order._id.slice(-8).toUpperCase()}
                                     </div>
                                     <div className="text-[11px] text-muted-foreground truncate">
-                                      {order.user.name}
+                                      {order.user?.name || 'Cliente não identificado'}
                                     </div>
                                   </div>
 

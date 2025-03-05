@@ -244,6 +244,7 @@ const orderSchema = new mongoose.Schema(
     subtotal: { type: Number, required: true, default: 0 },
     total: { type: Number, required: true },
     status: { type: String, required: true },
+    deliveryTime: { type: Number },
     events: [{
       date: { type: Date, required: true },
       status: { type: String, required: true },
