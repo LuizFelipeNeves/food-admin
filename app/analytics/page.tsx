@@ -2,8 +2,16 @@
 
 import { Layout } from '@/components/layout/layout'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis } from 'recharts'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import dynamic from 'next/dynamic'
+import { Skeleton } from '@/components/ui/skeleton'
+import { useState, useEffect } from 'react'
+
+// Importação dinâmica do componente de gráfico
+const DynamicRevenueChart = dynamic(
+  () => import('@/components/analytics/revenue-chart'),
+  { ssr: false, loading: () => <Skeleton className="h-[240px] w-full" /> }
+);
 
 const data = [
   {
@@ -41,6 +49,12 @@ const topProducts = [
 ]
 
 export default function AnalyticsPage() {
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
   return (
     <Layout>
       <div className="flex flex-col h-full">
@@ -124,32 +138,11 @@ export default function AnalyticsPage() {
                   <CardTitle>Receita Mensal</CardTitle>
                 </CardHeader>
                 <CardContent className="pl-2">
-                  <div className="h-[240px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={data}>
-                        <XAxis
-                          dataKey="name"
-                          stroke="#888888"
-                          fontSize={12}
-                          tickLine={false}
-                          axisLine={false}
-                        />
-                        <YAxis
-                          stroke="#888888"
-                          fontSize={12}
-                          tickLine={false}
-                          axisLine={false}
-                          tickFormatter={(value) => `R$${value}`}
-                        />
-                        <Bar
-                          dataKey="total"
-                          fill="currentColor"
-                          radius={[4, 4, 0, 0]}
-                          className="fill-primary"
-                        />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
+                  {isMounted ? (
+                    <DynamicRevenueChart data={data} />
+                  ) : (
+                    <Skeleton className="h-[240px] w-full" />
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>
