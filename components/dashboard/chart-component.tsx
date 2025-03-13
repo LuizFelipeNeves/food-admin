@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, memo } from 'react';
+import { useState, useEffect } from 'react';
 import { Skeleton } from "@/components/ui/skeleton";
 
 // Definir interfaces
@@ -25,10 +25,93 @@ interface ChartComponentProps {
   data: SaleData[];
 }
 
-// Componente que será renderizado apenas no cliente
-function ChartComponentClient({ data }: ChartComponentProps) {
+// Componente principal que será exportado
+export default function ChartComponent({ data }: ChartComponentProps) {
+  const [isMounted, setIsMounted] = useState(false);
+  const [hasError, setHasError] = useState(false);
+  const [isRechartsLoaded, setIsRechartsLoaded] = useState(false);
+  const [RechartsComponents, setRechartsComponents] = useState<any>(null);
+
   // Verificar se os dados são válidos
-  if (!data || !Array.isArray(data) || data.length === 0) {
+  const isDataValid = data && Array.isArray(data) && data.length > 0;
+
+  // Verificar se os dados têm a estrutura esperada
+  const validData = isDataValid
+    ? data.filter(item => 
+        item && 
+        typeof item === 'object' && 
+        'name' in item && 
+        'total' in item && 
+        'subtotal' in item && 
+        'deliveryFees' in item && 
+        'orders' in item
+      )
+    : [];
+
+  useEffect(() => {
+    try {
+      setIsMounted(true);
+      
+      // Carregar Recharts apenas no cliente
+      const loadRecharts = async () => {
+        try {
+          // Importar dinamicamente apenas no cliente
+          if (typeof window !== 'undefined') {
+            // Usar um timeout para garantir que o DOM esteja completamente carregado
+            setTimeout(async () => {
+              try {
+                const recharts = await import('recharts');
+                setRechartsComponents(recharts);
+                setIsRechartsLoaded(true);
+              } catch (error) {
+                console.error('Erro ao carregar o Recharts:', error);
+                setHasError(true);
+              }
+            }, 500);
+          }
+        } catch (error) {
+          console.error('Erro ao carregar o Recharts:', error);
+          setHasError(true);
+        }
+      };
+      
+      loadRecharts();
+    } catch (error) {
+      console.error('Erro ao montar o componente:', error);
+      setHasError(true);
+    }
+    
+    return () => {
+      try {
+        setIsMounted(false);
+        setIsRechartsLoaded(false);
+        setRechartsComponents(null);
+      } catch (error) {
+        console.error('Erro ao desmontar o componente:', error);
+      }
+    };
+  }, []);
+
+  // Renderizar um fallback enquanto o componente não está montado
+  if (!isMounted) {
+    return (
+      <div className="h-[350px] w-full flex items-center justify-center">
+        <Skeleton className="h-[350px] w-full" />
+      </div>
+    );
+  }
+
+  // Renderizar um fallback em caso de erro
+  if (hasError) {
+    return (
+      <div className="h-[350px] w-full flex items-center justify-center border rounded-lg">
+        <p className="text-muted-foreground">Erro ao carregar o gráfico</p>
+      </div>
+    );
+  }
+
+  // Renderizar um fallback se os dados forem inválidos
+  if (!isDataValid || validData.length === 0) {
     return (
       <div className="h-[350px] w-full flex items-center justify-center border rounded-lg">
         <p className="text-muted-foreground">Nenhum dado disponível</p>
@@ -36,39 +119,30 @@ function ChartComponentClient({ data }: ChartComponentProps) {
     );
   }
 
-  // Verificar se os dados têm a estrutura esperada
-  const validData = data.filter(item => 
-    item && 
-    typeof item === 'object' && 
-    'name' in item && 
-    'total' in item && 
-    'subtotal' in item && 
-    'deliveryFees' in item && 
-    'orders' in item
-  );
-
-  if (validData.length === 0) {
+  // Renderizar um fallback enquanto o Recharts não está carregado
+  if (!isRechartsLoaded || !RechartsComponents) {
     return (
       <div className="h-[350px] w-full flex items-center justify-center border rounded-lg">
-        <p className="text-muted-foreground">Dados inválidos</p>
+        <p className="text-muted-foreground">Carregando gráfico...</p>
       </div>
     );
   }
 
-  try {
-    // Importar os componentes do Recharts dinamicamente
-    const { 
-      BarChart, 
-      Bar, 
-      XAxis, 
-      YAxis, 
-      CartesianGrid, 
-      Tooltip, 
-      Legend, 
-      Rectangle, 
-      ResponsiveContainer 
-    } = require('recharts');
+  // Extrair os componentes do Recharts
+  const { 
+    BarChart, 
+    Bar, 
+    XAxis, 
+    YAxis, 
+    CartesianGrid, 
+    Tooltip, 
+    Legend, 
+    Rectangle, 
+    ResponsiveContainer 
+  } = RechartsComponents;
 
+  // Renderizar uma tabela simples como fallback se o Recharts não puder ser renderizado
+  try {
     return (
       <div className="h-[350px] w-full">
         <ResponsiveContainer width="100%" height="100%">
@@ -150,72 +224,33 @@ function ChartComponentClient({ data }: ChartComponentProps) {
     );
   } catch (error) {
     console.error('Erro ao renderizar o gráfico:', error);
-    return (
-      <div className="h-[350px] w-full flex items-center justify-center border rounded-lg">
-        <p className="text-muted-foreground">Erro ao renderizar o gráfico</p>
-      </div>
-    );
-  }
-}
-
-// Componente memoizado para evitar re-renderizações desnecessárias
-const MemoizedChartComponent = memo(ChartComponentClient);
-
-// Componente principal que será exportado
-export default function ChartComponent({ data }: ChartComponentProps) {
-  const [isMounted, setIsMounted] = useState(false);
-  const [hasError, setHasError] = useState(false);
-
-  useEffect(() => {
-    try {
-      setIsMounted(true);
-    } catch (error) {
-      console.error('Erro ao montar o componente:', error);
-      setHasError(true);
-    }
     
-    return () => {
-      try {
-        setIsMounted(false);
-      } catch (error) {
-        console.error('Erro ao desmontar o componente:', error);
-      }
-    };
-  }, []);
-
-  if (hasError) {
+    // Renderizar uma tabela simples como fallback
     return (
-      <div className="h-[350px] w-full flex items-center justify-center border rounded-lg">
-        <p className="text-muted-foreground">Erro ao carregar o gráfico</p>
-      </div>
-    );
-  }
-
-  if (!isMounted) {
-    return (
-      <div className="h-[350px] w-full flex items-center justify-center">
-        <Skeleton className="h-[350px] w-full" />
-      </div>
-    );
-  }
-
-  // Verificação adicional de dados
-  if (!data || !Array.isArray(data) || data.length === 0) {
-    return (
-      <div className="h-[350px] w-full flex items-center justify-center border rounded-lg">
-        <p className="text-muted-foreground">Nenhum dado disponível</p>
-      </div>
-    );
-  }
-
-  // Renderizar o componente do cliente apenas quando montado
-  try {
-    return <MemoizedChartComponent data={data} />;
-  } catch (error) {
-    console.error('Erro ao renderizar o componente:', error);
-    return (
-      <div className="h-[350px] w-full flex items-center justify-center border rounded-lg">
-        <p className="text-muted-foreground">Erro ao renderizar o gráfico</p>
+      <div className="h-[350px] w-full overflow-auto border rounded-lg p-4">
+        <h3 className="text-center mb-4 font-medium">Dados de Vendas por Hora</h3>
+        <table className="w-full border-collapse">
+          <thead>
+            <tr className="border-b">
+              <th className="p-2 text-left">Horário</th>
+              <th className="p-2 text-right">Total</th>
+              <th className="p-2 text-right">Subtotal</th>
+              <th className="p-2 text-right">Taxa de Entrega</th>
+              <th className="p-2 text-right">Pedidos</th>
+            </tr>
+          </thead>
+          <tbody>
+            {validData.map((item, index) => (
+              <tr key={index} className="border-b">
+                <td className="p-2">{item.name}</td>
+                <td className="p-2 text-right">R$ {item.total.toFixed(2)}</td>
+                <td className="p-2 text-right">R$ {item.subtotal.toFixed(2)}</td>
+                <td className="p-2 text-right">R$ {item.deliveryFees.toFixed(2)}</td>
+                <td className="p-2 text-right">{item.orders}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     );
   }
