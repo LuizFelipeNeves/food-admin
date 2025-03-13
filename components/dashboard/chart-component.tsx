@@ -1,18 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  Rectangle,
-  ResponsiveContainer,
-} from "recharts";
+import { useState, useEffect, memo } from 'react';
+import { Skeleton } from "@/components/ui/skeleton";
 
+// Definir interfaces
 interface SaleStatus {
   completed: number;
   preparing: number;
@@ -34,25 +25,20 @@ interface ChartComponentProps {
   data: SaleData[];
 }
 
-export default function ChartComponent({ data }: ChartComponentProps) {
-  const [isMounted, setIsMounted] = useState(false);
-
-  useEffect(() => {
-    setIsMounted(true);
-    
-    // Limpar o estado ao desmontar o componente
-    return () => {
-      setIsMounted(false);
-    };
-  }, []);
-
-  if (!isMounted) {
-    return (
-      <div className="h-[350px] w-full flex items-center justify-center">
-        <p className="text-muted-foreground">Carregando gráfico...</p>
-      </div>
-    );
-  }
+// Componente que será renderizado apenas no cliente
+function ChartComponentClient({ data }: ChartComponentProps) {
+  // Importar os componentes do Recharts dinamicamente
+  const { 
+    BarChart, 
+    Bar, 
+    XAxis, 
+    YAxis, 
+    CartesianGrid, 
+    Tooltip, 
+    Legend, 
+    Rectangle, 
+    ResponsiveContainer 
+  } = require('recharts');
 
   return (
     <div className="h-[350px] w-full">
@@ -76,14 +62,14 @@ export default function ChartComponent({ data }: ChartComponentProps) {
           />
           <YAxis 
             yAxisId="left"
-            tickFormatter={(value) => `R$ ${value}`}
+            tickFormatter={(value: number) => `R$ ${value}`}
             stroke="hsl(var(--muted-foreground))"
             fontSize={12}
           />
           <YAxis 
             yAxisId="right" 
             orientation="right"
-            tickFormatter={(value) => `${value} pedidos`}
+            tickFormatter={(value: number) => `${value} pedidos`}
             stroke="hsl(var(--muted-foreground))"
             fontSize={12}
           />
@@ -94,11 +80,11 @@ export default function ChartComponent({ data }: ChartComponentProps) {
               borderRadius: '6px',
               fontSize: '12px'
             }}
-            formatter={(value, name) => {
+            formatter={(value: any, name: string) => {
               if (name === 'Pedidos') return [value, name];
               return [`R$ ${Number(value).toFixed(2)}`, name];
             }}
-            labelFormatter={(label) => `Horário: ${label}`}
+            labelFormatter={(label: string) => `Horário: ${label}`}
           />
           <Legend />
           <Bar 
@@ -133,4 +119,36 @@ export default function ChartComponent({ data }: ChartComponentProps) {
       </ResponsiveContainer>
     </div>
   );
+}
+
+// Componente memoizado para evitar re-renderizações desnecessárias
+const MemoizedChartComponent = memo(ChartComponentClient);
+
+// Componente principal que será exportado
+export default function ChartComponent({ data }: ChartComponentProps) {
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+    return () => setIsMounted(false);
+  }, []);
+
+  if (!isMounted) {
+    return (
+      <div className="h-[350px] w-full flex items-center justify-center">
+        <Skeleton className="h-[350px] w-full" />
+      </div>
+    );
+  }
+
+  if (!data?.length) {
+    return (
+      <div className="h-[350px] w-full flex items-center justify-center border rounded-lg">
+        <p className="text-muted-foreground">Nenhum dado disponível</p>
+      </div>
+    );
+  }
+
+  // Renderizar o componente do cliente apenas quando montado
+  return <MemoizedChartComponent data={data} />;
 } 

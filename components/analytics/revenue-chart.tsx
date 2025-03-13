@@ -1,7 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis } from 'recharts';
+import { useState, useEffect, memo } from 'react';
+import { Skeleton } from "@/components/ui/skeleton";
+
+// Importar apenas os tipos do Recharts
+import type { BarProps, XAxisProps, YAxisProps } from 'recharts';
 
 interface RevenueData {
   name: string;
@@ -12,25 +15,10 @@ interface RevenueChartProps {
   data: RevenueData[];
 }
 
-export default function RevenueChart({ data }: RevenueChartProps) {
-  const [isMounted, setIsMounted] = useState(false);
-
-  useEffect(() => {
-    setIsMounted(true);
-    
-    // Limpar o estado ao desmontar o componente
-    return () => {
-      setIsMounted(false);
-    };
-  }, []);
-
-  if (!isMounted) {
-    return (
-      <div className="h-[240px] flex items-center justify-center">
-        <p className="text-muted-foreground">Carregando gráfico...</p>
-      </div>
-    );
-  }
+// Componente que será renderizado apenas no cliente
+function RevenueChartClient({ data }: RevenueChartProps) {
+  // Importar os componentes do Recharts dinamicamente
+  const { Bar, BarChart, ResponsiveContainer, XAxis, YAxis } = require('recharts');
 
   return (
     <div className="h-[240px]">
@@ -48,7 +36,7 @@ export default function RevenueChart({ data }: RevenueChartProps) {
             fontSize={12}
             tickLine={false}
             axisLine={false}
-            tickFormatter={(value) => `R$${value}`}
+            tickFormatter={(value: number) => `R$${value}`}
           />
           <Bar
             dataKey="total"
@@ -60,4 +48,36 @@ export default function RevenueChart({ data }: RevenueChartProps) {
       </ResponsiveContainer>
     </div>
   );
+}
+
+// Componente memoizado para evitar re-renderizações desnecessárias
+const MemoizedRevenueChart = memo(RevenueChartClient);
+
+// Componente principal que será exportado
+export default function RevenueChart({ data }: RevenueChartProps) {
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+    return () => setIsMounted(false);
+  }, []);
+
+  if (!isMounted) {
+    return (
+      <div className="h-[240px] flex items-center justify-center">
+        <Skeleton className="h-[240px] w-full" />
+      </div>
+    );
+  }
+
+  if (!data?.length) {
+    return (
+      <div className="h-[240px] flex items-center justify-center border rounded-lg">
+        <p className="text-muted-foreground">Nenhum dado disponível</p>
+      </div>
+    );
+  }
+
+  // Renderizar o componente do cliente apenas quando montado
+  return <MemoizedRevenueChart data={data} />;
 } 
