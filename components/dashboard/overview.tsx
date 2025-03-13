@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { Skeleton } from "@/components/ui/skeleton";
 
-// Importação dinâmica do Recharts para evitar problemas de SSR
 const DynamicChart = dynamic(
   () => import('@/components/dashboard/chart-component'),
   { 

@@ -48,6 +48,7 @@
     "@types/node": "^20.11.24",
     "@types/react": "^18.2.61",
     "@types/react-dom": "^18.2.19",
+    "apexcharts": "^4.5.0",
     "class-variance-authority": "^0.7.0",
     "classnames": "^2.5.1",
     "clsx": "^2.1.0",
@@ -63,6 +64,7 @@
     "next-themes": "^0.2.1",
     "qrcode.react": "^4.2.0",
     "react": "^18.2.0",
+    "react-apexcharts": "^1.7.0",
     "react-day-picker": "^8.10.0",
     "react-dom": "^18.2.0",
     "react-hook-form": "^7.50.1",
@@ -70,7 +72,6 @@
     "react-resizable-panels": "^2.1.7",
     "react-select": "^5.10.0",
     "reactflow": "^11.11.4",
-    "recharts": "^2.12.1",
     "sonner": "^1.7.4",
     "tailwind-merge": "^2.2.1",
     "typescript": "^5.3.3",
@@ -78,9 +79,9 @@
     "zod": "^3.22.4"
   },
   "devDependencies": {
-    "dotenv": "^16.4.7",
     "@tailwindcss/postcss": "^4.0.6",
     "autoprefixer": "^10.4.20",
+    "dotenv": "^16.4.7",
     "postcss": "^8.5.2",
     "tailwindcss": "^4.0.6",
     "tailwindcss-animate": "^1.0.7"
