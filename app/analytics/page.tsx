@@ -142,7 +142,15 @@ export default function AnalyticsPage() {
                 </CardHeader>
                 <CardContent className="pl-2">
                   {isMounted ? (
-                    <DynamicRevenueChart data={data} />
+                    <DynamicRevenueChart 
+                      data={Array.isArray(data) && data.length > 0 
+                        ? data.map(item => ({
+                            name: typeof item.name === 'string' ? item.name : '',
+                            total: typeof item.total === 'number' ? item.total : 0
+                          }))
+                        : []
+                      } 
+                    />
                   ) : (
                     <Skeleton className="h-[240px] w-full" />
                   )}

@@ -137,9 +137,29 @@ export default function HomePage() {
               </div>
             </CardHeader>
             <CardContent>
-              <Overview 
-                data={salesData?.hourly ?? []} 
-              />
+              {salesLoading ? (
+                <Skeleton className="h-[350px] w-full" />
+              ) : (
+                <Overview 
+                  data={salesData?.hourly && Array.isArray(salesData.hourly) && salesData.hourly.length > 0 
+                    ? salesData.hourly.map(item => ({
+                        ...item,
+                        total: typeof item.total === 'number' ? item.total : 0,
+                        subtotal: typeof item.subtotal === 'number' ? item.subtotal : 0,
+                        deliveryFees: typeof item.deliveryFees === 'number' ? item.deliveryFees : 0,
+                        orders: typeof item.orders === 'number' ? item.orders : 0,
+                        average: typeof item.average === 'number' ? item.average : 0,
+                        status: {
+                          completed: typeof item.status?.completed === 'number' ? item.status.completed : 0,
+                          preparing: typeof item.status?.preparing === 'number' ? item.status.preparing : 0,
+                          ready: typeof item.status?.ready === 'number' ? item.status.ready : 0,
+                          pending: typeof item.status?.pending === 'number' ? item.status.pending : 0
+                        }
+                      }))
+                    : []
+                  } 
+                />
+              )}
             </CardContent>
           </Card>
 

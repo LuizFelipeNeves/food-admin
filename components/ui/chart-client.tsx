@@ -50,27 +50,53 @@ const ChartContainer = React.forwardRef<
   // Usar um estado para controlar se o componente está montado no cliente
   const [isMounted, setIsMounted] = React.useState(false);
   const [RechartsPrimitive, setRechartsPrimitive] = React.useState<any>(null);
+  const [hasError, setHasError] = React.useState(false);
   
   React.useEffect(() => {
-    setIsMounted(true);
-    
-    // Importar o Recharts dinamicamente apenas no cliente
-    const loadRecharts = async () => {
-      try {
-        const recharts = await import('recharts');
-        setRechartsPrimitive(recharts);
-      } catch (error) {
-        console.error('Erro ao carregar o Recharts:', error);
-      }
-    };
-    
-    loadRecharts();
+    try {
+      setIsMounted(true);
+      
+      // Importar o Recharts dinamicamente apenas no cliente
+      const loadRecharts = async () => {
+        try {
+          const recharts = await import('recharts');
+          setRechartsPrimitive(recharts);
+        } catch (error) {
+          console.error('Erro ao carregar o Recharts:', error);
+          setHasError(true);
+        }
+      };
+      
+      loadRecharts();
+    } catch (error) {
+      console.error('Erro ao montar o componente:', error);
+      setHasError(true);
+    }
     
     return () => {
-      setIsMounted(false);
-      setRechartsPrimitive(null);
+      try {
+        setIsMounted(false);
+        setRechartsPrimitive(null);
+      } catch (error) {
+        console.error('Erro ao desmontar o componente:', error);
+      }
     };
   }, []);
+
+  if (hasError) {
+    return (
+      <div
+        ref={finalRef}
+        className={cn(
+          "flex aspect-video justify-center items-center text-xs",
+          className
+        )}
+        {...props}
+      >
+        <p className="text-muted-foreground">Erro ao carregar o gráfico</p>
+      </div>
+    );
+  }
 
   return (
     <ChartContext.Provider value={{ config }}>
@@ -85,9 +111,15 @@ const ChartContainer = React.forwardRef<
       >
         <ChartStyle id={chartId} config={config} />
         {isMounted && RechartsPrimitive && validChildren ? (
-          <RechartsPrimitive.ResponsiveContainer width="100%" height="100%">
-            {validChildren}
-          </RechartsPrimitive.ResponsiveContainer>
+          <React.Suspense fallback={
+            <div className="flex items-center justify-center h-full w-full">
+              <p className="text-muted-foreground">Carregando gráfico...</p>
+            </div>
+          }>
+            <RechartsPrimitive.ResponsiveContainer width="100%" height="100%">
+              {validChildren}
+            </RechartsPrimitive.ResponsiveContainer>
+          </React.Suspense>
         ) : (
           <div className="flex items-center justify-center h-full w-full">
             <p className="text-muted-foreground">Carregando gráfico...</p>
