@@ -46,6 +46,9 @@ const ChartContainer = React.forwardRef<
   const chartId = `chart-${id || uniqueId.replace(/:/g, '')}`;
   const finalRef = forwardedRef || ref;
 
+  // Verificar se children é um elemento React válido
+  const validChildren = React.isValidElement(children) ? children : null;
+
   return (
     <ChartContext.Provider value={{ config }}>
       <div
@@ -58,9 +61,15 @@ const ChartContainer = React.forwardRef<
         {...props}
       >
         <ChartStyle id={chartId} config={config} />
-        <RechartsPrimitive.ResponsiveContainer>
-          {children}
-        </RechartsPrimitive.ResponsiveContainer>
+        {validChildren ? (
+          <RechartsPrimitive.ResponsiveContainer>
+            {validChildren}
+          </RechartsPrimitive.ResponsiveContainer>
+        ) : (
+          <div className="flex items-center justify-center h-full w-full">
+            <p className="text-muted-foreground">Sem dados para exibir</p>
+          </div>
+        )}
       </div>
     </ChartContext.Provider>
   );
@@ -356,4 +365,5 @@ function getPayloadConfigFromPayload(
     : config[key as keyof typeof config];
 }
 
+// Exportar o ChartContainer como default e os componentes necessários
 export default ChartContainer; 
