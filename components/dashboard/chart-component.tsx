@@ -212,9 +212,8 @@ export default function ChartComponent({ data }: ChartComponentProps) {
         colors: isDarkMode ? '#e5e7eb' : '#374151'
       },
       markers: {
-        width: 12,
-        height: 12,
-        radius: 12
+        size: 12,
+        strokeWidth: 0
       },
       itemMargin: {
         horizontal: 10

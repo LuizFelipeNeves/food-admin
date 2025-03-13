@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Skeleton } from "@/components/ui/skeleton";
 import dynamic from 'next/dynamic';
 import { ApexOptions } from 'apexcharts';
+import { useTheme } from 'next-themes';
 
 // Importação dinâmica do ApexCharts
 const ApexChart = dynamic(() => import('react-apexcharts'), { ssr: false });
@@ -19,6 +20,8 @@ interface RevenueChartProps {
 
 export default function RevenueChart({ data }: RevenueChartProps) {
   const [isMounted, setIsMounted] = useState(false);
+  const { theme } = useTheme();
+  const isDarkMode = theme === 'dark';
 
   // Verificar se os dados são válidos
   const isDataValid = data && Array.isArray(data) && data.length > 0;
@@ -69,6 +72,9 @@ export default function RevenueChart({ data }: RevenueChartProps) {
     }
   ];
 
+  // Cores para modo claro e escuro
+  const barColor = isDarkMode ? '#60a5fa' : '#3b82f6'; // Azul mais claro para modo escuro
+
   // Configuração do gráfico
   const options: ApexOptions = {
     chart: {
@@ -76,12 +82,17 @@ export default function RevenueChart({ data }: RevenueChartProps) {
       toolbar: {
         show: false
       },
-      fontFamily: 'inherit'
+      fontFamily: 'inherit',
+      background: 'transparent'
     },
     plotOptions: {
       bar: {
-        borderRadius: 4,
+        borderRadius: 6,
         columnWidth: '60%',
+        distributed: false,
+        dataLabels: {
+          position: 'top'
+        }
       }
     },
     dataLabels: {
@@ -91,7 +102,7 @@ export default function RevenueChart({ data }: RevenueChartProps) {
       categories: validData.map(item => item.name),
       labels: {
         style: {
-          colors: '#888888',
+          colors: isDarkMode ? '#9ca3af' : '#6b7280',
           fontSize: '12px'
         }
       },
@@ -103,37 +114,94 @@ export default function RevenueChart({ data }: RevenueChartProps) {
       }
     },
     yaxis: {
+      title: {
+        text: 'Receita (R$)',
+        style: {
+          color: isDarkMode ? '#9ca3af' : '#6b7280',
+          fontWeight: 500
+        }
+      },
       labels: {
         formatter: function(val: number) {
           return `R$ ${val.toFixed(0)}`;
         },
         style: {
-          colors: '#888888',
+          colors: isDarkMode ? '#9ca3af' : '#6b7280',
           fontSize: '12px'
         }
       }
     },
     grid: {
-      borderColor: '#f1f1f1',
+      borderColor: isDarkMode ? '#374151' : '#e5e7eb',
       strokeDashArray: 4,
       xaxis: {
         lines: {
           show: false
         }
+      },
+      yaxis: {
+        lines: {
+          show: true
+        }
+      },
+      padding: {
+        top: 0,
+        right: 0,
+        bottom: 0,
+        left: 10
       }
     },
     fill: {
-      type: 'solid',
-      opacity: 1
+      type: 'gradient',
+      gradient: {
+        shade: 'light',
+        type: 'vertical',
+        shadeIntensity: 0.2,
+        gradientToColors: undefined,
+        inverseColors: false,
+        opacityFrom: 0.85,
+        opacityTo: 0.85
+      }
     },
-    colors: ['hsl(var(--primary))'],
+    colors: [barColor],
     tooltip: {
+      theme: isDarkMode ? 'dark' : 'light',
       y: {
         formatter: function(val: number) {
           return `R$ ${val.toFixed(2)}`;
         }
+      },
+      marker: {
+        show: true
       }
-    }
+    },
+    states: {
+      hover: {
+        filter: {
+          type: 'darken'
+        }
+      },
+      active: {
+        filter: {
+          type: 'darken'
+        }
+      }
+    },
+    theme: {
+      mode: isDarkMode ? 'dark' : 'light'
+    },
+    responsive: [
+      {
+        breakpoint: 640,
+        options: {
+          plotOptions: {
+            bar: {
+              columnWidth: '80%'
+            }
+          }
+        }
+      }
+    ]
   };
 
   // Renderizar o gráfico com ApexCharts

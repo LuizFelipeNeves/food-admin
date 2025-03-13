@@ -4,6 +4,7 @@ import * as React from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import dynamic from 'next/dynamic';
 import { ApexOptions } from 'apexcharts';
+import { useTheme } from 'next-themes';
 
 // Importação dinâmica do ApexCharts
 const ApexChart = dynamic(() => import('react-apexcharts'), { ssr: false });
@@ -14,6 +15,7 @@ export type ChartConfig = {
     label?: React.ReactNode;
     icon?: React.ComponentType;
     color?: string;
+    darkColor?: string; // Cor para o modo escuro
   };
 };
 
@@ -30,6 +32,8 @@ export type ChartProps = React.ComponentProps<'div'> & {
 const Chart = React.forwardRef<HTMLDivElement, ChartProps>(
   ({ config, type = 'line', series, options, height = 350, width = '100%', ...props }, ref) => {
     const [isMounted, setIsMounted] = React.useState(false);
+    const { theme } = useTheme();
+    const isDarkMode = theme === 'dark';
     
     React.useEffect(() => {
       setIsMounted(true);
@@ -42,6 +46,11 @@ const Chart = React.forwardRef<HTMLDivElement, ChartProps>(
       return <Skeleton className="aspect-video w-full" />;
     }
     
+    // Obter cores com base no tema
+    const colors = Object.values(config).map(item => 
+      isDarkMode && item.darkColor ? item.darkColor : (item.color || 'hsl(var(--primary))')
+    );
+    
     // Configurações padrão do gráfico
     const defaultOptions: ApexOptions = {
       chart: {
@@ -49,16 +58,84 @@ const Chart = React.forwardRef<HTMLDivElement, ChartProps>(
         toolbar: {
           show: false
         },
-        fontFamily: 'inherit'
+        fontFamily: 'inherit',
+        background: 'transparent'
       },
-      colors: Object.values(config).map(item => item.color || 'hsl(var(--primary))'),
+      colors: colors,
       tooltip: {
-        theme: 'light'
+        theme: isDarkMode ? 'dark' : 'light',
+        marker: {
+          show: true
+        }
       },
       grid: {
-        borderColor: 'hsl(var(--border))',
-        strokeDashArray: 4
+        borderColor: isDarkMode ? 'rgba(55, 65, 81, 0.5)' : 'rgba(229, 231, 235, 0.8)',
+        strokeDashArray: 4,
+        xaxis: {
+          lines: {
+            show: false
+          }
+        },
+        yaxis: {
+          lines: {
+            show: true
+          }
+        },
+        padding: {
+          top: 0,
+          right: 0,
+          bottom: 0,
+          left: 10
+        }
       },
+      xaxis: {
+        labels: {
+          style: {
+            colors: isDarkMode ? '#9ca3af' : '#6b7280',
+            fontSize: '12px'
+          }
+        },
+        axisBorder: {
+          show: false
+        },
+        axisTicks: {
+          show: false
+        }
+      },
+      yaxis: {
+        labels: {
+          style: {
+            colors: isDarkMode ? '#9ca3af' : '#6b7280',
+            fontSize: '12px'
+          }
+        }
+      },
+      legend: {
+        labels: {
+          colors: isDarkMode ? '#e5e7eb' : '#374151'
+        },
+        markers: {
+          size: 12,
+          strokeWidth: 0
+        },
+        itemMargin: {
+          horizontal: 10
+        }
+      },
+      theme: {
+        mode: isDarkMode ? 'dark' : 'light'
+      },
+      responsive: [
+        {
+          breakpoint: 640,
+          options: {
+            legend: {
+              position: 'bottom',
+              offsetX: 0
+            }
+          }
+        }
+      ],
       ...options
     };
     
@@ -67,7 +144,7 @@ const Chart = React.forwardRef<HTMLDivElement, ChartProps>(
       return (
         <div 
           ref={ref} 
-          className="w-full border rounded-lg p-4"
+          className="w-full border rounded-lg p-4 dark:border-gray-700"
           {...props}
         >
           {typeof window !== 'undefined' && (
@@ -88,7 +165,7 @@ const Chart = React.forwardRef<HTMLDivElement, ChartProps>(
       return (
         <div 
           ref={ref} 
-          className="aspect-video w-full border rounded-lg p-4 flex items-center justify-center"
+          className="aspect-video w-full border rounded-lg p-4 flex items-center justify-center dark:border-gray-700"
           {...props}
         >
           <p className="text-muted-foreground">

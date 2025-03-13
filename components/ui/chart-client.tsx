@@ -4,6 +4,7 @@ import * as React from 'react';
 import { cn } from '@/lib/utils';
 import dynamic from 'next/dynamic';
 import { ApexOptions } from 'apexcharts';
+import { useTheme } from 'next-themes';
 
 // Importação dinâmica do ApexCharts
 const ApexChart = dynamic(() => import('react-apexcharts'), { ssr: false });
@@ -57,6 +58,8 @@ const ChartContainer = React.forwardRef<
   
   // Usar um estado para controlar se o componente está montado no cliente
   const [isMounted, setIsMounted] = React.useState(false);
+  const { theme } = useTheme();
+  const isDarkMode = theme === 'dark';
   
   React.useEffect(() => {
     setIsMounted(true);
@@ -84,8 +87,8 @@ const ChartContainer = React.forwardRef<
   const colors = Object.entries(config).map(([_, itemConfig]) => {
     if (itemConfig.theme) {
       // Se tiver theme, usar a cor do tema atual
-      const theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
-      return itemConfig.theme[theme as keyof typeof itemConfig.theme];
+      const themeKey = isDarkMode ? 'dark' : 'light';
+      return itemConfig.theme[themeKey as keyof typeof itemConfig.theme];
     }
     return itemConfig.color || 'hsl(var(--primary))';
   });
@@ -97,16 +100,84 @@ const ChartContainer = React.forwardRef<
       toolbar: {
         show: false
       },
-      fontFamily: 'inherit'
+      fontFamily: 'inherit',
+      background: 'transparent'
     },
     colors,
     tooltip: {
-      theme: document.documentElement.classList.contains('dark') ? 'dark' : 'light'
+      theme: isDarkMode ? 'dark' : 'light',
+      marker: {
+        show: true
+      }
     },
     grid: {
-      borderColor: 'hsl(var(--border))',
-      strokeDashArray: 4
+      borderColor: isDarkMode ? 'rgba(55, 65, 81, 0.5)' : 'rgba(229, 231, 235, 0.8)',
+      strokeDashArray: 4,
+      xaxis: {
+        lines: {
+          show: false
+        }
+      },
+      yaxis: {
+        lines: {
+          show: true
+        }
+      },
+      padding: {
+        top: 0,
+        right: 0,
+        bottom: 0,
+        left: 10
+      }
     },
+    xaxis: {
+      labels: {
+        style: {
+          colors: isDarkMode ? '#9ca3af' : '#6b7280',
+          fontSize: '12px'
+        }
+      },
+      axisBorder: {
+        show: false
+      },
+      axisTicks: {
+        show: false
+      }
+    },
+    yaxis: {
+      labels: {
+        style: {
+          colors: isDarkMode ? '#9ca3af' : '#6b7280',
+          fontSize: '12px'
+        }
+      }
+    },
+    legend: {
+      labels: {
+        colors: isDarkMode ? '#e5e7eb' : '#374151'
+      },
+      markers: {
+        size: 12,
+        strokeWidth: 0
+      },
+      itemMargin: {
+        horizontal: 10
+      }
+    },
+    theme: {
+      mode: isDarkMode ? 'dark' : 'light'
+    },
+    responsive: [
+      {
+        breakpoint: 640,
+        options: {
+          legend: {
+            position: 'bottom',
+            offsetX: 0
+          }
+        }
+      }
+    ],
     ...options
   };
 
@@ -118,7 +189,7 @@ const ChartContainer = React.forwardRef<
           ref={finalRef}
           id={chartId}
           data-chart={chartId}
-          className={cn("w-full", className)}
+          className={cn("w-full border rounded-lg p-4 dark:border-gray-700", className)}
           {...props}
         >
           {typeof window !== 'undefined' && series.length > 0 ? (
@@ -148,7 +219,7 @@ const ChartContainer = React.forwardRef<
       <div
         ref={finalRef}
         className={cn(
-          "flex aspect-video justify-center items-center text-xs",
+          "flex aspect-video justify-center items-center text-xs border rounded-lg p-4 dark:border-gray-700",
           className
         )}
         {...props}
