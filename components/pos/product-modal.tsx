@@ -18,6 +18,7 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Minus, Plus, ShoppingBag } from "lucide-react";
 import Image from "next/image";
+import { getImageUrl } from "@/lib/upload-service";
 
 export interface Additional {
   _id: string;
@@ -168,7 +169,7 @@ export function ProductModal({
           <div className="relative h-40 bg-muted rounded-md overflow-hidden">
             {!imageError && product.image ? (
               <Image
-                src={product.image}
+                src={getImageUrl(product.image)}
                 alt={product.name}
                 fill
                 className="object-cover"

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm, FormProvider } from 'react-hook-form'
 import * as z from 'zod'
@@ -34,6 +34,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { ImageUpload } from '@/components/ui/image-upload'
+import { deleteImage } from '@/lib/upload-service'
+import { Loader2 } from 'lucide-react'
+import toast from 'react-hot-toast'
 
 const productSchema = z.object({
   name: z.string().min(2, 'Nome muito curto'),
@@ -49,7 +53,25 @@ const productSchema = z.object({
     value: z.string(),
     label: z.string()
   })),
+  discountPercentage: z.string().refine((val) => val === '' || (!isNaN(Number(val)) && Number(val) >= 0 && Number(val) <= 100), 'Desconto inválido'),
+  image: z.string().nullable().optional(),
 })
+
+// Definir interface para o tipo de produto
+interface ProductData {
+  _id?: string;
+  name: string;
+  description: string;
+  price: number;
+  stock: number;
+  active: boolean;
+  category: string;
+  additionalGroups: string[];
+  store: string;
+  discountPercentage: number;
+  additionals: any[];
+  image?: string | null;
+}
 
 interface ProductDialogProps {
   open: boolean
@@ -57,19 +79,7 @@ interface ProductDialogProps {
   product: Product | null
   categories: ProductCategory[]
   additionalGroups: AdditionalGroup[]
-  onSave: (data: {
-    _id?: string
-    name: string
-    description: string
-    price: number
-    stock: number
-    active: boolean
-    category: string
-    additionalGroups: string[]
-    store: string
-    discountPercentage: number
-    additionals: string[]
-  }) => void
+  onSave: (data: ProductData) => void
 }
 
 export function ProductDialog({
@@ -80,73 +90,245 @@ export function ProductDialog({
   additionalGroups,
   onSave,
 }: ProductDialogProps) {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [uploadedImagePath, setUploadedImagePath] = useState<string | null>(null);
+
   const form = useForm<z.infer<typeof productSchema>>({
     resolver: zodResolver(productSchema),
     defaultValues: {
       name: '',
       description: '',
-      price: '0',
-      stock: '0',
+      price: '',
+      stock: '',
       active: true,
-      category: {
-        value: '',
-        label: ''
-      },
+      category: { value: '', label: '' },
       additionalGroups: [],
+      discountPercentage: '',
+      image: null,
     },
-    mode: 'onChange'
   })
 
   useEffect(() => {
     if (product) {
-      // Encontra e mapeia a categoria do produto
-      const category = categories.find(c => c._id === product.category._id)
-      console.log('category', category, product.category)
+      const selectedCategory = categories.find(c => c._id === (typeof product.category === 'string' ? product.category : product.category._id))
+      const selectedAdditionalGroups = additionalGroups
+        .filter(g => product.additionalGroups?.includes(g._id || ''))
+        .map(g => ({ value: g._id || '', label: g.name }))
 
-      // Mapeia os grupos de adicionais
-      const selectedGroups = product.additionalGroups?.map(id => {
-        const group = additionalGroups.find(g => g._id === id)
-        return group ? {
-          value: group._id,
-          label: group.name
-        } : null
-      }).filter(Boolean) as Option[]
-
-      // Reset do formulário com os valores corretos
       form.reset({
         name: product.name,
         description: product.description || '',
         price: product.price.toString(),
-        stock: product.stock?.toString() || '0',
+        stock: product.stock.toString(),
         active: product.active,
-        category: category ? {
-          value: category._id,
-          label: category.name
-        } : {
-          value: '',
-          label: ''
-        },
-        additionalGroups: selectedGroups,
+        category: selectedCategory ? { value: selectedCategory._id || '', label: selectedCategory.name } : { value: '', label: '' },
+        additionalGroups: selectedAdditionalGroups,
+        discountPercentage: product.discountPercentage?.toString() || '',
+        image: product.image || null,
       })
+      
+      // Resetar o caminho da imagem carregada quando o produto mudar
+      setUploadedImagePath(null);
     } else {
       form.reset({
         name: '',
         description: '',
-        price: '0',
-        stock: '0',
+        price: '',
+        stock: '',
         active: true,
-        category: {
-          value: '',
-          label: ''
-        },
+        category: { value: '', label: '' },
         additionalGroups: [],
+        discountPercentage: '',
+        image: null,
       })
+      
+      // Resetar o caminho da imagem carregada quando o produto for limpo
+      setUploadedImagePath(null);
     }
   }, [product, categories, additionalGroups, form])
 
-  function onSubmit(values: z.infer<typeof productSchema>) {
-    onSave({
-      _id: product?._id,
+  // Função para lidar com o upload de imagem e receber o caminho relativo
+  const handleImageChange = async (file: File | null, imagePath?: string) => {
+    if (imagePath) {
+      // Se recebemos um caminho, significa que o upload direto foi bem-sucedido
+      setUploadedImagePath(imagePath);
+      form.setValue('image', imagePath);
+      
+      // Salvar automaticamente o produto após o upload da imagem
+      try {
+        setIsSubmitting(true);
+        
+        // Obter os valores atuais do formulário
+        const formValues = form.getValues();
+        
+        // Verificar se os campos obrigatórios estão preenchidos
+        if (!formValues.name || !formValues.price || !formValues.stock || !formValues.category.value) {
+          console.log('[ProductDialog] Campos obrigatórios não preenchidos, não salvando automaticamente');
+          toast.error('Preencha todos os campos obrigatórios e clique em Salvar');
+          return; // Não salvar se campos obrigatórios não estiverem preenchidos
+        }
+        
+        // Se estamos editando um produto existente e ele já tem uma imagem, excluir a imagem anterior
+        if (product?.image && product.image !== imagePath) {
+          try {
+            console.log('[ProductDialog] Excluindo imagem anterior do storage:', product.image);
+            toast.success('Removendo imagem anterior...', { duration: 2000 });
+            await deleteImage(product.image);
+            console.log('[ProductDialog] Imagem anterior excluída com sucesso');
+          } catch (deleteError) {
+            console.error('[ProductDialog] Erro ao excluir imagem anterior:', deleteError);
+            toast.error('Erro ao remover imagem anterior, mas o produto será atualizado');
+            // Continuar mesmo se falhar a exclusão
+          }
+        }
+        
+        // Criar objeto de produto
+        const productData: ProductData = {
+          name: formValues.name,
+          description: formValues.description,
+          price: Number(formValues.price),
+          stock: Number(formValues.stock),
+          active: formValues.active,
+          category: formValues.category.value,
+          additionalGroups: formValues.additionalGroups.map(g => g.value),
+          store: '67a05b53927e38337439322f', // ID fixo da loja
+          discountPercentage: formValues.discountPercentage ? Number(formValues.discountPercentage) : 0,
+          additionals: [], // Será preenchido pelo backend
+          image: imagePath, // Usar o novo caminho da imagem
+        };
+        
+        // Se estamos editando um produto existente, adicionar o ID
+        if (product && product._id) {
+          productData._id = product._id;
+        }
+        
+        console.log('[ProductDialog] Salvando produto automaticamente após upload da imagem:', productData);
+        
+        // Chamar a função onSave para salvar/atualizar o produto no banco de dados
+        onSave(productData);
+        
+        // Mostrar feedback para o usuário
+        const isNewProduct = !product;
+        toast.success(
+          isNewProduct 
+            ? `Produto "${productData.name}" criado com sucesso!` 
+            : `Produto "${productData.name}" atualizado com sucesso!`
+        );
+        
+        // Fechar o modal apenas para novos produtos
+        if (isNewProduct) {
+          onOpenChange(false);
+        }
+        // Para produtos existentes, mantemos o modal aberto para permitir outras edições
+      } catch (error) {
+        console.error('[ProductDialog] Erro ao salvar produto após upload da imagem:', error);
+        toast.error('Erro ao salvar produto. Tente novamente.');
+      } finally {
+        setIsSubmitting(false);
+      }
+    } else if (file === null) {
+      // Se o arquivo for null, o usuário removeu a imagem
+      // Não precisamos excluir a imagem aqui, pois isso será feito pelo componente ImageUpload
+      setUploadedImagePath(null);
+      form.setValue('image', null);
+    }
+    // Se temos apenas o arquivo sem caminho, o upload direto não está ativado
+    // Nesse caso, não fazemos nada aqui, pois o upload seria feito no onSubmit
+  };
+
+  // Função para excluir uma imagem
+  const handleDeleteImage = async (imagePath: string): Promise<void> => {
+    try {
+      setIsDeleting(true);
+      console.log('[ProductDialog] Iniciando exclusão da imagem:', imagePath);
+      toast.success('Removendo imagem...', { duration: 2000 });
+      
+      // 1. Excluir a imagem do storage
+      try {
+        await deleteImage(imagePath);
+        console.log('[ProductDialog] Imagem excluída do storage com sucesso');
+      } catch (deleteError) {
+        console.error('[ProductDialog] Erro ao excluir imagem do storage:', deleteError);
+        toast.error(`Erro ao excluir imagem: ${deleteError instanceof Error ? deleteError.message : 'Erro desconhecido'}`);
+        throw new Error(`Erro ao excluir imagem: ${deleteError instanceof Error ? deleteError.message : 'Erro desconhecido'}`);
+      }
+      
+      // 2. Se estamos editando um produto existente, atualizar o produto no banco de dados
+      if (product && product._id) {
+        console.log('[ProductDialog] Atualizando produto existente no banco de dados');
+        
+        // Criar uma cópia dos dados do produto sem a imagem
+        const updatedProduct = {
+          _id: product._id,
+          name: form.getValues('name'),
+          description: form.getValues('description'),
+          price: Number(form.getValues('price')),
+          stock: Number(form.getValues('stock')),
+          active: form.getValues('active'),
+          category: form.getValues('category').value,
+          additionalGroups: form.getValues('additionalGroups').map(g => g.value),
+          store: '67a05b53927e38337439322f', // ID fixo da loja
+          discountPercentage: form.getValues('discountPercentage') ? Number(form.getValues('discountPercentage')) : 0,
+          additionals: [], // Será preenchido pelo backend
+          image: null, // Definir a imagem como null
+        };
+        
+        try {
+          // Chamar a função onSave para atualizar o produto no banco de dados
+          console.log('[ProductDialog] Enviando atualização para o servidor:', updatedProduct);
+          onSave(updatedProduct);
+          
+          // Mostrar feedback para o usuário
+          toast.success(`Produto "${updatedProduct.name}" atualizado com sucesso!`);
+          
+          // Fechar o modal após a atualização
+          console.log('[ProductDialog] Fechando modal após atualização');
+          onOpenChange(false);
+        } catch (saveError) {
+          console.error('[ProductDialog] Erro ao atualizar produto no banco de dados:', saveError);
+          toast.error('Erro ao atualizar produto no banco de dados');
+          throw new Error('Erro ao atualizar produto no banco de dados');
+        }
+      } else {
+        // Se estamos criando um novo produto, apenas limpar o campo de imagem
+        console.log('[ProductDialog] Limpando campo de imagem para novo produto');
+        form.setValue('image', null);
+        setUploadedImagePath(null);
+      }
+      
+      return Promise.resolve();
+    } catch (error) {
+      console.error('[ProductDialog] Erro ao excluir imagem:', error);
+      throw error; // Propagar o erro para o componente ImageUpload
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  async function onSubmit(values: z.infer<typeof productSchema>) {
+    try {
+      setIsSubmitting(true);
+      
+      // Se temos uma imagem anterior e uma nova imagem foi carregada, excluir a anterior
+      if (product?.image && uploadedImagePath && product.image !== uploadedImagePath) {
+        try {
+          console.log('[ProductDialog] Excluindo imagem anterior do storage:', product.image);
+          toast.success('Removendo imagem anterior...', { duration: 2000 });
+          await deleteImage(product.image);
+          console.log('[ProductDialog] Imagem anterior excluída com sucesso');
+        } catch (error) {
+          console.error('[ProductDialog] Erro ao excluir imagem anterior:', error);
+          toast.error('Erro ao remover imagem anterior, mas o produto será atualizado');
+          // Continuar mesmo se falhar a exclusão
+        }
+      }
+      
+      // Usar o caminho da imagem carregada ou o existente
+      const imagePath = uploadedImagePath || values.image;
+      
+      // Criar objeto de produto
+      const productData: ProductData = {
       name: values.name,
       description: values.description,
       price: Number(values.price),
@@ -154,37 +336,53 @@ export function ProductDialog({
       active: values.active,
       category: values.category.value,
       additionalGroups: values.additionalGroups.map(g => g.value),
-      store: product?.store || '',
-      discountPercentage: 0,
-      additionals: [],
-    })
-    form.reset()
-    onOpenChange(false)
+        store: '67a05b53927e38337439322f', // ID fixo da loja
+        discountPercentage: values.discountPercentage ? Number(values.discountPercentage) : 0,
+        additionals: [], // Será preenchido pelo backend
+        image: imagePath,
+      };
+      
+      // Se estamos editando um produto existente, adicionar o ID
+      if (product && product._id) {
+        productData._id = product._id;
+      }
+      
+      console.log('[ProductDialog] Salvando produto pelo botão de submit:', productData);
+      
+      // Chamar a função onSave para salvar/atualizar o produto no banco de dados
+      onSave(productData);
+      
+      // Mostrar feedback para o usuário
+      const isNewProduct = !product;
+      toast.success(
+        isNewProduct 
+          ? `Produto "${productData.name}" criado com sucesso!` 
+          : `Produto "${productData.name}" atualizado com sucesso!`
+      );
+      
+      // Fechar o modal
+      onOpenChange(false);
+    } catch (error) {
+      console.error('[ProductDialog] Erro ao salvar produto:', error);
+      toast.error('Erro ao salvar produto. Tente novamente.');
+    } finally {
+      setIsSubmitting(false);
+    }
   }
-
-  const categoryOptions = categories
-    .filter(category => category._id)
-    .map(category => ({
-      value: category._id as string,
-      label: category.name
-    }))
-
-  const additionalGroupOptions = additionalGroups
-    .filter(group => group._id)
-    .map(group => ({
-      value: group._id as string,
-      label: group.name
-    }))
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[700px] max-h-[85vh]">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto overflow-x-hidden w-[95vw]">
         <DialogHeader>
-          <DialogTitle>{product ? 'Editar' : 'Criar'} Produto</DialogTitle>
+          <DialogTitle>{product ? 'Editar Produto' : 'Novo Produto'}</DialogTitle>
+          <DialogDescription>
+            {product ? 'Edite as informações do produto' : 'Adicione um novo produto ao catálogo'}
+          </DialogDescription>
         </DialogHeader>
-        <div className="overflow-y-auto pr-2">
-          <FormProvider {...form}>
+        <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-4">
               <FormField
                 control={form.control}
                 name="name"
@@ -199,40 +397,14 @@ export function ProductDialog({
                 )}
               />
 
-              <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Descrição</FormLabel>
-                    <FormControl>
-                      <Textarea placeholder="Descrição do produto" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
                   name="price"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Preço</FormLabel>
+                      <FormLabel>Preço (R$)</FormLabel>
                       <FormControl>
-                        <Input
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          placeholder="0.00"
-                          {...field}
-                          onChange={(e) => {
-                            const value = e.target.value
-                            field.onChange(value)
-                            form.trigger('price')
-                          }}
-                        />
+                        <Input placeholder="0.00" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -246,54 +418,82 @@ export function ProductDialog({
                     <FormItem>
                       <FormLabel>Estoque</FormLabel>
                       <FormControl>
-                        <Input
-                          type="number"
-                          min="0"
-                          placeholder="0"
-                          {...field}
-                          onChange={(e) => {
-                            const value = e.target.value
-                            field.onChange(value)
-                            form.trigger('stock')
-                          }}
-                        />
+                        <Input placeholder="Quantidade" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
+                
+                <FormField
+                  control={form.control}
+                  name="discountPercentage"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Desconto (%)</FormLabel>
+                      <FormControl>
+                        <Input placeholder="0" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="active"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                      <div className="space-y-0.5">
+                        <FormLabel>Ativo</FormLabel>
+                        <FormDescription>
+                          Produto disponível para venda
+                        </FormDescription>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
               </div>
 
+              <div className="space-y-4">
               <FormField
                 control={form.control}
                 name="category"
-                render={({ field, fieldState }) => (
+                  render={({ field }) => (
                   <FormItem>
                     <FormLabel>Categoria</FormLabel>
-                    <FormControl>
                       <Select
-                        value={field.value.value}
-                        onValueChange={(value) => {
+                        onValueChange={(value: string) => {
+                          if (typeof value === 'string') {
                           const category = categories.find(c => c._id === value)
                           field.onChange({
                             value,
-                            label: category?.name || ''
+                              label: category ? category.name : '' 
                           })
+                          }
                         }}
+                        value={field.value.value || ''}
                       >
-                        <SelectTrigger className={fieldState.error ? 'border-destructive' : ''}>
+                        <FormControl>
+                          <SelectTrigger>
                           <SelectValue placeholder="Selecione uma categoria" />
                         </SelectTrigger>
+                        </FormControl>
                         <SelectContent>
-                          {categoryOptions.map((option) => (
-                            <SelectItem key={option.value} value={option.value as string}>
-                              {option.label}
+                          {categories.map((category) => (
+                            <SelectItem key={category._id || 'no-id'} value={category._id || ''}>
+                              {category.name}
                             </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
-                    </FormControl>
-                    <FormMessage className="text-red-500" />
+                      <FormMessage />
                   </FormItem>
                 )}
               />
@@ -306,11 +506,15 @@ export function ProductDialog({
                     <FormLabel>Grupos de Adicionais</FormLabel>
                     <FormControl>
                       <MultiSelect
-                        options={additionalGroupOptions}
+                          options={additionalGroups
+                            .filter(g => g._id) // Filtra apenas grupos com ID válido
+                            .map(g => ({ 
+                              value: g._id || '', 
+                              label: g.name 
+                            }))}
                         selected={field.value}
                         onChange={field.onChange}
-                        placeholder="Selecione os grupos..."
-                        emptyMessage="Nenhum grupo encontrado."
+                          placeholder="Selecione os grupos"
                       />
                     </FormControl>
                     <FormMessage />
@@ -320,45 +524,82 @@ export function ProductDialog({
 
               <FormField
                 control={form.control}
-                name="active"
+                  name="description"
                 render={({ field }) => (
-                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                    <FormItem>
+                      <FormLabel>Descrição</FormLabel>
                     <FormControl>
-                      <Switch
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
+                        <Textarea
+                          placeholder="Descreva o produto..."
+                          className="min-h-[80px]"
+                          {...field}
                       />
                     </FormControl>
-                    <div className="space-y-1 leading-none">
-                      <FormLabel>
-                        Ativo
-                      </FormLabel>
-                      <FormDescription>
-                        Este produto está disponível para venda
-                      </FormDescription>
-                    </div>
+                      <FormMessage />
                   </FormItem>
                 )}
               />
+                
+                <FormField
+                  control={form.control}
+                  name="image"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Imagem do Produto</FormLabel>
+                      <FormControl>
+                        <ImageUpload
+                          value={field.value || ''}
+                          onChange={handleImageChange}
+                          onDelete={handleDeleteImage}
+                          aspectRatio="square"
+                          placeholder="Arraste ou clique para adicionar uma imagem"
+                          disabled={isSubmitting || isDeleting}
+                          folder="products"
+                          directUpload={true}
+                          onUploadStart={() => {
+                            setIsSubmitting(true);
+                            toast.success('Enviando imagem...', { duration: 2000 });
+                          }}
+                          onUploadEnd={() => setIsSubmitting(false)}
+                          onUploadError={(error) => {
+                            console.error('Erro no upload:', error);
+                            toast.error(`Erro ao fazer upload da imagem: ${error.message}`);
+                            form.setError('image', { 
+                              message: 'Erro ao fazer upload da imagem' 
+                            });
+                          }}
+                          compression={true}
+                          compressionQuality={0.8}
+                          maxWidthOrHeight={1200}
+                          maxSizeMB={0.8}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
 
               <DialogFooter>
                 <Button
+                type="button" 
                   variant="outline"
-                  onClick={() => {
-                    form.reset()
-                    onOpenChange(false)
-                  }}
-                  type="button"
+                onClick={() => onOpenChange(false)}
+                disabled={isSubmitting || isDeleting}
                 >
                   Cancelar
                 </Button>
-                <Button type="submit">
-                  {product ? 'Salvar' : 'Criar'} Produto
+              <Button 
+                type="submit"
+                disabled={isSubmitting || isDeleting}
+              >
+                {(isSubmitting || isDeleting) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {product ? 'Atualizar' : 'Criar'} Produto
                 </Button>
               </DialogFooter>
             </form>
-          </FormProvider>
-        </div>
+        </Form>
       </DialogContent>
     </Dialog>
   )

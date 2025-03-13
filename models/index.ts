@@ -67,7 +67,7 @@ const itemSchema = new mongoose.Schema(
     description: { type: String, trim: true },
     discountPercentage: { type: Number, required: true, min: 0 },
     price: { type: Number, required: true, min: 0 },
-    image: { type: String, trim: true },
+    image: { type: String, trim: true, default: null },
     category: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Category",
@@ -106,7 +106,7 @@ const promotionSchema = new mongoose.Schema(
     status: { type: String, required: true },
     type: { type: String, required: true },
     rules: { type: String, required: true },
-    image: { type: String, trim: true },
+    image: { type: String, trim: true, default: null },
     startDate: { type: Date, required: true },
     endDate: { type: Date, required: true },
     discountPercentage: { type: Number, required: true },

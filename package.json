@@ -9,6 +9,8 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.758.0",
+    "@aws-sdk/s3-request-presigner": "^3.758.0",
     "@hello-pangea/dnd": "^16.6.0",
     "@hookform/resolvers": "^3.9.0",
     "@radix-ui/react-accordion": "^1.2.0",
@@ -49,6 +51,7 @@
     "@types/react": "^18.2.61",
     "@types/react-dom": "^18.2.19",
     "apexcharts": "^4.5.0",
+    "browser-image-compression": "^2.0.2",
     "class-variance-authority": "^0.7.0",
     "classnames": "^2.5.1",
     "clsx": "^2.1.0",
@@ -67,6 +70,7 @@
     "react-apexcharts": "^1.7.0",
     "react-day-picker": "^8.10.0",
     "react-dom": "^18.2.0",
+    "react-dropzone": "^14.3.8",
     "react-hook-form": "^7.50.1",
     "react-hot-toast": "^2.5.1",
     "react-resizable-panels": "^2.1.7",

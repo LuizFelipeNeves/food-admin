@@ -7,6 +7,7 @@ import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { PlusCircle, Tag } from "lucide-react";
 import { Product } from "./product-modal";
+import { getImageUrl } from "@/lib/upload-service";
 
 interface ProductGridProps {
   products: Product[];
@@ -60,7 +61,7 @@ export function ProductGrid({
           <div className="relative h-24 sm:h-20 bg-muted">
             {!imageErrors[product._id] && product.image ? (
               <Image
-                src={product.image}
+                src={getImageUrl(product.image)}
                 alt={product.name}
                 fill
                 className="object-cover"

@@ -8,6 +8,7 @@ const businessSchema = z.object({
   // email: z.string().email('Email inválido'),
   phone: z.string().min(10, 'Telefone inválido'),
   address: z.string().min(5, 'Endereço muito curto'),
+  logo: z.string().optional(),
 });
 
 const businessHoursSchema = z.array(z.object({
@@ -50,6 +51,7 @@ export const settingsRouter = router({
         email: store.email || '',
         phone: store.phone || '',
         address: store.address?.street || '',
+        logo: store.logo,
       };
     }),
 
@@ -72,6 +74,7 @@ export const settingsRouter = router({
           // email: data.email,
           phone: data.phone,
           'address.street': data.address,
+          logo: data.logo,
         },
         { new: true }
       );

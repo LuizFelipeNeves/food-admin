@@ -7,6 +7,7 @@ import { PencilIcon, TrashIcon } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarImage } from '@/components/ui/avatar'
+import { getImageUrl } from '@/lib/upload-service'
 
 interface ActionCellProps<T> {
   row: any;
@@ -60,14 +61,19 @@ interface ColumnsProps {
   onDelete: (id: string) => void;
 }
 
-const baseUrl = 'https://piratafood.vercel.app/'
-
 export function productColumns({ onEdit, onDelete }: ColumnsProps): ColumnDef<Product>[] {
   return [
     {
       accessorKey: 'image',
       header: 'Imagem',
-      cell: ({ row }) => row ? <Avatar><AvatarImage src={baseUrl + row.getValue('image')} /></Avatar> : null,
+      cell: ({ row }) => {
+        const imagePath = row.getValue('image');
+        return row && imagePath ? (
+          <Avatar>
+            <AvatarImage src={getImageUrl(imagePath)} />
+          </Avatar>
+        ) : null;
+      },
       enableHiding: true,
     },
     {

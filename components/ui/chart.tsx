@@ -192,9 +192,9 @@ const Chart = React.forwardRef<HTMLDivElement, ChartProps>(
     
     // Renderizar o gráfico com ApexCharts
     try {
-      return (
-        <div 
-          ref={ref} 
+    return (
+      <div
+        ref={ref}
           className="w-full border rounded-lg p-4 dark:border-gray-700"
           {...props}
         >
@@ -206,25 +206,25 @@ const Chart = React.forwardRef<HTMLDivElement, ChartProps>(
               height={height}
               width={width}
             />
-          )}
-        </div>
-      );
+                )}
+              </div>
+            );
     } catch (error) {
       console.error('Erro ao renderizar o gráfico:', error);
       
       // Renderizar um fallback em caso de erro
-      return (
-        <div 
-          ref={ref} 
+    return (
+      <div
+        ref={ref}
           className="aspect-video w-full border rounded-lg p-4 flex items-center justify-center dark:border-gray-700"
           {...props}
         >
           <p className="text-muted-foreground">
             Erro ao carregar o gráfico
           </p>
-        </div>
-      );
-    }
+      </div>
+    );
+  }
   }
 );
 Chart.displayName = 'Chart';
