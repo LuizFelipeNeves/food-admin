@@ -32,7 +32,7 @@ function useChart() {
   return context;
 }
 
-// Componente simplificado que não usa Recharts diretamente
+// Componente simplificado que não usa Recharts
 const ChartContainer = React.forwardRef<
   HTMLDivElement,
   React.ComponentProps<'div'> & {
@@ -50,51 +50,15 @@ const ChartContainer = React.forwardRef<
   
   // Usar um estado para controlar se o componente está montado no cliente
   const [isMounted, setIsMounted] = React.useState(false);
-  const [hasError, setHasError] = React.useState(false);
-  const [RechartsLoaded, setRechartsLoaded] = React.useState(false);
   
   React.useEffect(() => {
-    try {
-      setIsMounted(true);
-      
-      // Carregar Recharts apenas no cliente
-      const loadRecharts = async () => {
-        try {
-          if (typeof window !== 'undefined') {
-            // Usar um timeout para garantir que o DOM esteja completamente carregado
-            setTimeout(async () => {
-              try {
-                await import('recharts');
-                setRechartsLoaded(true);
-              } catch (error) {
-                console.error('Erro ao carregar o Recharts:', error);
-                setHasError(true);
-              }
-            }, 500);
-          }
-        } catch (error) {
-          console.error('Erro ao carregar o Recharts:', error);
-          setHasError(true);
-        }
-      };
-      
-      loadRecharts();
-    } catch (error) {
-      console.error('Erro ao montar o componente:', error);
-      setHasError(true);
-    }
-    
+    setIsMounted(true);
     return () => {
-      try {
-        setIsMounted(false);
-        setRechartsLoaded(false);
-      } catch (error) {
-        console.error('Erro ao desmontar o componente:', error);
-      }
+      setIsMounted(false);
     };
   }, []);
 
-  if (hasError) {
+  if (!isMounted) {
     return (
       <div
         ref={finalRef}
@@ -104,22 +68,7 @@ const ChartContainer = React.forwardRef<
         )}
         {...props}
       >
-        <p className="text-muted-foreground">Erro ao carregar o gráfico</p>
-      </div>
-    );
-  }
-
-  if (!isMounted || !RechartsLoaded) {
-    return (
-      <div
-        ref={finalRef}
-        className={cn(
-          "flex aspect-video justify-center items-center text-xs",
-          className
-        )}
-        {...props}
-      >
-        <p className="text-muted-foreground">Carregando gráfico...</p>
+        <p className="text-muted-foreground">Carregando...</p>
       </div>
     );
   }
@@ -127,17 +76,21 @@ const ChartContainer = React.forwardRef<
   return (
     <ChartContext.Provider value={{ config }}>
       <div
-        data-chart={chartId}
         ref={finalRef}
-        className={cn(
-          "flex aspect-video justify-center text-xs [&_.recharts-cartesian-axis-tick_text]:fill-muted-foreground [&_.recharts-cartesian-grid_line[stroke='#ccc']]:stroke-border/50 [&_.recharts-curve.recharts-tooltip-cursor]:stroke-border [&_.recharts-dot[stroke='#fff']]:stroke-transparent [&_.recharts-layer]:outline-none [&_.recharts-polar-grid_[stroke='#ccc']]:stroke-border [&_.recharts-radial-bar-background-sector]:fill-muted [&_.recharts-rectangle.recharts-tooltip-cursor]:fill-muted [&_.recharts-reference-line_[stroke='#ccc']]:stroke-border [&_.recharts-sector[stroke='#fff']]:stroke-transparent [&_.recharts-sector]:outline-none [&_.recharts-surface]:outline-none",
-          className
-        )}
+        id={chartId}
+        data-chart={chartId}
+        className={cn("aspect-video", className)}
         {...props}
       >
-        <ChartStyle id={chartId} config={config} />
-        {validChildren}
+        {validChildren || (
+          <div className="flex h-full items-center justify-center">
+            <p className="text-sm text-muted-foreground">
+              Dados não disponíveis para visualização
+            </p>
+          </div>
+        )}
       </div>
+      <ChartStyle id={chartId} config={config} />
     </ChartContext.Provider>
   );
 });
