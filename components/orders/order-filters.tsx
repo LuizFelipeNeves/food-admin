@@ -62,17 +62,6 @@ export function OrderFilters({ onFiltersChange }: OrderFiltersProps) {
     <div className="space-y-4">
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
         <div className="flex flex-col gap-2">
-          <Label>Cliente</Label>
-          <Input
-            type="search"
-            placeholder="Buscar por nome..."
-            value={customerName}
-            onChange={(e) => setCustomerName(e.target.value)}
-            disabled={true}
-          />
-        </div>
-
-        <div className="flex flex-col gap-2">
           <Label>Data do Pedido</Label>
           <Popover>
             <PopoverTrigger asChild>

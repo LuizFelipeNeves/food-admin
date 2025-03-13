@@ -5,6 +5,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import dynamic from 'next/dynamic';
 import { ApexOptions } from 'apexcharts';
 import { useTheme } from 'next-themes';
+import { format, parseISO } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 // Importação dinâmica do ApexCharts
 const ApexChart = dynamic(() => import('react-apexcharts'), { ssr: false });
@@ -19,6 +21,7 @@ interface SaleStatus {
 
 interface SaleData {
   name: string;
+  date?: string; // Campo opcional para data em formato ISO
   total: number;
   subtotal: number;
   deliveryFees: number;
@@ -29,6 +32,39 @@ interface SaleData {
 
 interface ChartComponentProps {
   data: SaleData[];
+}
+
+// Função para formatar data
+function formatDateLabel(item: SaleData): string {
+  // Se tiver um campo date em formato ISO, formata corretamente
+  if (item.date && isValidISODate(item.date)) {
+    try {
+      const date = parseISO(item.date);
+      return format(date, 'dd/MM HH:mm', { locale: ptBR });
+    } catch (error) {
+      console.error('Erro ao formatar data:', error);
+      return item.name;
+    }
+  }
+  
+  // Tenta interpretar o name como data se parecer com um timestamp
+  if (item.name && !isNaN(Date.parse(item.name))) {
+    try {
+      const date = new Date(item.name);
+      return format(date, 'dd/MM HH:mm', { locale: ptBR });
+    } catch (error) {
+      console.error('Erro ao formatar name como data:', error);
+    }
+  }
+  
+  // Retorna o name original se não conseguir formatar
+  return item.name;
+}
+
+// Verifica se uma string é uma data ISO válida
+function isValidISODate(dateString: string): boolean {
+  const regex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})?$/;
+  return regex.test(dateString) && !isNaN(Date.parse(dateString));
 }
 
 // Componente principal que será exportado
@@ -52,6 +88,22 @@ export default function ChartComponent({ data }: ChartComponentProps) {
         'orders' in item
       )
     : [];
+
+  // Ordenar os dados por data se possível
+  const sortedData = [...validData].sort((a, b) => {
+    // Se ambos têm campo date, ordenar por ele
+    if (a.date && b.date && isValidISODate(a.date) && isValidISODate(b.date)) {
+      return new Date(a.date).getTime() - new Date(b.date).getTime();
+    }
+    
+    // Se ambos os nomes parecem ser datas, ordenar por eles
+    if (!isNaN(Date.parse(a.name)) && !isNaN(Date.parse(b.name))) {
+      return new Date(a.name).getTime() - new Date(b.name).getTime();
+    }
+    
+    // Caso contrário, manter a ordem original
+    return 0;
+  });
 
   useEffect(() => {
     // Marcar o componente como montado
@@ -84,24 +136,27 @@ export default function ChartComponent({ data }: ChartComponentProps) {
   const series = [
     {
       name: 'Total',
-      data: validData.map(item => item.total)
+      data: sortedData.map(item => item.total)
     },
     {
       name: 'Subtotal',
-      data: validData.map(item => item.subtotal)
+      data: sortedData.map(item => item.subtotal)
     },
     {
       name: 'Taxa de Entrega',
-      data: validData.map(item => item.deliveryFees)
+      data: sortedData.map(item => item.deliveryFees)
     }
   ];
 
   const orderSeries = [
     {
       name: 'Pedidos',
-      data: validData.map(item => item.orders)
+      data: sortedData.map(item => item.orders)
     }
   ];
+
+  // Formatar as categorias (labels do eixo X)
+  const categories = sortedData.map(item => formatDateLabel(item));
 
   // Cores para modo claro e escuro
   const colors = isDarkMode 
@@ -138,18 +193,25 @@ export default function ChartComponent({ data }: ChartComponentProps) {
       colors: ['transparent']
     },
     xaxis: {
-      categories: validData.map(item => item.name),
+      categories: categories,
       labels: {
         style: {
           colors: isDarkMode ? '#9ca3af' : '#6b7280',
           fontSize: '12px'
-        }
+        },
+        rotate: -45,
+        rotateAlways: false,
+        hideOverlappingLabels: true,
+        trim: true
       },
       axisBorder: {
         show: false
       },
       axisTicks: {
         show: false
+      },
+      tooltip: {
+        enabled: true
       }
     },
     yaxis: [
@@ -195,6 +257,11 @@ export default function ChartComponent({ data }: ChartComponentProps) {
       shared: true,
       intersect: false,
       theme: isDarkMode ? 'dark' : 'light',
+      x: {
+        formatter: function(val: number, { dataPointIndex }: { dataPointIndex: number }) {
+          return categories[dataPointIndex];
+        }
+      },
       y: {
         formatter: function(val: number, { seriesIndex }: { seriesIndex: number }) {
           return seriesIndex < 3 ? `R$ ${val.toFixed(2)}` : val.toString();
@@ -286,9 +353,9 @@ export default function ChartComponent({ data }: ChartComponentProps) {
             </tr>
           </thead>
           <tbody>
-            {validData.map((item, index) => (
+            {sortedData.map((item, index) => (
               <tr key={index} className="border-b hover:bg-muted/50">
-                <td className="p-2">{item.name}</td>
+                <td className="p-2">{formatDateLabel(item)}</td>
                 <td className="p-2 text-right">R$ {item.total.toFixed(2)}</td>
                 <td className="p-2 text-right">R$ {item.subtotal.toFixed(2)}</td>
                 <td className="p-2 text-right">R$ {item.deliveryFees.toFixed(2)}</td>

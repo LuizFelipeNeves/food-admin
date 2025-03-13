@@ -5,17 +5,53 @@ import { Skeleton } from "@/components/ui/skeleton";
 import dynamic from 'next/dynamic';
 import { ApexOptions } from 'apexcharts';
 import { useTheme } from 'next-themes';
+import { format, parseISO } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 // Importação dinâmica do ApexCharts
 const ApexChart = dynamic(() => import('react-apexcharts'), { ssr: false });
 
 interface RevenueData {
   name: string;
+  date?: string; // Campo opcional para data em formato ISO
   total: number;
 }
 
 interface RevenueChartProps {
   data: RevenueData[];
+}
+
+// Função para formatar data
+function formatDateLabel(item: RevenueData): string {
+  // Se tiver um campo date em formato ISO, formata corretamente
+  if (item.date && isValidISODate(item.date)) {
+    try {
+      const date = parseISO(item.date);
+      return format(date, 'MMM/yyyy', { locale: ptBR });
+    } catch (error) {
+      console.error('Erro ao formatar data:', error);
+      return item.name;
+    }
+  }
+  
+  // Tenta interpretar o name como data se parecer com um timestamp ou mês
+  if (item.name && !isNaN(Date.parse(item.name))) {
+    try {
+      const date = new Date(item.name);
+      return format(date, 'MMM/yyyy', { locale: ptBR });
+    } catch (error) {
+      console.error('Erro ao formatar name como data:', error);
+    }
+  }
+  
+  // Retorna o name original se não conseguir formatar
+  return item.name;
+}
+
+// Verifica se uma string é uma data ISO válida
+function isValidISODate(dateString: string): boolean {
+  const regex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})?$/;
+  return regex.test(dateString) && !isNaN(Date.parse(dateString));
 }
 
 export default function RevenueChart({ data }: RevenueChartProps) {
@@ -36,6 +72,22 @@ export default function RevenueChart({ data }: RevenueChartProps) {
         typeof item.total === 'number'
       )
     : [];
+
+  // Ordenar os dados por data se possível
+  const sortedData = [...validData].sort((a, b) => {
+    // Se ambos têm campo date, ordenar por ele
+    if (a.date && b.date && isValidISODate(a.date) && isValidISODate(b.date)) {
+      return new Date(a.date).getTime() - new Date(b.date).getTime();
+    }
+    
+    // Se ambos os nomes parecem ser datas, ordenar por eles
+    if (!isNaN(Date.parse(a.name)) && !isNaN(Date.parse(b.name))) {
+      return new Date(a.name).getTime() - new Date(b.name).getTime();
+    }
+    
+    // Caso contrário, manter a ordem original
+    return 0;
+  });
 
   useEffect(() => {
     // Marcar o componente como montado
@@ -68,9 +120,12 @@ export default function RevenueChart({ data }: RevenueChartProps) {
   const series = [
     {
       name: 'Receita',
-      data: validData.map(item => item.total)
+      data: sortedData.map(item => item.total)
     }
   ];
+
+  // Formatar as categorias (labels do eixo X)
+  const categories = sortedData.map(item => formatDateLabel(item));
 
   // Cores para modo claro e escuro
   const barColor = isDarkMode ? '#60a5fa' : '#3b82f6'; // Azul mais claro para modo escuro
@@ -99,18 +154,25 @@ export default function RevenueChart({ data }: RevenueChartProps) {
       enabled: false
     },
     xaxis: {
-      categories: validData.map(item => item.name),
+      categories: categories,
       labels: {
         style: {
           colors: isDarkMode ? '#9ca3af' : '#6b7280',
           fontSize: '12px'
-        }
+        },
+        rotate: -45,
+        rotateAlways: false,
+        hideOverlappingLabels: true,
+        trim: true
       },
       axisBorder: {
         show: false
       },
       axisTicks: {
         show: false
+      },
+      tooltip: {
+        enabled: true
       }
     },
     yaxis: {
@@ -166,6 +228,11 @@ export default function RevenueChart({ data }: RevenueChartProps) {
     colors: [barColor],
     tooltip: {
       theme: isDarkMode ? 'dark' : 'light',
+      x: {
+        formatter: function(val: number, { dataPointIndex }: { dataPointIndex: number }) {
+          return categories[dataPointIndex];
+        }
+      },
       y: {
         formatter: function(val: number) {
           return `R$ ${val.toFixed(2)}`;
@@ -233,9 +300,9 @@ export default function RevenueChart({ data }: RevenueChartProps) {
             </tr>
           </thead>
           <tbody>
-            {validData.map((item, index) => (
+            {sortedData.map((item, index) => (
               <tr key={index} className="border-b hover:bg-muted/50">
-                <td className="p-2">{item.name}</td>
+                <td className="p-2">{formatDateLabel(item)}</td>
                 <td className="p-2 text-right">R$ {item.total.toFixed(2)}</td>
               </tr>
             ))}
