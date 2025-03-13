@@ -166,9 +166,9 @@ export function ProductModal({
 
         <div className="grid gap-4 py-2">
           <div className="relative h-40 bg-muted rounded-md overflow-hidden">
-            {!imageError ? (
+            {!imageError && product.image ? (
               <Image
-                src={product.image || ""}
+                src={product.image}
                 alt={product.name}
                 fill
                 className="object-cover"

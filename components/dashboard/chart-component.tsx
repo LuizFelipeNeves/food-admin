@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import {
   BarChart,
   Bar,
@@ -34,6 +35,25 @@ interface ChartComponentProps {
 }
 
 export default function ChartComponent({ data }: ChartComponentProps) {
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+    
+    // Limpar o estado ao desmontar o componente
+    return () => {
+      setIsMounted(false);
+    };
+  }, []);
+
+  if (!isMounted) {
+    return (
+      <div className="h-[350px] w-full flex items-center justify-center">
+        <p className="text-muted-foreground">Carregando gráfico...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="h-[350px] w-full">
       <ResponsiveContainer width="100%" height="100%">

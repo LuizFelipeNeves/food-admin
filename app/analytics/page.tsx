@@ -10,7 +10,10 @@ import { useState, useEffect } from 'react'
 // Importação dinâmica do componente de gráfico
 const DynamicRevenueChart = dynamic(
   () => import('@/components/analytics/revenue-chart'),
-  { ssr: false, loading: () => <Skeleton className="h-[240px] w-full" /> }
+  { 
+    ssr: false, 
+    loading: () => <Skeleton className="h-[240px] w-full" /> 
+  }
 );
 
 const data = [

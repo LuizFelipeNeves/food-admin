@@ -7,7 +7,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 // Importação dinâmica do Recharts para evitar problemas de SSR
 const DynamicChart = dynamic(
   () => import('@/components/dashboard/chart-component'),
-  { ssr: false, loading: () => <Skeleton className="h-[350px] w-full" /> }
+  { 
+    ssr: false, 
+    loading: () => <Skeleton className="h-[350px] w-full" /> 
+  }
 );
 
 interface SaleStatus {
@@ -36,6 +39,11 @@ export function Overview({ data }: OverviewProps) {
 
   useEffect(() => {
     setIsMounted(true);
+    
+    // Limpar o estado ao desmontar o componente
+    return () => {
+      setIsMounted(false);
+    };
   }, []);
 
   if (!isMounted) {
@@ -50,5 +58,9 @@ export function Overview({ data }: OverviewProps) {
     );
   }
 
-  return <DynamicChart data={data} />;
+  return (
+    <div className="h-[350px] w-full">
+      <DynamicChart data={data} />
+    </div>
+  );
 }

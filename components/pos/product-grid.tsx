@@ -58,9 +58,9 @@ export function ProductGrid({
           onClick={() => onSelectProduct(product)}
         >
           <div className="relative h-24 sm:h-20 bg-muted">
-            {!imageErrors[product._id] ? (
+            {!imageErrors[product._id] && product.image ? (
               <Image
-                src={product.image || ""}
+                src={product.image}
                 alt={product.name}
                 fill
                 className="object-cover"

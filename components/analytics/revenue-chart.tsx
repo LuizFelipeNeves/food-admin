@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis } from 'recharts';
 
 interface RevenueData {
@@ -12,6 +13,25 @@ interface RevenueChartProps {
 }
 
 export default function RevenueChart({ data }: RevenueChartProps) {
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+    
+    // Limpar o estado ao desmontar o componente
+    return () => {
+      setIsMounted(false);
+    };
+  }, []);
+
+  if (!isMounted) {
+    return (
+      <div className="h-[240px] flex items-center justify-center">
+        <p className="text-muted-foreground">Carregando gráfico...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="h-[240px]">
       <ResponsiveContainer width="100%" height="100%">

@@ -45,9 +45,16 @@ const ChartContainer = React.forwardRef<
   const uniqueId = React.useId();
   const chartId = `chart-${id || uniqueId.replace(/:/g, '')}`;
   const finalRef = forwardedRef || ref;
-
+  
   // Verificar se children é um elemento React válido
   const validChildren = React.isValidElement(children) ? children : null;
+  
+  // Usar um estado para controlar se o componente está montado no cliente
+  const [isMounted, setIsMounted] = React.useState(false);
+  
+  React.useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   return (
     <ChartContext.Provider value={{ config }}>
@@ -61,13 +68,13 @@ const ChartContainer = React.forwardRef<
         {...props}
       >
         <ChartStyle id={chartId} config={config} />
-        {validChildren ? (
-          <RechartsPrimitive.ResponsiveContainer>
+        {isMounted && validChildren ? (
+          <RechartsPrimitive.ResponsiveContainer width="100%" height="100%">
             {validChildren}
           </RechartsPrimitive.ResponsiveContainer>
         ) : (
           <div className="flex items-center justify-center h-full w-full">
-            <p className="text-muted-foreground">Sem dados para exibir</p>
+            <p className="text-muted-foreground">Carregando gráfico...</p>
           </div>
         )}
       </div>
