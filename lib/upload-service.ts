@@ -200,11 +200,7 @@ export function isFullUrl(path: string): boolean {
 }
 
 // Converte um caminho relativo para URL completa
-export function getImageUrl(imagePath: string | null | undefined): string | null {
-  if (!imagePath) {
-    return null;
-  }
-  
+export function getImageUrl(imagePath: string): string {  
   // Se já for uma URL completa, retornar como está
   if (isFullUrl(imagePath)) return imagePath;
   

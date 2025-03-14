@@ -20,10 +20,10 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Configurações do R2
-    const R2_ACCOUNT_ID = process.env.R2_ACCOUNT_ID;
-    const R2_ACCESS_KEY_ID = process.env.R2_ACCESS_KEY_ID;
-    const R2_SECRET_ACCESS_KEY = process.env.R2_SECRET_ACCESS_KEY;
-    const R2_BUCKET_NAME = process.env.R2_BUCKET_NAME;
+    const R2_ACCOUNT_ID = process.env.R2_ACCOUNT_ID  || '';
+    const R2_ACCESS_KEY_ID = process.env.R2_ACCESS_KEY_ID || '';
+    const R2_SECRET_ACCESS_KEY = process.env.R2_SECRET_ACCESS_KEY || '';
+    const R2_BUCKET_NAME = process.env.R2_BUCKET_NAME || '';
 
     // Verificar se todas as configurações necessárias estão presentes
     const missingConfigs = [];
@@ -42,7 +42,6 @@ export async function DELETE(request: NextRequest) {
     }
 
     console.log(`[R2 Delete] Tentando excluir arquivo '${filePath}' do bucket '${R2_BUCKET_NAME}'`);
-
     // Configurar cliente S3 para Cloudflare R2
     const s3Client = new S3Client({
       region: 'auto',

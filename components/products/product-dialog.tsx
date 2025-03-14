@@ -431,7 +431,7 @@ export function ProductDialog({
       }
       
       console.log('[ProductDialog] Salvando produto pelo botão de submit:', productData);
-      toast.info('Salvando produto...', { duration: 2000 });
+      toast.success('Salvando produto...', { duration: 2000 });
       
       // Chamar a função onSave para salvar/atualizar o produto no banco de dados
       onSave(productData);

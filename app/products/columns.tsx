@@ -67,7 +67,7 @@ export function productColumns({ onEdit, onDelete }: ColumnsProps): ColumnDef<Pr
       accessorKey: 'image',
       header: 'Imagem',
       cell: ({ row }) => {
-        const imagePath = row.getValue('image');
+        const imagePath = row.getValue('image') as string;
         return row && imagePath ? (
           <Avatar>
             <AvatarImage src={getImageUrl(imagePath)} />
