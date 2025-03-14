@@ -42,7 +42,7 @@ const paymentMethodColors = {
 export default function AnalyticsPage() {
   const [isMounted, setIsMounted] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState<'day' | 'week' | 'month'>('month');
-  const storeId = '67a05b53927e38337439322f'
+  const storeId = '67a05b53927e38337439322f';
 
   // Buscar dados de receita mensal
   const { data: revenueData, isLoading: isLoadingRevenue } = trpc.analytics.getMonthlyRevenue.useQuery({
@@ -85,12 +85,19 @@ export default function AnalyticsPage() {
   // Preparar dados para o gráfico de pizza
   const pieChartData = paymentMethodData?.map(method => ({
     name: method.name,
-    value: method.percentage
+    value: method.percentage || 0 // Garantir que o valor nunca seja undefined
+  })) || [];
+
+  // Preparar dados para o gráfico de pizza de produtos
+  const productPieChartData = topProductsData?.map(product => ({
+    name: product.name,
+    value: product.revenue || 0 // Garantir que o valor nunca seja undefined
   })) || [];
 
   useEffect(() => {
     setIsMounted(true);
-  }, []);
+    console.log('StoreId:', storeId);
+  }, [storeId]);
 
   // Função para formatar valores monetários
   const formatCurrency = (value: number) => {
@@ -108,6 +115,18 @@ export default function AnalyticsPage() {
       return dateString;
     }
   };
+
+  // Verificar se há dados para exibir
+  useEffect(() => {
+    if (paymentMethodData) {
+      console.log('Payment Method Data:', paymentMethodData);
+      console.log('Pie Chart Data:', pieChartData);
+    }
+    if (topProductsData) {
+      console.log('Top Products Data:', topProductsData);
+      console.log('Product Pie Chart Data:', productPieChartData);
+    }
+  }, [paymentMethodData, topProductsData, pieChartData, productPieChartData]);
 
   return (
     <Layout>
@@ -260,16 +279,16 @@ export default function AnalyticsPage() {
                       <div className="flex items-center justify-center h-[300px]">
                         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                       </div>
-                    ) : paymentMethodData && paymentMethodData.length > 0 ? (
+                    ) : pieChartData && pieChartData.length > 0 ? (
                       <DynamicPieChart 
-                        data={pieChartData}
+                        data={pieChartData.filter(item => item.value > 0)}
                         type="donut"
                         height={300}
                         showTotal={true}
                         totalLabel="Total"
                         colorMap={paymentMethodColors}
                         tooltipFormatter={(value, name) => {
-                          const method = paymentMethodData.find(m => m.name === name);
+                          const method = paymentMethodData?.find(m => m.name === name);
                           return method ? `${method.count} transações (${value.toFixed(1)}%)` : '';
                         }}
                       />
@@ -390,18 +409,15 @@ export default function AnalyticsPage() {
                       <div className="flex items-center justify-center h-[300px]">
                         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                       </div>
-                    ) : topProductsData && topProductsData.length > 0 ? (
+                    ) : productPieChartData && productPieChartData.length > 0 ? (
                       <DynamicPieChart 
-                        data={topProductsData.map(product => ({
-                          name: product.name,
-                          value: product.revenue
-                        }))}
+                        data={productPieChartData.filter(item => item.value > 0)}
                         type="pie"
                         height={300}
                         showTotal={false}
                         valueFormatter={(value) => formatCurrency(value)}
                         tooltipFormatter={(value, name) => {
-                          const product = topProductsData.find(p => p.name === name);
+                          const product = topProductsData?.find(p => p.name === name);
                           return product ? `${product.quantity} unidades - ${formatCurrency(value)}` : '';
                         }}
                       />
