@@ -426,7 +426,7 @@ export default function AnalyticsPage() {
                             item.value > 0
                           )}
                         type="donut"
-                        height={300}
+                        height={260}
                         showTotal={true}
                         totalLabel="Total"
                         colorMap={paymentMethodColors}
