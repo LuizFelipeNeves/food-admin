@@ -33,6 +33,7 @@ export function BusinessSettings({ storeId }: { storeId: string }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [uploadedLogoUrl, setUploadedLogoUrl] = useState<string | null>(null);
+  const [hasChanges, setHasChanges] = useState(false);
 
   const businessForm = useForm<z.infer<typeof businessFormSchema>>({
     resolver: zodResolver(businessFormSchema),
@@ -56,6 +57,7 @@ export function BusinessSettings({ storeId }: { storeId: string }) {
           color: '#fff',
         },
       })
+      setHasChanges(false);
     },
     onError: (error) => {
       toast.error(`Erro ao atualizar informações: ${error.message}`, {
@@ -81,11 +83,69 @@ export function BusinessSettings({ storeId }: { storeId: string }) {
       
       // Resetar a URL do logo carregado quando os dados do negócio mudarem
       setUploadedLogoUrl(null);
+      setHasChanges(false);
     }
   }, [businessData, businessForm])
 
+  // Função para atualizar o estado de alterações com base nos dados atuais
+  const updateChangesState = () => {
+    if (!businessData) return;
+    
+    const formValues = businessForm.getValues();
+    
+    // Verificar se o logo atual é o mesmo que o original ou o que foi carregado
+    const isLogoSame = 
+      (businessData.logo === formValues.logo) || 
+      (businessData.logo === uploadedLogoUrl) ||
+      (formValues.logo === uploadedLogoUrl && uploadedLogoUrl !== null);
+    
+    const hasFormChanges = 
+      businessData.businessName !== formValues.businessName ||
+      businessData.description !== formValues.description ||
+      businessData.phone !== formValues.phone ||
+      businessData.address !== formValues.address ||
+      !isLogoSame;
+    
+    setHasChanges(hasFormChanges);
+  };
+
+  // Atualizar o estado de alterações quando os dados do negócio mudarem
+  useEffect(() => {
+    if (businessData) {
+      updateChangesState();
+    }
+  }, [businessData]);
+
+  // Monitorar alterações no formulário
+  useEffect(() => {
+    const subscription = businessForm.watch(() => {
+      updateChangesState();
+    });
+    
+    return () => subscription.unsubscribe();
+  }, [businessForm, businessData, uploadedLogoUrl]);
+
   async function onBusinessSubmit(values: z.infer<typeof businessFormSchema>) {
     try {
+      // Verificar se houve alterações antes de salvar
+      if (businessData && 
+          businessData.businessName === values.businessName &&
+          businessData.description === values.description &&
+          businessData.phone === values.phone &&
+          businessData.address === values.address &&
+          (businessData.logo === values.logo || businessData.logo === uploadedLogoUrl)) {
+        
+        console.log('[BusinessSettings] Nenhuma alteração detectada, ignorando salvamento');
+        toast.success('Nenhuma alteração detectada', {
+          style: {
+            borderRadius: '6px',
+            background: '#333',
+            color: '#fff',
+          },
+        });
+        return;
+      }
+      
       setIsSubmitting(true);
       
       // Se temos um logo anterior e um novo logo foi carregado, excluir o anterior
@@ -109,7 +169,10 @@ export function BusinessSettings({ storeId }: { storeId: string }) {
         phone: values.phone,
         address: values.address,
         logo: logoUrl || '',
-      })
+      });
+      
+      // Após salvar com sucesso, atualizar o estado para refletir que não há mais alterações pendentes
+      setHasChanges(false);
     } catch (error) {
       console.error('Erro ao salvar configurações:', error);
       toast.error('Erro ao salvar as configurações', {
@@ -129,6 +192,13 @@ export function BusinessSettings({ storeId }: { storeId: string }) {
     if (url) {
       // Se recebemos uma URL, significa que o upload direto foi bem-sucedido
       console.log('[BusinessSettings] Logo carregado com sucesso:', url);
+      
+      // Verificar se o logo é diferente do atual
+      if (businessData?.logo === url) {
+        console.log('[BusinessSettings] Logo não foi alterado, ignorando salvamento automático');
+        return;
+      }
+      
       setUploadedLogoUrl(url);
       businessForm.setValue('logo', url);
       
@@ -169,6 +239,9 @@ export function BusinessSettings({ storeId }: { storeId: string }) {
           logo: url,
         });
         
+        // Após salvar com sucesso, atualizar o estado para refletir que não há mais alterações pendentes
+        setHasChanges(false);
+        
         // Mostrar feedback para o usuário
         toast.dismiss(savingToastId);
         toast.success('Configurações salvas com sucesso!', {
@@ -190,9 +263,14 @@ export function BusinessSettings({ storeId }: { storeId: string }) {
         });
       }
     } else if (file === null) {
-      // Se o arquivo for null, o usuário removeu o logo
+      // Se o arquivo for null, o usuário removeu o logo localmente
       setUploadedLogoUrl(null);
       businessForm.setValue('logo', null);
+      
+      // Se havia um logo antes, marcar que houve alteração
+      if (businessData?.logo) {
+        setHasChanges(true);
+      }
     }
     // Se temos apenas o arquivo sem URL, o upload direto não está ativado
     // Nesse caso, não fazemos nada aqui, pois o upload seria feito no onSubmit
@@ -201,6 +279,30 @@ export function BusinessSettings({ storeId }: { storeId: string }) {
   // Função para excluir o logo
   const handleDeleteLogo = async (logoPath: string): Promise<void> => {
     try {
+      // Verificar se o caminho do logo é válido
+      if (!logoPath || logoPath === '') {
+        console.log('[BusinessSettings] Nenhum logo para excluir');
+        toast.success('Nenhum logo para excluir', {
+          style: {
+            borderRadius: '6px',
+            background: '#333',
+            color: '#fff',
+          },
+        });
+        return Promise.resolve();
+      }
+      
+      // Verificar se o logo é o mesmo que já está salvo
+      if (!businessData?.logo || businessData.logo === '') {
+        console.log('[BusinessSettings] Não há logo salvo no banco de dados para excluir');
+        
+        // Apenas limpar o estado local
+        setUploadedLogoUrl(null);
+        businessForm.setValue('logo', null);
+        
+        return Promise.resolve();
+      }
+      
       setIsDeleting(true);
       console.log('[BusinessSettings] Iniciando exclusão do logo:', logoPath);
       
@@ -239,6 +341,13 @@ export function BusinessSettings({ storeId }: { storeId: string }) {
       // Obter os valores atuais do formulário
       const formValues = businessForm.getValues();
       
+      // Verificar se houve alterações além do logo
+      const hasOtherChanges = 
+        businessData.businessName !== formValues.businessName ||
+        businessData.description !== formValues.description ||
+        businessData.phone !== formValues.phone ||
+        businessData.address !== formValues.address;
+      
       try {
         // Chamar a função de atualização para atualizar o negócio no banco de dados
         console.log('[BusinessSettings] Enviando atualização para o servidor');
@@ -263,17 +372,30 @@ export function BusinessSettings({ storeId }: { storeId: string }) {
         // Atualizar o estado local e o formulário
         setUploadedLogoUrl(null);
         businessForm.setValue('logo', null);
+        setHasChanges(false); // Resetar o estado de alterações após salvar
         
         // Mostrar feedback para o usuário
         toast.dismiss(savingToastId);
-        toast.success('Logo removido com sucesso!', {
-          id: 'delete-logo-success',
-          style: {
-            borderRadius: '6px',
-            background: '#333',
-            color: '#fff',
-          },
-        });
+        
+        if (hasOtherChanges) {
+          toast.success('Configurações atualizadas com sucesso!', {
+            id: 'delete-logo-success',
+            style: {
+              borderRadius: '6px',
+              background: '#333',
+              color: '#fff',
+            },
+          });
+        } else {
+          toast.success('Logo removido com sucesso!', {
+            id: 'delete-logo-success',
+            style: {
+              borderRadius: '6px',
+              background: '#333',
+              color: '#fff',
+            },
+          });
+        }
         
         return Promise.resolve();
       } catch (saveError) {
@@ -432,16 +554,24 @@ export function BusinessSettings({ storeId }: { storeId: string }) {
                 />
               </div>
             </div>
-            <Button 
-              type="submit" 
-              disabled={isLoading || updateBusiness.isLoading || isSubmitting || isDeleting}
-              className="w-full sm:w-auto"
-            >
-              {(updateBusiness.isLoading || isSubmitting || isDeleting) && (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            <div className="flex flex-col space-y-2">
+              <Button 
+                type="submit" 
+                disabled={isLoading || updateBusiness.isLoading || isSubmitting || isDeleting || !hasChanges}
+                className="w-full sm:w-auto"
+              >
+                {(updateBusiness.isLoading || isSubmitting || isDeleting) && (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                )}
+                {hasChanges ? 'Salvar Alterações' : 'Sem Alterações'}
+              </Button>
+              
+              {!hasChanges && !isLoading && !isSubmitting && !isDeleting && (
+                <p className="text-xs text-muted-foreground">
+                  Faça alterações nos campos acima para habilitar o botão de salvar.
+                </p>
               )}
-              Salvar Alterações
-            </Button>
+            </div>
           </form>
         </Form>
       </CardContent>
