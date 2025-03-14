@@ -186,12 +186,18 @@ export default function PieChart({
     // Usar um objeto mais simples para o ApexChart
     const chartOptions: ApexOptions = {
       chart: {
-        type: type
+        type: type,
+        background: 'transparent',
+        foreColor: isDarkMode ? '#e5e7eb' : '#374151' // Cor do texto base
       },
       colors: colors,
       labels: labels,
       legend: {
-        position: 'right' as const
+        position: 'right' as const,
+        labels: {
+          colors: isDarkMode ? '#e5e7eb' : '#374151'
+        },
+        fontFamily: 'inherit'
       },
       dataLabels: {
         enabled: false
@@ -206,6 +212,9 @@ export default function PieChart({
             return valueFormatter(val);
           }
         }
+      },
+      theme: {
+        mode: isDarkMode ? 'dark' : 'light'
       }
     };
 
