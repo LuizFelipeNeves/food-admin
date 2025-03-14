@@ -57,7 +57,7 @@ export default function PieChart({
   ) || [];
 
   // Verificar se os dados são válidos
-  const isDataValid = filteredData.length > 0;
+  const isDataValid = filteredData && filteredData.length > 0;
 
   useEffect(() => {
     setIsMounted(true);
@@ -131,6 +131,16 @@ export default function PieChart({
   const series = filteredData.map(item => item.value);
   const labels = filteredData.map(item => item.name);
   
+  // Verificação adicional para garantir que temos dados válidos
+  if (!series.length || !labels.length) {
+    console.log('Séries ou labels vazios:', { series, labels });
+    return (
+      <div className="h-[300px] flex items-center justify-center border rounded-lg dark:border-gray-800">
+        <p className="text-muted-foreground">Dados insuficientes para renderizar o gráfico</p>
+      </div>
+    );
+  }
+
   // Mapear cores para os itens com suporte a modo escuro
   const colors = filteredData.map((item, index) => {
     if (isDarkMode) {
@@ -156,50 +166,52 @@ export default function PieChart({
     chart: {
       type: type,
       background: 'transparent',
-      foreColor: isDarkMode ? '#e5e7eb' : '#374151' // Cor do texto base
+      foreColor: isDarkMode ? '#e5e7eb' : '#374151', // Cor do texto base
+      animations: {
+        enabled: true,
+        speed: 800,
+        animateGradually: {
+          enabled: true,
+          delay: 150
+        },
+        dynamicAnimation: {
+          enabled: true,
+          speed: 350
+        }
+      }
     },
     colors: colors,
     labels: labels,
     legend: {
-      position: 'bottom',
+      position: 'right',
+      horizontalAlign: 'center',
+      floating: false,
+      fontSize: '14px',
+      fontFamily: 'inherit',
+      offsetX: 0,
+      offsetY: 0,
       labels: {
         colors: isDarkMode ? '#e5e7eb' : '#374151' // Cor do texto da legenda
       },
       markers: {
         fillColors: colors,
         strokeWidth: 0,
-        radius: 6
       },
       itemMargin: {
         horizontal: 12,
         vertical: 5
-      },
-      fontSize: '14px',
-      fontFamily: 'inherit'
+      }
     },
     stroke: {
       width: isDarkMode ? 2 : 1,
       colors: isDarkMode ? ['#1f2937'] : ['#ffffff'] // Borda entre segmentos
     },
     dataLabels: {
-      enabled: true,
-      style: {
-        fontSize: '14px',
-        fontFamily: 'inherit',
-        fontWeight: 'medium',
-        colors: [isDarkMode ? '#ffffff' : '#000000']
-      },
-      dropShadow: {
-        enabled: isDarkMode,
-        top: 1,
-        left: 1,
-        blur: 3,
-        color: '#000000',
-        opacity: 0.45
-      }
+      enabled: false, // Desativando os rótulos de dados para um visual mais limpo
     },
     plotOptions: {
       pie: {
+        customScale: 0.9, // Reduzir um pouco o tamanho do gráfico para evitar problemas de renderização
         expandOnClick: false,
         donut: type === 'donut' ? {
           size: '60%',
@@ -236,13 +248,15 @@ export default function PieChart({
       }
     },
     responsive: [{
-      breakpoint: 480,
+      breakpoint: 768,
       options: {
         chart: {
           width: '100%'
         },
         legend: {
           position: 'bottom',
+          horizontalAlign: 'center',
+          offsetY: 10,
           fontSize: '12px'
         },
         dataLabels: {
@@ -272,13 +286,11 @@ export default function PieChart({
       hover: {
         filter: {
           type: 'darken',
-          value: 0.15
         }
       },
       active: {
         filter: {
           type: 'darken',
-          value: 0.2
         }
       }
     }
@@ -291,14 +303,64 @@ export default function PieChart({
 
   // Formato correto para gráficos de pizza/donut no ApexCharts
   try {
+    // Verificação final para garantir que temos todos os dados necessários
+    if (!series || !series.length || !labels || !labels.length || series.length !== labels.length) {
+      console.error('Dados inválidos para o gráfico:', { series, labels });
+      return (
+        <div className="h-[300px] flex items-center justify-center border rounded-lg dark:border-gray-800">
+          <p className="text-muted-foreground">Dados inconsistentes para renderizar o gráfico</p>
+        </div>
+      );
+    }
+
+    // Criar uma cópia simplificada das opções para evitar problemas de referência
+    const chartOptions = {
+      chart: {
+        type: type,
+        background: 'transparent'
+      },
+      colors: colors,
+      labels: labels,
+      legend: {
+        position: 'right' as const,
+        horizontalAlign: 'center' as const
+      },
+      stroke: {
+        width: isDarkMode ? 2 : 1
+      },
+      dataLabels: {
+        enabled: false
+      },
+      tooltip: {
+        enabled: true,
+        theme: isDarkMode ? 'dark' : 'light',
+        y: {
+          formatter: function(val: number, { seriesIndex }: { seriesIndex: number }) {
+            if (tooltipFormatter && seriesIndex < labels.length) {
+              return tooltipFormatter(val, labels[seriesIndex]);
+            }
+            return valueFormatter(val);
+          }
+        }
+      },
+      responsive: [{
+        breakpoint: 768,
+        options: {
+          legend: {
+            position: 'bottom' as const
+          }
+        }
+      }]
+    };
+
     return (
-      <div className="w-full border rounded-lg p-4 dark:border-gray-800 dark:bg-gray-900/50">
+      <div className="w-full rounded-lg p-4 bg-transparent">
         {title && (
           <h3 className="text-lg font-medium mb-4 text-center dark:text-gray-100">{title}</h3>
         )}
         {typeof window !== 'undefined' && (
           <ApexChart
-            options={options}
+            options={chartOptions}
             series={series}
             type={type}
             height={height}
