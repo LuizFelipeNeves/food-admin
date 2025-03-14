@@ -12,6 +12,7 @@ import { ptBR } from 'date-fns/locale'
 import { Loader2 } from 'lucide-react'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useTheme } from 'next-themes'
+import { CacheIndicator } from '@/components/ui/cache-indicator'
 
 // Importação dinâmica dos componentes de gráfico
 const DynamicRevenueChart = dynamic(
@@ -89,59 +90,126 @@ export default function AnalyticsPage() {
   const productColors = isDarkMode ? productDarkColors : productLightColors;
   const paymentMethodColors = isDarkMode ? paymentMethodDarkColors : paymentMethodLightColors;
 
+  const [dataTimestamps, setDataTimestamps] = useState<{
+    revenue?: { time: Date; fromCache: boolean };
+    products?: { time: Date; fromCache: boolean };
+    customers?: { time: Date; fromCache: boolean };
+    payments?: { time: Date; fromCache: boolean };
+  }>({});
+  const [refreshing, setRefreshing] = useState(false);
+
   // Buscar dados de receita mensal
-  const { data: revenueData, isLoading: isLoadingRevenue } = trpc.analytics.getMonthlyRevenue.useQuery({
+  const { data: revenueResponse, isLoading: isLoadingRevenue, refetch: refetchRevenue } = trpc.analytics.getMonthlyRevenue.useQuery({
     storeId,
     months: 6
   }, {
-    enabled: !!storeId && isMounted
+    enabled: !!storeId && isMounted,
+    onSuccess: (data) => {
+      if (data) {
+        setDataTimestamps(prev => ({
+          ...prev,
+          revenue: { time: new Date(data.timestamp), fromCache: data.fromCache }
+        }));
+      }
+    }
   });
 
+  const revenueData = revenueResponse?.data || [];
+
   // Buscar dados de produtos mais vendidos
-  const { data: topProductsData, isLoading: isLoadingProducts } = trpc.analytics.getTopProducts.useQuery({
+  const { data: topProductsResponse, isLoading: isLoadingProducts, refetch: refetchProducts } = trpc.analytics.getTopProducts.useQuery({
     storeId,
     limit: 5,
     period: selectedPeriod
   }, {
-    enabled: !!storeId && isMounted
+    enabled: !!storeId && isMounted,
+    onSuccess: (data) => {
+      if (data) {
+        setDataTimestamps(prev => ({
+          ...prev,
+          products: { time: new Date(data.timestamp), fromCache: data.fromCache }
+        }));
+      }
+    }
   });
 
+  const topProductsData = topProductsResponse?.data || [];
+
   // Buscar dados de clientes
-  const { data: customerData, isLoading: isLoadingCustomers } = trpc.analytics.getCustomerStats.useQuery({
+  const { data: customerResponse, isLoading: isLoadingCustomers, refetch: refetchCustomers } = trpc.analytics.getCustomerStats.useQuery({
     storeId,
     limit: 5
   }, {
-    enabled: !!storeId && isMounted
+    enabled: !!storeId && isMounted,
+    onSuccess: (data) => {
+      if (data) {
+        setDataTimestamps(prev => ({
+          ...prev,
+          customers: { time: new Date(data.timestamp), fromCache: data.fromCache }
+        }));
+      }
+    }
   });
 
+  const customerData = customerResponse?.data;
+
   // Buscar dados de métodos de pagamento
-  const { data: paymentMethodData, isLoading: isLoadingPayments } = trpc.analytics.getPaymentMethodStats.useQuery({
+  const { data: paymentMethodResponse, isLoading: isLoadingPayments, refetch: refetchPayments } = trpc.analytics.getPaymentMethodStats.useQuery({
     storeId,
     period: selectedPeriod
   }, {
-    enabled: !!storeId && isMounted
+    enabled: !!storeId && isMounted,
+    onSuccess: (data) => {
+      if (data) {
+        setDataTimestamps(prev => ({
+          ...prev,
+          payments: { time: new Date(data.timestamp), fromCache: data.fromCache }
+        }));
+      }
+    }
   });
 
-  // Calcular totais
-  const totalRevenue = revenueData?.reduce((acc: number, item: { total: number }) => acc + item.total, 0) || 0;
-  const totalOrders = topProductsData?.reduce((acc: number, item: { quantity: number }) => acc + item.quantity, 0) || 0;
-  const averageTicket = totalOrders > 0 ? totalRevenue / totalOrders : 0;
+  const paymentMethodData = paymentMethodResponse?.data || [];
 
-  // Preparar dados para o gráfico de pizza
-  // Nota: value = % baseada no número de transações, percentage = % baseada no valor total
-  const pieChartDataByCount = paymentMethodData?.map(method => ({
-    name: method.name,
-    value: method.value || 0, // % baseada no número de transações
-    color: paymentMethodColors[method.name],
-    darkColor: paymentMethodDarkColors[method.name]
-  })) || [];
+  // Calcular totais usando useMemo
+  const totalRevenue = useMemo(() => {
+    return Array.isArray(revenueData) 
+      ? revenueData.reduce((acc: number, item: { total: number }) => acc + item.total, 0) 
+      : 0;
+  }, [revenueData]);
+  
+  const totalOrders = useMemo(() => {
+    return Array.isArray(topProductsData) 
+      ? topProductsData.reduce((acc: number, item: { quantity: number }) => acc + item.quantity, 0) 
+      : 0;
+  }, [topProductsData]);
+  
+  const averageTicket = useMemo(() => {
+    return totalOrders > 0 ? totalRevenue / totalOrders : 0;
+  }, [totalRevenue, totalOrders]);
 
-  const pieChartDataByRevenue = paymentMethodData?.map(method => ({
-    name: method.name,
-    value: method.percentage || 0, // % baseada no valor total
-    color: paymentMethodColors[method.name],
-    darkColor: paymentMethodDarkColors[method.name]
-  })) || [];
+  // Preparar dados para o gráfico de pizza usando useMemo
+  const pieChartDataByCount = useMemo(() => {
+    return Array.isArray(paymentMethodData) 
+      ? paymentMethodData.map((method: any) => ({
+          name: method.name,
+          value: method.value || 0, // % baseada no número de transações
+          color: paymentMethodColors[method.name],
+          darkColor: paymentMethodDarkColors[method.name]
+        })) 
+      : [];
+  }, [paymentMethodData, paymentMethodColors, paymentMethodDarkColors]);
+
+  const pieChartDataByRevenue = useMemo(() => {
+    return Array.isArray(paymentMethodData) 
+      ? paymentMethodData.map((method: any) => ({
+          name: method.name,
+          value: method.percentage || 0, // % baseada no valor total
+          color: paymentMethodColors[method.name],
+          darkColor: paymentMethodDarkColors[method.name]
+        })) 
+      : [];
+  }, [paymentMethodData, paymentMethodColors, paymentMethodDarkColors]);
 
   // Estado para controlar qual visualização mostrar
   const [showByRevenue, setShowByRevenue] = useState(true);
@@ -198,6 +266,25 @@ export default function AnalyticsPage() {
     }
   };
 
+  // Função para formatar a data e hora
+  const formatDateTime = (date?: Date) => {
+    if (!date) return 'Não disponível';
+    
+    return format(date, 'dd/MM/yyyy HH:mm:ss', { locale: ptBR });
+  };
+
+  // Função para atualizar todos os dados
+  const refreshAllData = async () => {
+    setRefreshing(true);
+    await Promise.all([
+      refetchRevenue(),
+      refetchProducts(),
+      refetchCustomers(),
+      refetchPayments()
+    ]);
+    setRefreshing(false);
+  };
+
   // Verificar se há dados para exibir
   useEffect(() => {
     if (paymentMethodData) {
@@ -249,6 +336,13 @@ export default function AnalyticsPage() {
                 Análise detalhada do seu negócio
               </p>
             </div>
+            
+            <CacheIndicator 
+              dataTimestamps={dataTimestamps}
+              refreshing={refreshing}
+              onRefresh={refreshAllData}
+              ttl={20}
+            />
           </div>
 
           <Tabs defaultValue="overview" className="space-y-4">
@@ -274,9 +368,9 @@ export default function AnalyticsPage() {
                     ) : (
                       <>
                         <div className="text-2xl font-bold">{formatCurrency(totalRevenue)}</div>
-                        <p className="text-xs text-muted-foreground">
+                    <p className="text-xs text-muted-foreground">
                           Últimos 6 meses
-                        </p>
+                    </p>
                       </>
                     )}
                   </CardContent>
@@ -293,9 +387,9 @@ export default function AnalyticsPage() {
                     ) : (
                       <>
                         <div className="text-2xl font-bold">{totalOrders}</div>
-                        <p className="text-xs text-muted-foreground">
+                    <p className="text-xs text-muted-foreground">
                           No período selecionado
-                        </p>
+                    </p>
                       </>
                     )}
                   </CardContent>
@@ -312,9 +406,9 @@ export default function AnalyticsPage() {
                     ) : (
                       <>
                         <div className="text-2xl font-bold">{formatCurrency(averageTicket)}</div>
-                        <p className="text-xs text-muted-foreground">
+                    <p className="text-xs text-muted-foreground">
                           No período selecionado
-                        </p>
+                    </p>
                       </>
                     )}
                   </CardContent>
@@ -331,7 +425,7 @@ export default function AnalyticsPage() {
                     ) : (
                       <>
                         <div className="text-2xl font-bold">+{customerData?.stats.newCustomers || 0}</div>
-                        <p className="text-xs text-muted-foreground">
+                    <p className="text-xs text-muted-foreground">
                           Este mês
                         </p>
                       </>
@@ -511,7 +605,7 @@ export default function AnalyticsPage() {
                   ) : (
                     <div className="flex items-center justify-center h-[200px]">
                       <p className="text-muted-foreground">Nenhum dado disponível</p>
-                    </div>
+                  </div>
                   )}
                 </CardContent>
               </Card>
@@ -535,17 +629,17 @@ export default function AnalyticsPage() {
               </div>
 
               <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Top Produtos</CardTitle>
-                  </CardHeader>
-                  <CardContent>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Top Produtos</CardTitle>
+                </CardHeader>
+                <CardContent>
                     {isLoadingProducts ? (
                       <div className="flex items-center justify-center h-[200px]">
                         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                       </div>
                     ) : topProductsData && topProductsData.length > 0 ? (
-                      <div className="space-y-8">
+                  <div className="space-y-8">
                         <div className="grid grid-cols-4 text-xs font-medium text-muted-foreground mb-2">
                           <div>Produto</div>
                           <div>Quantidade</div>
@@ -597,15 +691,15 @@ export default function AnalyticsPage() {
                 <Card>
                   <CardHeader>
                     <CardTitle>Distribuição de Vendas por Produto</CardTitle>
-                    <p className="text-sm text-muted-foreground">
+                          <p className="text-sm text-muted-foreground">
                       Visualização da distribuição de receita entre os produtos mais vendidos
-                    </p>
+                          </p>
                   </CardHeader>
                   <CardContent>
                     {isLoadingProducts ? (
                       <div className="flex items-center justify-center h-[300px]">
                         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                      </div>
+                        </div>
                     ) : productPieChartData && productPieChartData.length > 0 && isMounted ? (
                       <DynamicPieChart
                         data={productPieChartData.filter(item =>
@@ -632,8 +726,8 @@ export default function AnalyticsPage() {
                         <p className="text-muted-foreground">Nenhum produto vendido no período selecionado</p>
                       </div>
                     )}
-                  </CardContent>
-                </Card>
+                </CardContent>
+              </Card>
               </div>
             </TabsContent>
 
@@ -696,16 +790,16 @@ export default function AnalyticsPage() {
                             </p>
                           </div>
                           <div className="text-right">
-                            <p className="text-sm font-medium leading-none">
+                          <p className="text-sm font-medium leading-none">
                               {formatCurrency(customer.totalSpent)}
-                            </p>
-                            <p className="text-sm text-muted-foreground">
+                          </p>
+                          <p className="text-sm text-muted-foreground">
                               Total gasto
-                            </p>
-                          </div>
+                          </p>
+                        </div>
                         </div>
                       ))}
-                    </div>
+                      </div>
                   ) : (
                     <div className="flex items-center justify-center h-[200px]">
                       <p className="text-muted-foreground">Nenhum cliente encontrado</p>

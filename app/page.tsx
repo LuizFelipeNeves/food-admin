@@ -17,45 +17,162 @@ import { Overview } from '@/components/dashboard/overview'
 import { SeedButton } from '@/components/dashboard/seed-button'
 import { GenerateDataButton } from '@/components/dashboard/generate-data-button'
 import { DeliveryStats } from '@/components/dashboard/delivery-stats'
+import { useState } from 'react'
+import { CacheIndicator } from '@/components/ui/cache-indicator'
 
 export default function HomePage() {
   const storeId = '67a05b53927e38337439322f';
+  const [refreshing, setRefreshing] = useState(false);
+  const [dataTimestamps, setDataTimestamps] = useState<{
+    stats?: { time: Date; fromCache: boolean };
+    sales?: { time: Date; fromCache: boolean };
+    products?: { time: Date; fromCache: boolean };
+    system?: { time: Date; fromCache: boolean };
+    categories?: { time: Date; fromCache: boolean };
+    payments?: { time: Date; fromCache: boolean };
+  }>({});
 
-  const { data: stats, isLoading: statsLoading } = trpc.dashboard.getStats.useQuery({
+  const { data: statsResponse, isLoading: statsLoading, refetch: refetchStats } = trpc.dashboard.getStats.useQuery({
     storeId,
+  }, {
+    onSuccess: (data: any) => {
+      if (data) {
+        setDataTimestamps(prev => ({
+          ...prev,
+          stats: { 
+            time: new Date(data.timestamp || Date.now()), 
+            fromCache: !!data.fromCache 
+          }
+        }));
+      }
+    }
   });
 
-  const { data: salesData, isLoading: salesLoading } = trpc.dashboard.getSalesChart.useQuery({
+  const { data: salesResponse, isLoading: salesLoading, refetch: refetchSales } = trpc.dashboard.getSalesChart.useQuery({
     storeId,
+  }, {
+    onSuccess: (data: any) => {
+      if (data) {
+        setDataTimestamps(prev => ({
+          ...prev,
+          sales: { 
+            time: new Date(data.timestamp || Date.now()), 
+            fromCache: !!data.fromCache 
+          }
+        }));
+      }
+    }
   });
 
-  const { data: topProducts, isLoading: topProductsLoading } = trpc.dashboard.getTopProducts.useQuery({
+  const { data: topProductsResponse, isLoading: topProductsLoading, refetch: refetchProducts } = trpc.dashboard.getTopProducts.useQuery({
     storeId,
+  }, {
+    onSuccess: (data: any) => {
+      if (data) {
+        setDataTimestamps(prev => ({
+          ...prev,
+          products: { 
+            time: new Date(data.timestamp || Date.now()), 
+            fromCache: !!data.fromCache 
+          }
+        }));
+      }
+    }
   });
 
-  const { data: systemStatus, isLoading: systemStatusLoading } = trpc.dashboard.getSystemStatus.useQuery({
+  const { data: systemStatusResponse, isLoading: systemStatusLoading, refetch: refetchSystem } = trpc.dashboard.getSystemStatus.useQuery({
     storeId,
+  }, {
+    onSuccess: (data: any) => {
+      if (data) {
+        setDataTimestamps(prev => ({
+          ...prev,
+          system: { 
+            time: new Date(data.timestamp || Date.now()), 
+            fromCache: !!data.fromCache 
+          }
+        }));
+      }
+    }
   });
 
-  const { data: ordersByCategory, isLoading: ordersByCategoryLoading } = trpc.dashboard.getOrdersByCategory.useQuery({
+  const { data: ordersByCategoryResponse, isLoading: ordersByCategoryLoading, refetch: refetchCategories } = trpc.dashboard.getOrdersByCategory.useQuery({
     storeId,
+  }, {
+    onSuccess: (data: any) => {
+      if (data) {
+        setDataTimestamps(prev => ({
+          ...prev,
+          categories: { 
+            time: new Date(data.timestamp || Date.now()), 
+            fromCache: !!data.fromCache 
+          }
+        }));
+      }
+    }
   });
 
-  const { data: paymentMethods, isLoading: paymentMethodsLoading } = trpc.dashboard.getPaymentMethods.useQuery({
+  const { data: paymentMethodsResponse, isLoading: paymentMethodsLoading, refetch: refetchPayments } = trpc.dashboard.getPaymentMethods.useQuery({
     storeId,
+  }, {
+    onSuccess: (data: any) => {
+      if (data) {
+        setDataTimestamps(prev => ({
+          ...prev,
+          payments: { 
+            time: new Date(data.timestamp || Date.now()), 
+            fromCache: !!data.fromCache 
+          }
+        }));
+      }
+    }
   });
+
+  // Extrair os dados das respostas
+  const stats = statsResponse;
+  const salesData = salesResponse;
+  const topProducts = topProductsResponse?.data || [];
+  const systemStatus = systemStatusResponse?.data || [];
+  const ordersByCategory = ordersByCategoryResponse?.data || [];
+  const paymentMethods = paymentMethodsResponse?.data || [];
+
+  // Função para atualizar todos os dados
+  const refreshAllData = async () => {
+    setRefreshing(true);
+    await Promise.all([
+      refetchStats(),
+      refetchSales(),
+      refetchProducts(),
+      refetchSystem(),
+      refetchCategories(),
+      refetchPayments()
+    ]);
+    setRefreshing(false);
+  };
 
   return (
     <Layout>
       <div className="flex-1 space-y-4 p-2 sm:p-4 md:p-6 lg:p-8 pt-4 sm:pt-6 max-w-[2000px] mx-auto overflow-y-auto">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
-          <h1 className="text-1xl sm:text-2xl font-bold tracking-tight">Dashboard</h1>
-          <p className="text-sm text-muted-foreground">
-            {format(new Date(), "EEEE, dd 'de' MMMM", { locale: ptBR })}
-          </p>
-          <div className="flex items-center space-x-2">
-            <SeedButton />
-            <GenerateDataButton storeId={storeId} />
+          <div>
+            <h1 className="text-1xl sm:text-2xl font-bold tracking-tight">Dashboard</h1>
+            <p className="text-sm text-muted-foreground">
+              {format(new Date(), "EEEE, dd 'de' MMMM", { locale: ptBR })}
+            </p>
+          </div>
+          
+          <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2">
+            <CacheIndicator 
+              dataTimestamps={dataTimestamps}
+              refreshing={refreshing}
+              onRefresh={refreshAllData}
+              ttl={20}
+            />
+            
+            <div className="flex items-center space-x-2">
+              <SeedButton />
+              <GenerateDataButton storeId={storeId} />
+            </div>
           </div>
         </div>
 
@@ -104,7 +221,10 @@ export default function HomePage() {
             </CardContent>
           </Card>
 
-          <DeliveryStats averageDeliveryTime={stats?.averageDeliveryTime ?? 0} deliveryTimeChange={stats?.deliveryTimeChange ?? 0} />
+          <DeliveryStats 
+            averageDeliveryTime={stats?.averageDeliveryTime ?? 0} 
+            deliveryTimeChange={stats?.deliveryTimeChange ?? 0} 
+          />
 
           <Card className="dark:border-muted">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -142,7 +262,7 @@ export default function HomePage() {
               ) : (
                 <Overview 
                   data={salesData?.hourly && Array.isArray(salesData.hourly) && salesData.hourly.length > 0 
-                    ? salesData.hourly.map(item => ({
+                    ? salesData.hourly.map((item: any) => ({
                         ...item,
                         total: typeof item.total === 'number' ? item.total : 0,
                         subtotal: typeof item.subtotal === 'number' ? item.subtotal : 0,
@@ -176,7 +296,7 @@ export default function HomePage() {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {topProducts?.map((product) => (
+                  {Array.isArray(topProducts) && topProducts.map((product: any) => (
                     <div key={product._id} className="flex items-center justify-between">
                       <div>
                         <p className="text-sm font-medium">{product.name}</p>
@@ -212,7 +332,7 @@ export default function HomePage() {
                 </div>
               ) : (
                 <div className="space-y-3 sm:space-y-4">
-                  {systemStatus?.map((item) => (
+                  {Array.isArray(systemStatus) && systemStatus.map((item: any) => (
                     <div key={item.name} className="flex items-center justify-between">
                       <p className="text-sm">{item.name}</p>
                       <div className="flex items-center">
@@ -241,7 +361,7 @@ export default function HomePage() {
                 </div>
               ) : (
                 <div className="space-y-3 sm:space-y-4">
-                  {ordersByCategory?.map((category) => (
+                  {Array.isArray(ordersByCategory) && ordersByCategory.map((category: any) => (
                     <div key={category.name} className="flex items-center justify-between gap-2">
                       <p className="text-sm min-w-[80px]">{category.name}</p>
                       <div className="flex items-center gap-2 flex-1">
@@ -277,7 +397,7 @@ export default function HomePage() {
                 </div>
               ) : (
                 <div className="space-y-3 sm:space-y-4">
-                  {paymentMethods?.map((payment) => (
+                  {Array.isArray(paymentMethods) && paymentMethods.map((payment: any) => (
                     <div key={payment.name} className="flex items-center justify-between gap-2">
                       <p className="text-sm min-w-[80px] truncate">{payment.name}</p>
                       <div className="flex items-center gap-2 flex-1">

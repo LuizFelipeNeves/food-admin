@@ -4,6 +4,7 @@ import { Order } from '@/models';
 import { startOfDay, endOfDay, subDays, subMonths, format, startOfMonth, endOfMonth } from 'date-fns';
 import mongoose from 'mongoose';
 import { PAYMENT_METHOD_NAMES } from '@/constants/payments';
+import { CacheService } from '../services/cache-service';
 
 type PaymentMethodType = 'credit' | 'debit' | 'pix' | 'money' | 'vrRefeicao';
 
@@ -13,6 +14,12 @@ interface RevenueData {
   total: number;
 }
 
+interface CachedResponse<T> {
+  data: T;
+  timestamp: Date;
+  fromCache: boolean;
+}
+
 export const analyticsRouter = router({
   // Obter dados de receita mensal para o gráfico
   getMonthlyRevenue: publicProcedure
@@ -20,7 +27,25 @@ export const analyticsRouter = router({
       storeId: z.string(),
       months: z.number().min(1).max(12).default(6), // Número de meses para buscar
     }))
-    .query(async ({ input }) => {
+    .query(async ({ input }): Promise<CachedResponse<RevenueData[]>> => {
+      // Tentar obter do cache primeiro
+      const cacheKey = {
+        storeId: input.storeId,
+        dataType: 'monthlyRevenue',
+        params: { months: input.months }
+      };
+
+      const cachedData = await CacheService.getCache<RevenueData[]>(cacheKey);
+      
+      if (cachedData) {
+        return {
+          data: cachedData.data,
+          timestamp: cachedData.timestamp,
+          fromCache: true
+        };
+      }
+
+      // Se não estiver em cache, buscar dados frescos
       const now = new Date();
       const monthlyData: RevenueData[] = [];
 
@@ -57,7 +82,16 @@ export const analyticsRouter = router({
       }
 
       // Inverter a ordem para que os meses mais antigos apareçam primeiro
-      return monthlyData.reverse();
+      const result = monthlyData.reverse();
+      
+      // Salvar no cache
+      await CacheService.setCache(cacheKey, result);
+      
+      return {
+        data: result,
+        timestamp: new Date(),
+        fromCache: false
+      };
     }),
 
   // Obter os produtos mais vendidos
@@ -68,6 +102,27 @@ export const analyticsRouter = router({
       period: z.enum(['day', 'week', 'month']).default('month'), // Período para análise
     }))
     .query(async ({ input }) => {
+      // Tentar obter do cache primeiro
+      const cacheKey = {
+        storeId: input.storeId,
+        dataType: 'topProducts',
+        params: { 
+          limit: input.limit,
+          period: input.period
+        }
+      };
+
+      const cachedData = await CacheService.getCache(cacheKey);
+      
+      if (cachedData) {
+        return {
+          data: cachedData.data,
+          timestamp: cachedData.timestamp,
+          fromCache: true
+        };
+      }
+
+      // Se não estiver em cache, buscar dados frescos
       const now = new Date();
       let startDate;
       
@@ -112,7 +167,14 @@ export const analyticsRouter = router({
         }
       ]);
 
-      return topProducts;
+      // Salvar no cache
+      await CacheService.setCache(cacheKey, topProducts);
+      
+      return {
+        data: topProducts,
+        timestamp: new Date(),
+        fromCache: false
+      };
     }),
 
   // Obter dados de clientes
@@ -122,6 +184,24 @@ export const analyticsRouter = router({
       limit: z.number().min(1).max(20).default(10), // Número de clientes para retornar
     }))
     .query(async ({ input }) => {
+      // Tentar obter do cache primeiro
+      const cacheKey = {
+        storeId: input.storeId,
+        dataType: 'customerStats',
+        params: { limit: input.limit }
+      };
+
+      const cachedData = await CacheService.getCache(cacheKey);
+      
+      if (cachedData) {
+        return {
+          data: cachedData.data,
+          timestamp: cachedData.timestamp,
+          fromCache: true
+        };
+      }
+
+      // Se não estiver em cache, buscar dados frescos
       const now = new Date();
       const startOfCurrentMonth = startOfMonth(now);
       
@@ -215,7 +295,7 @@ export const analyticsRouter = router({
         ]).then(result => result[0]?.count || 0)
       ]);
 
-      return {
+      const result = {
         topCustomers,
         stats: {
           totalCustomers,
@@ -226,6 +306,15 @@ export const analyticsRouter = router({
             : 0
         }
       };
+
+      // Salvar no cache
+      await CacheService.setCache(cacheKey, result);
+      
+      return {
+        data: result,
+        timestamp: new Date(),
+        fromCache: false
+      };
     }),
 
   // Obter dados de métodos de pagamento
@@ -235,6 +324,24 @@ export const analyticsRouter = router({
       period: z.enum(['day', 'week', 'month']).default('month'), // Período para análise
     }))
     .query(async ({ input }) => {
+      // Tentar obter do cache primeiro
+      const cacheKey = {
+        storeId: input.storeId,
+        dataType: 'paymentMethodStats',
+        params: { period: input.period }
+      };
+
+      const cachedData = await CacheService.getCache(cacheKey);
+      
+      if (cachedData) {
+        return {
+          data: cachedData.data,
+          timestamp: cachedData.timestamp,
+          fromCache: true
+        };
+      }
+
+      // Se não estiver em cache, buscar dados frescos
       const now = new Date();
       let startDate;
       
@@ -275,7 +382,7 @@ export const analyticsRouter = router({
       const totalOrders = paymentMethods.reduce((acc, curr) => acc + curr.count, 0);
       const totalRevenue = paymentMethods.reduce((acc, curr) => acc + curr.total, 0);
 
-      return paymentMethods.map(method => {
+      const result = paymentMethods.map(method => {
         const methodId = method._id as PaymentMethodType;
         return {
           name: PAYMENT_METHOD_NAMES[methodId] || methodId,
@@ -285,5 +392,14 @@ export const analyticsRouter = router({
           count: method.count
         };
       });
+
+      // Salvar no cache
+      await CacheService.setCache(cacheKey, result);
+      
+      return {
+        data: result,
+        timestamp: new Date(),
+        fromCache: false
+      };
     })
 }); 

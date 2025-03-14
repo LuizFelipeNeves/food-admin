@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Skeleton } from "@/components/ui/skeleton";
 import { useTheme } from 'next-themes';
 import dynamic from 'next/dynamic';
@@ -49,12 +49,12 @@ export default function PieChart({
   const { theme } = useTheme();
   const isDarkMode = theme === 'dark';
 
-  // Filtrar dados inválidos (valores zero ou undefined)
-  const filteredData = data?.filter(item => 
-    item && typeof item.name === 'string' && 
-    typeof item.value === 'number' && 
-    item.value > 0
-  ) || [];
+  // Filtrar dados vazios
+  const filteredData = useMemo(() => {
+    return Array.isArray(data) 
+      ? data.filter(item => item.value > 0)
+      : [];
+  }, [data]);
 
   // Verificar se os dados são válidos
   const isDataValid = filteredData && filteredData.length > 0;

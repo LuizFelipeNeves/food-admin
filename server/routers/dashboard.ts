@@ -4,6 +4,7 @@ import { Order } from '@/models';
 import { startOfDay, endOfDay, subDays } from 'date-fns';
 import mongoose from 'mongoose';
 import { PAYMENT_METHOD_NAMES } from '@/constants/payments';
+import { CacheService } from '../services/cache-service';
 
 type PaymentMethodType = 'credit' | 'debit' | 'pix' | 'money' | 'vrRefeicao';
 
@@ -43,6 +44,21 @@ export const dashboardRouter = router({
       storeId: z.string(),
     }))
     .query(async ({ input }) => {
+      // Verificar cache primeiro
+      const cacheKey = {
+        storeId: input.storeId,
+        dataType: 'dashboard.stats'
+      };
+      
+      const cachedData = await CacheService.getCache(cacheKey);
+      if (cachedData) {
+        return {
+          ...cachedData.data,
+          timestamp: cachedData.timestamp,
+          fromCache: true
+        };
+      }
+      
       const now = new Date();
       const startOfToday = startOfDay(now);
       const endOfToday = endOfDay(now);
@@ -175,7 +191,8 @@ export const dashboardRouter = router({
         ? ((todayStats.averageDeliveryTime - yesterdayStats.averageDeliveryTime) / yesterdayStats.averageDeliveryTime) * 100
         : 0;
 
-      return {
+      // Salvar no cache e retornar
+      const result = {
         dailySales: todayTotal,
         dailyOrders: todayOrders,
         salesGrowth,
@@ -185,8 +202,13 @@ export const dashboardRouter = router({
         deliveryFees: todaySales[0]?.deliveryFees || 0,
         averageDeliveryTime: Math.round(todayStats.averageDeliveryTime || 0),
         deliveryTimeChange: Math.round(deliveryTimeChange),
-        lastHourOrders
+        lastHourOrders,
+        timestamp: new Date(),
+        fromCache: false
       };
+      
+      await CacheService.setCache(cacheKey, result);
+      return result;
     }),
 
   getSalesChart: publicProcedure
@@ -194,6 +216,21 @@ export const dashboardRouter = router({
       storeId: z.string(),
     }))
     .query(async ({ input }) => {
+      // Verificar cache primeiro
+      const cacheKey = {
+        storeId: input.storeId,
+        dataType: 'dashboard.salesChart'
+      };
+      
+      const cachedData = await CacheService.getCache(cacheKey);
+      if (cachedData) {
+        return {
+          ...cachedData.data,
+          timestamp: cachedData.timestamp,
+          fromCache: true
+        };
+      }
+      
       const now = new Date();
       const startOfToday = startOfDay(now);
       const endOfToday = endOfDay(now);
@@ -302,7 +339,8 @@ export const dashboardRouter = router({
         return curr.orders > (peak?.orders || 0) ? curr : peak;
       }, salesData[0]);
 
-      return {
+      // Salvar no cache e retornar
+      const result = {
         hourly: salesData,
         summary: {
           totalOrders: totals.orders,
@@ -315,8 +353,13 @@ export const dashboardRouter = router({
             ready: totals.ready,
             pending: totals.pending
           }
-        }
+        },
+        timestamp: new Date(),
+        fromCache: false
       };
+      
+      await CacheService.setCache(cacheKey, result);
+      return result;
     }),
 
   getTopProducts: publicProcedure
@@ -324,6 +367,21 @@ export const dashboardRouter = router({
       storeId: z.string(),
     }))
     .query(async ({ input }) => {
+      // Verificar cache primeiro
+      const cacheKey = {
+        storeId: input.storeId,
+        dataType: 'dashboard.topProducts'
+      };
+      
+      const cachedData = await CacheService.getCache(cacheKey);
+      if (cachedData) {
+        return {
+          data: cachedData.data,
+          timestamp: cachedData.timestamp,
+          fromCache: true
+        };
+      }
+      
       const today = new Date();
       const startOfToday = startOfDay(today);
       const endOfToday = endOfDay(today);
@@ -377,20 +435,54 @@ export const dashboardRouter = router({
         }
       ]);
 
-      return topItems;
+      // Salvar no cache e retornar
+      const result = {
+        data: topItems,
+        timestamp: new Date(),
+        fromCache: false
+      };
+      
+      await CacheService.setCache(cacheKey, result);
+      return result;
     }),
 
   getSystemStatus: publicProcedure
     .input(z.object({
       storeId: z.string(),
     }))
-    .query(async () => {
-      // Simular verificação de status dos sistemas
-      return [
-        { name: 'Impressora Fiscal', status: 'online' },
-        { name: 'Integração Delivery', status: 'online' },
-        { name: 'Gateway de Pagamento', status: 'online' },
+    .query(async ({ input }) => {
+      // Verificar cache primeiro
+      const cacheKey = {
+        storeId: input.storeId,
+        dataType: 'dashboard.systemStatus'
+      };
+      
+      const cachedData = await CacheService.getCache(cacheKey);
+      if (cachedData) {
+        return {
+          data: cachedData.data,
+          timestamp: cachedData.timestamp,
+          fromCache: true
+        };
+      }
+      
+      // Dados simulados para status do sistema
+      const systemStatus = [
+        { name: 'API', status: 'online' },
+        { name: 'Banco de Dados', status: 'online' },
+        { name: 'Processamento de Pagamentos', status: 'online' },
+        { name: 'Serviço de Notificações', status: 'online' }
       ];
+      
+      // Salvar no cache e retornar
+      const result = {
+        data: systemStatus,
+        timestamp: new Date(),
+        fromCache: false
+      };
+      
+      await CacheService.setCache(cacheKey, result);
+      return result;
     }),
 
   getOrdersByCategory: publicProcedure
@@ -398,6 +490,21 @@ export const dashboardRouter = router({
       storeId: z.string(),
     }))
     .query(async ({ input }) => {
+      // Verificar cache primeiro
+      const cacheKey = {
+        storeId: input.storeId,
+        dataType: 'dashboard.ordersByCategory'
+      };
+      
+      const cachedData = await CacheService.getCache(cacheKey);
+      if (cachedData) {
+        return {
+          data: cachedData.data,
+          timestamp: cachedData.timestamp,
+          fromCache: true
+        };
+      }
+      
       const today = new Date();
       const startOfToday = startOfDay(today);
       const endOfToday = endOfDay(today);
@@ -489,12 +596,22 @@ export const dashboardRouter = router({
       const totalOrders = ordersByCategory.reduce((acc: number, curr: CategoryData) => acc + curr.count, 0);
       const totalRevenue = ordersByCategory.reduce((acc: number, curr: any) => acc + curr.total, 0);
       
-      return ordersByCategory.map((category: any) => ({
+      const categories = ordersByCategory.map((category: any) => ({
         name: category.name,
         value: Math.round((category.count / totalOrders) * 100),
         total: category.total,
         percentage: Math.round((category.total / totalRevenue) * 100)
       }));
+      
+      // Salvar no cache e retornar
+      const result = {
+        data: categories,
+        timestamp: new Date(),
+        fromCache: false
+      };
+      
+      await CacheService.setCache(cacheKey, result);
+      return result;
     }),
 
   getPaymentMethods: publicProcedure
@@ -502,6 +619,21 @@ export const dashboardRouter = router({
       storeId: z.string(),
     }))
     .query(async ({ input }) => {
+      // Verificar cache primeiro
+      const cacheKey = {
+        storeId: input.storeId,
+        dataType: 'dashboard.paymentMethods'
+      };
+      
+      const cachedData = await CacheService.getCache(cacheKey);
+      if (cachedData) {
+        return {
+          data: cachedData.data,
+          timestamp: cachedData.timestamp,
+          fromCache: true
+        };
+      }
+      
       const today = new Date();
       const startOfToday = startOfDay(today);
       const endOfToday = endOfDay(today);
@@ -531,7 +663,7 @@ export const dashboardRouter = router({
       const totalOrders = paymentMethods.reduce((acc: number, curr: PaymentData) => acc + curr.count, 0);
       const totalRevenue = paymentMethods.reduce((acc: number, curr: any) => acc + curr.total, 0);
 
-      return paymentMethods.map((method: any) => {
+      const methods = paymentMethods.map((method: any) => {
         const methodId = method._id as PaymentMethodType;
         return {
           name: methodNames[methodId] || methodId,
@@ -542,5 +674,15 @@ export const dashboardRouter = router({
           deliveryFees: method.deliveryFees
         };
       });
+      
+      // Salvar no cache e retornar
+      const result = {
+        data: methods,
+        timestamp: new Date(),
+        fromCache: false
+      };
+      
+      await CacheService.setCache(cacheKey, result);
+      return result;
     })
 }); 
