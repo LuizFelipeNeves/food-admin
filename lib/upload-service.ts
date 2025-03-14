@@ -128,20 +128,59 @@ export async function deleteImage(imagePath: string): Promise<void> {
     console.log('deleteImage: Caminho processado para exclusão:', filePath);
 
     // Como a exclusão requer autenticação, precisamos chamar um endpoint no servidor
-    const response = await fetch(`/api/r2/delete?filePath=${encodeURIComponent(filePath)}`, {
+    const deleteUrl = `/api/r2/delete?filePath=${encodeURIComponent(filePath)}`;
+    console.log('deleteImage: Chamando endpoint de exclusão:', deleteUrl);
+    
+    // Adicionar timestamp para evitar cache
+    const timestamp = new Date().getTime();
+    const urlWithTimestamp = `${deleteUrl}&_t=${timestamp}`;
+    
+    const response = await fetch(urlWithTimestamp, {
       method: 'DELETE',
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
+    });
+
+    console.log('deleteImage: Resposta do servidor:', {
+      status: response.status,
+      statusText: response.statusText,
+      ok: response.ok
     });
 
     if (!response.ok) {
       let errorMessage = 'Erro ao excluir a imagem';
+      let errorDetails = {};
+      
       try {
         const errorData = await response.json();
         errorMessage = errorData.error || errorMessage;
+        errorDetails = errorData;
         console.error('deleteImage: Resposta de erro do servidor:', errorData);
       } catch (parseError) {
         console.error('deleteImage: Erro ao analisar resposta de erro:', parseError);
+        
+        // Tentar obter o texto da resposta se não conseguir analisar como JSON
+        try {
+          const errorText = await response.text();
+          errorDetails = { text: errorText };
+          console.error('deleteImage: Texto da resposta de erro:', errorText);
+        } catch (textError) {
+          console.error('deleteImage: Não foi possível obter texto da resposta:', textError);
+        }
       }
-      throw new Error(errorMessage);
+      
+      throw new Error(`${errorMessage} (Status: ${response.status})`);
+    }
+    
+    // Tentar obter a resposta de sucesso
+    try {
+      const successData = await response.json();
+      console.log('deleteImage: Resposta de sucesso:', successData);
+    } catch (parseError) {
+      console.log('deleteImage: Não foi possível analisar resposta de sucesso como JSON');
     }
     
     console.log('deleteImage: Imagem excluída com sucesso:', filePath);

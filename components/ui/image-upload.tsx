@@ -220,6 +220,17 @@ export function ImageUpload({
       } catch (error) {
         console.error('[ImageUpload] Erro ao excluir imagem:', error);
         setError('Erro ao excluir imagem');
+        
+        // Mostrar detalhes do erro no console para depuração
+        if (error instanceof Error) {
+          console.error('[ImageUpload] Detalhes do erro:', {
+            message: error.message,
+            stack: error.stack
+          });
+        } else {
+          console.error('[ImageUpload] Erro desconhecido:', error);
+        }
+        
         // Não limpar o preview ou notificar o componente pai em caso de erro
       } finally {
         setIsDeleting(false);

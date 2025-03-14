@@ -31,6 +31,7 @@ const businessFormSchema = z.object({
 
 export function BusinessSettings({ storeId }: { storeId: string }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [uploadedLogoUrl, setUploadedLogoUrl] = useState<string | null>(null);
 
   const businessForm = useForm<z.infer<typeof businessFormSchema>>({
@@ -127,8 +128,67 @@ export function BusinessSettings({ storeId }: { storeId: string }) {
   const handleLogoChange = async (file: File | null, url?: string) => {
     if (url) {
       // Se recebemos uma URL, significa que o upload direto foi bem-sucedido
+      console.log('[BusinessSettings] Logo carregado com sucesso:', url);
       setUploadedLogoUrl(url);
       businessForm.setValue('logo', url);
+      
+      // Salvar automaticamente as configurações quando uma nova imagem for enviada
+      try {
+        console.log('[BusinessSettings] Salvando configurações automaticamente após upload do logo');
+        const formValues = businessForm.getValues();
+        
+        // Se temos um logo anterior e um novo logo foi carregado, excluir o anterior
+        if (businessData?.logo && businessData.logo !== url) {
+          try {
+            console.log('[BusinessSettings] Excluindo logo anterior:', businessData.logo);
+            await deleteImage(businessData.logo);
+            console.log('[BusinessSettings] Logo anterior excluído com sucesso');
+          } catch (error) {
+            console.error('[BusinessSettings] Erro ao excluir logo anterior:', error);
+            // Continuar mesmo se falhar a exclusão
+          }
+        }
+        
+        // Mostrar toast de salvamento
+        const savingToastId = toast.loading('Salvando configurações...', {
+          id: 'save-settings-loading',
+          style: {
+            borderRadius: '6px',
+            background: '#333',
+            color: '#fff',
+          },
+        });
+        
+        // Atualizar os dados do negócio
+        await updateBusiness.mutateAsync({
+          storeId,
+          businessName: formValues.businessName,
+          description: formValues.description,
+          phone: formValues.phone,
+          address: formValues.address,
+          logo: url,
+        });
+        
+        // Mostrar feedback para o usuário
+        toast.dismiss(savingToastId);
+        toast.success('Configurações salvas com sucesso!', {
+          id: 'save-settings-success',
+          style: {
+            borderRadius: '6px',
+            background: '#333',
+            color: '#fff',
+          },
+        });
+      } catch (error) {
+        console.error('[BusinessSettings] Erro ao salvar configurações após upload:', error);
+        toast.error('Erro ao salvar as configurações', {
+          style: {
+            borderRadius: '6px',
+            background: '#333',
+            color: '#fff',
+          },
+        });
+      }
     } else if (file === null) {
       // Se o arquivo for null, o usuário removeu o logo
       setUploadedLogoUrl(null);
@@ -136,6 +196,104 @@ export function BusinessSettings({ storeId }: { storeId: string }) {
     }
     // Se temos apenas o arquivo sem URL, o upload direto não está ativado
     // Nesse caso, não fazemos nada aqui, pois o upload seria feito no onSubmit
+  };
+
+  // Função para excluir o logo
+  const handleDeleteLogo = async (logoPath: string): Promise<void> => {
+    try {
+      setIsDeleting(true);
+      console.log('[BusinessSettings] Iniciando exclusão do logo:', logoPath);
+      
+      // Usar ID único para o toast de carregamento
+      const loadingToastId = toast.loading('Removendo logo...', {
+        id: 'delete-logo-loading',
+        style: {
+          borderRadius: '6px',
+          background: '#333',
+          color: '#fff',
+        },
+      });
+      
+      // 1. Excluir a imagem do storage
+      try {
+        await deleteImage(logoPath);
+        console.log('[BusinessSettings] Logo excluído do storage com sucesso');
+        toast.dismiss(loadingToastId);
+      } catch (deleteError) {
+        console.error('[BusinessSettings] Erro ao excluir logo do storage:', deleteError);
+        toast.dismiss(loadingToastId);
+        toast.error(`Erro ao excluir logo: ${deleteError instanceof Error ? deleteError.message : 'Erro desconhecido'}`, {
+          id: 'delete-logo-error',
+          style: {
+            borderRadius: '6px',
+            background: '#333',
+            color: '#fff',
+          },
+        });
+        throw new Error(`Erro ao excluir logo: ${deleteError instanceof Error ? deleteError.message : 'Erro desconhecido'}`);
+      }
+      
+      // 2. Atualizar o negócio no banco de dados
+      console.log('[BusinessSettings] Atualizando negócio no banco de dados após remoção do logo');
+      
+      // Obter os valores atuais do formulário
+      const formValues = businessForm.getValues();
+      
+      try {
+        // Chamar a função de atualização para atualizar o negócio no banco de dados
+        console.log('[BusinessSettings] Enviando atualização para o servidor');
+        const savingToastId = toast.loading('Salvando configurações sem logo...', {
+          id: 'save-settings-loading',
+          style: {
+            borderRadius: '6px',
+            background: '#333',
+            color: '#fff',
+          },
+        });
+        
+        await updateBusiness.mutateAsync({
+          storeId,
+          businessName: formValues.businessName,
+          description: formValues.description,
+          phone: formValues.phone,
+          address: formValues.address,
+          logo: '', // Definir o logo como string vazia
+        });
+        
+        // Atualizar o estado local e o formulário
+        setUploadedLogoUrl(null);
+        businessForm.setValue('logo', null);
+        
+        // Mostrar feedback para o usuário
+        toast.dismiss(savingToastId);
+        toast.success('Logo removido com sucesso!', {
+          id: 'delete-logo-success',
+          style: {
+            borderRadius: '6px',
+            background: '#333',
+            color: '#fff',
+          },
+        });
+        
+        return Promise.resolve();
+      } catch (saveError) {
+        console.error('[BusinessSettings] Erro ao atualizar negócio no banco de dados:', saveError);
+        toast.error('Erro ao atualizar configurações no banco de dados', {
+          id: 'save-settings-error',
+          style: {
+            borderRadius: '6px',
+            background: '#333',
+            color: '#fff',
+          },
+        });
+        throw new Error('Erro ao atualizar configurações no banco de dados');
+      }
+    } catch (error) {
+      console.error('[BusinessSettings] Erro ao excluir logo:', error);
+      throw error; // Propagar o erro para o componente ImageUpload
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   if (isLoading) {
@@ -240,10 +398,11 @@ export function BusinessSettings({ storeId }: { storeId: string }) {
                         <ImageUpload
                           value={field.value || ''}
                           onChange={handleLogoChange}
+                          onDelete={handleDeleteLogo}
                           aspectRatio="square"
                           className="max-w-[300px]"
                           placeholder="Arraste ou clique para adicionar a logo"
-                          disabled={isSubmitting}
+                          disabled={isSubmitting || isDeleting}
                           folder="logos"
                           directUpload={true}
                           onUploadStart={() => setIsSubmitting(true)}
@@ -275,10 +434,10 @@ export function BusinessSettings({ storeId }: { storeId: string }) {
             </div>
             <Button 
               type="submit" 
-              disabled={isLoading || updateBusiness.isLoading || isSubmitting}
+              disabled={isLoading || updateBusiness.isLoading || isSubmitting || isDeleting}
               className="w-full sm:w-auto"
             >
-              {(updateBusiness.isLoading || isSubmitting) && (
+              {(updateBusiness.isLoading || isSubmitting || isDeleting) && (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               )}
               Salvar Alterações

@@ -93,6 +93,8 @@ export function ProductDialog({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [uploadedImagePath, setUploadedImagePath] = useState<string | null>(null);
+  const [hasUnsavedImage, setHasUnsavedImage] = useState(false);
+  const storeId = '67a05b53927e38337439322f';
 
   const form = useForm<z.infer<typeof productSchema>>({
     resolver: zodResolver(productSchema),
@@ -148,12 +150,63 @@ export function ProductDialog({
     }
   }, [product, categories, additionalGroups, form])
 
+  // Função para lidar com o fechamento do modal
+  const handleOpenChange = (open: boolean) => {
+    // Se o modal está sendo fechado e temos uma imagem não salva
+    if (!open && hasUnsavedImage && uploadedImagePath) {
+      const formValues = form.getValues();
+      
+      // Verificar se os campos obrigatórios estão preenchidos
+      if (formValues.name && formValues.price && formValues.stock && formValues.category.value) {
+        // Salvar automaticamente antes de fechar
+        console.log('[ProductDialog] Fechando modal com imagem não salva, salvando automaticamente');
+        toast.success('Salvando produto antes de fechar...', { duration: 2000 });
+        
+        // Criar objeto de produto
+        const productData: ProductData = {
+          name: formValues.name,
+          description: formValues.description,
+          price: Number(formValues.price),
+          stock: Number(formValues.stock),
+          active: formValues.active,
+          category: formValues.category.value,
+          additionalGroups: formValues.additionalGroups.map(g => g.value),
+          store: storeId, // ID fixo da loja
+          discountPercentage: formValues.discountPercentage ? Number(formValues.discountPercentage) : 0,
+          additionals: [], // Será preenchido pelo backend
+          image: uploadedImagePath, // Usar o novo caminho da imagem
+        };
+        
+        // Se estamos editando um produto existente, adicionar o ID
+        if (product && product._id) {
+          productData._id = product._id;
+        }
+        
+        // Chamar a função onSave para salvar/atualizar o produto no banco de dados
+        onSave(productData);
+        
+        // Mostrar feedback para o usuário
+        toast.success('Produto salvo automaticamente!');
+      } else {
+        // Se os campos obrigatórios não estão preenchidos, avisar o usuário
+        toast.error('Imagem carregada será perdida! Preencha todos os campos obrigatórios para salvar.');
+      }
+    }
+    
+    // Resetar o estado
+    setHasUnsavedImage(false);
+    
+    // Chamar a função original
+    onOpenChange(open);
+  };
+
   // Função para lidar com o upload de imagem e receber o caminho relativo
   const handleImageChange = async (file: File | null, imagePath?: string) => {
     if (imagePath) {
       // Se recebemos um caminho, significa que o upload direto foi bem-sucedido
       setUploadedImagePath(imagePath);
       form.setValue('image', imagePath);
+      setHasUnsavedImage(true);
       
       // Salvar automaticamente o produto após o upload da imagem
       try {
@@ -161,13 +214,6 @@ export function ProductDialog({
         
         // Obter os valores atuais do formulário
         const formValues = form.getValues();
-        
-        // Verificar se os campos obrigatórios estão preenchidos
-        if (!formValues.name || !formValues.price || !formValues.stock || !formValues.category.value) {
-          console.log('[ProductDialog] Campos obrigatórios não preenchidos, não salvando automaticamente');
-          toast.error('Preencha todos os campos obrigatórios e clique em Salvar');
-          return; // Não salvar se campos obrigatórios não estiverem preenchidos
-        }
         
         // Se estamos editando um produto existente e ele já tem uma imagem, excluir a imagem anterior
         if (product?.image && product.image !== imagePath) {
@@ -183,6 +229,25 @@ export function ProductDialog({
           }
         }
         
+        // Verificar se os campos obrigatórios estão preenchidos
+        const camposObrigatorios = {
+          nome: !!formValues.name,
+          preco: !!formValues.price,
+          estoque: !!formValues.stock,
+          categoria: !!formValues.category.value
+        };
+        
+        const todosPreenchidos = Object.values(camposObrigatorios).every(Boolean);
+        
+        if (!todosPreenchidos) {
+          console.log('[ProductDialog] Alguns campos obrigatórios não preenchidos:', camposObrigatorios);
+          toast.success('Imagem carregada! Preencha todos os campos obrigatórios para salvar o produto completo.');
+          
+          // Não tentamos salvar automaticamente se os campos obrigatórios não estiverem preenchidos
+          // Mas mantemos a imagem carregada para que o usuário possa preencher os campos e salvar
+          return;
+        }
+        
         // Criar objeto de produto
         const productData: ProductData = {
           name: formValues.name,
@@ -192,7 +257,7 @@ export function ProductDialog({
           active: formValues.active,
           category: formValues.category.value,
           additionalGroups: formValues.additionalGroups.map(g => g.value),
-          store: '67a05b53927e38337439322f', // ID fixo da loja
+          store: storeId, // ID fixo da loja
           discountPercentage: formValues.discountPercentage ? Number(formValues.discountPercentage) : 0,
           additionals: [], // Será preenchido pelo backend
           image: imagePath, // Usar o novo caminho da imagem
@@ -204,6 +269,7 @@ export function ProductDialog({
         }
         
         console.log('[ProductDialog] Salvando produto automaticamente após upload da imagem:', productData);
+        toast.success('Salvando produto...', { duration: 2000 });
         
         // Chamar a função onSave para salvar/atualizar o produto no banco de dados
         onSave(productData);
@@ -221,6 +287,9 @@ export function ProductDialog({
           onOpenChange(false);
         }
         // Para produtos existentes, mantemos o modal aberto para permitir outras edições
+        
+        // Resetar o estado de imagem não salva
+        setHasUnsavedImage(false);
       } catch (error) {
         console.error('[ProductDialog] Erro ao salvar produto após upload da imagem:', error);
         toast.error('Erro ao salvar produto. Tente novamente.');
@@ -232,6 +301,7 @@ export function ProductDialog({
       // Não precisamos excluir a imagem aqui, pois isso será feito pelo componente ImageUpload
       setUploadedImagePath(null);
       form.setValue('image', null);
+      setHasUnsavedImage(false);
     }
     // Se temos apenas o arquivo sem caminho, o upload direto não está ativado
     // Nesse caso, não fazemos nada aqui, pois o upload seria feito no onSubmit
@@ -254,47 +324,60 @@ export function ProductDialog({
         throw new Error(`Erro ao excluir imagem: ${deleteError instanceof Error ? deleteError.message : 'Erro desconhecido'}`);
       }
       
-      // 2. Se estamos editando um produto existente, atualizar o produto no banco de dados
-      if (product && product._id) {
-        console.log('[ProductDialog] Atualizando produto existente no banco de dados');
+      // 2. Atualizar o produto no banco de dados (para produtos existentes e novos)
+      console.log('[ProductDialog] Atualizando produto no banco de dados após remoção da imagem');
+      
+      // Obter os valores atuais do formulário
+      const formValues = form.getValues();
+      
+      // Verificar se os campos obrigatórios estão preenchidos
+      if (!formValues.name || !formValues.price || !formValues.stock || !formValues.category.value) {
+        console.log('[ProductDialog] Campos obrigatórios não preenchidos, não salvando automaticamente');
+        toast.error('Preencha todos os campos obrigatórios antes de remover a imagem');
         
-        // Criar uma cópia dos dados do produto sem a imagem
-        const updatedProduct = {
-          _id: product._id,
-          name: form.getValues('name'),
-          description: form.getValues('description'),
-          price: Number(form.getValues('price')),
-          stock: Number(form.getValues('stock')),
-          active: form.getValues('active'),
-          category: form.getValues('category').value,
-          additionalGroups: form.getValues('additionalGroups').map(g => g.value),
-          store: '67a05b53927e38337439322f', // ID fixo da loja
-          discountPercentage: form.getValues('discountPercentage') ? Number(form.getValues('discountPercentage')) : 0,
-          additionals: [], // Será preenchido pelo backend
-          image: null, // Definir a imagem como null
-        };
-        
-        try {
-          // Chamar a função onSave para atualizar o produto no banco de dados
-          console.log('[ProductDialog] Enviando atualização para o servidor:', updatedProduct);
-          onSave(updatedProduct);
-          
-          // Mostrar feedback para o usuário
-          toast.success(`Produto "${updatedProduct.name}" atualizado com sucesso!`);
-          
-          // Fechar o modal após a atualização
-          console.log('[ProductDialog] Fechando modal após atualização');
-          onOpenChange(false);
-        } catch (saveError) {
-          console.error('[ProductDialog] Erro ao atualizar produto no banco de dados:', saveError);
-          toast.error('Erro ao atualizar produto no banco de dados');
-          throw new Error('Erro ao atualizar produto no banco de dados');
-        }
-      } else {
-        // Se estamos criando um novo produto, apenas limpar o campo de imagem
-        console.log('[ProductDialog] Limpando campo de imagem para novo produto');
+        // Limpar o campo de imagem no formulário
         form.setValue('image', null);
         setUploadedImagePath(null);
+        
+        return Promise.resolve();
+      }
+      
+      // Criar objeto de produto sem a imagem
+      const productData: ProductData = {
+        name: formValues.name,
+        description: formValues.description,
+        price: Number(formValues.price),
+        stock: Number(formValues.stock),
+        active: formValues.active,
+        category: formValues.category.value,
+        additionalGroups: formValues.additionalGroups.map(g => g.value),
+        store: storeId, // ID fixo da loja
+        discountPercentage: formValues.discountPercentage ? Number(formValues.discountPercentage) : 0,
+        additionals: [], // Será preenchido pelo backend
+        image: null, // Definir a imagem como null
+      };
+      
+      // Se estamos editando um produto existente, adicionar o ID
+      if (product && product._id) {
+        productData._id = product._id;
+      }
+      
+      try {
+        // Chamar a função onSave para atualizar o produto no banco de dados
+        console.log('[ProductDialog] Enviando atualização para o servidor:', productData);
+        toast.success('Salvando produto sem imagem...', { duration: 2000 });
+        onSave(productData);
+        
+        // Mostrar feedback para o usuário
+        toast.success(`Produto atualizado sem imagem!`);
+        
+        // Fechar o modal após a atualização
+        console.log('[ProductDialog] Fechando modal após atualização');
+        onOpenChange(false);
+      } catch (saveError) {
+        console.error('[ProductDialog] Erro ao atualizar produto no banco de dados:', saveError);
+        toast.error('Erro ao atualizar produto no banco de dados');
+        throw new Error('Erro ao atualizar produto no banco de dados');
       }
       
       return Promise.resolve();
@@ -329,14 +412,14 @@ export function ProductDialog({
       
       // Criar objeto de produto
       const productData: ProductData = {
-      name: values.name,
-      description: values.description,
-      price: Number(values.price),
-      stock: Number(values.stock),
-      active: values.active,
-      category: values.category.value,
-      additionalGroups: values.additionalGroups.map(g => g.value),
-        store: '67a05b53927e38337439322f', // ID fixo da loja
+        name: values.name,
+        description: values.description,
+        price: Number(values.price),
+        stock: Number(values.stock),
+        active: values.active,
+        category: values.category.value,
+        additionalGroups: values.additionalGroups.map(g => g.value),
+        store: storeId, // ID fixo da loja
         discountPercentage: values.discountPercentage ? Number(values.discountPercentage) : 0,
         additionals: [], // Será preenchido pelo backend
         image: imagePath,
@@ -348,6 +431,7 @@ export function ProductDialog({
       }
       
       console.log('[ProductDialog] Salvando produto pelo botão de submit:', productData);
+      toast.info('Salvando produto...', { duration: 2000 });
       
       // Chamar a função onSave para salvar/atualizar o produto no banco de dados
       onSave(productData);
@@ -360,6 +444,9 @@ export function ProductDialog({
           : `Produto "${productData.name}" atualizado com sucesso!`
       );
       
+      // Resetar o estado de imagem não salva
+      setHasUnsavedImage(false);
+      
       // Fechar o modal
       onOpenChange(false);
     } catch (error) {
@@ -371,7 +458,7 @@ export function ProductDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto overflow-x-hidden w-[95vw]">
         <DialogHeader>
           <DialogTitle>{product ? 'Editar Produto' : 'Novo Produto'}</DialogTitle>
