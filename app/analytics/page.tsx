@@ -11,26 +11,27 @@ import { format, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { Loader2 } from 'lucide-react'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { useTheme } from 'next-themes'
 
 // Importação dinâmica dos componentes de gráfico
 const DynamicRevenueChart = dynamic(
   () => import('@/components/analytics/revenue-chart'),
-  { 
-    ssr: false, 
-    loading: () => <Skeleton className="h-[240px] w-full" /> 
+  {
+    ssr: false,
+    loading: () => <Skeleton className="h-[240px] w-full" />
   }
 );
 
 const DynamicPieChart = dynamic(
   () => import('@/components/ui/pie-chart'),
-  { 
-    ssr: false, 
-    loading: () => <Skeleton className="h-[300px] w-full" /> 
+  {
+    ssr: false,
+    loading: () => <Skeleton className="h-[300px] w-full" />
   }
 );
 
-// Configuração de cores para os métodos de pagamento
-const paymentMethodColors: Record<string, string> = {
+// Configuração de cores para os métodos de pagamento (modo claro)
+const paymentMethodLightColors: Record<string, string> = {
   'Cartão de Crédito': '#4f46e5', // Indigo
   'Cartão de Débito': '#0ea5e9', // Sky
   'PIX': '#10b981', // Emerald
@@ -39,8 +40,18 @@ const paymentMethodColors: Record<string, string> = {
   'Outros': '#6b7280', // Gray
 };
 
-// Cores para o gráfico de produtos
-const productColors: string[] = [
+// Configuração de cores para os métodos de pagamento (modo escuro)
+const paymentMethodDarkColors: Record<string, string> = {
+  'Cartão de Crédito': '#818cf8', // Indigo mais brilhante
+  'Cartão de Débito': '#38bdf8', // Sky mais brilhante
+  'PIX': '#34d399', // Emerald mais brilhante
+  'Dinheiro': '#fbbf24', // Amber mais brilhante
+  'Vale Refeição': '#f472b6', // Pink mais brilhante
+  'Outros': '#d1d5db', // Gray mais brilhante
+};
+
+// Cores para o gráfico de produtos (modo claro)
+const productLightColors: string[] = [
   '#4f46e5', // Indigo
   '#0ea5e9', // Sky
   '#10b981', // Emerald
@@ -53,10 +64,30 @@ const productColors: string[] = [
   '#6b7280', // Gray
 ];
 
+// Cores para o gráfico de produtos (modo escuro)
+const productDarkColors: string[] = [
+  '#818cf8', // Indigo mais brilhante
+  '#38bdf8', // Sky mais brilhante
+  '#34d399', // Emerald mais brilhante
+  '#fbbf24', // Amber mais brilhante
+  '#f472b6', // Pink mais brilhante
+  '#a78bfa', // Violet mais brilhante
+  '#22d3ee', // Cyan mais brilhante
+  '#fb7185', // Rose mais brilhante
+  '#a3e635', // Lime mais brilhante
+  '#d1d5db', // Gray mais brilhante
+];
+
 export default function AnalyticsPage() {
   const [isMounted, setIsMounted] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState<'day' | 'week' | 'month'>('month');
   const storeId = '67a05b53927e38337439322f';
+  const { theme } = useTheme();
+  const isDarkMode = theme === 'dark';
+
+  // Escolher o conjunto de cores com base no tema
+  const productColors = isDarkMode ? productDarkColors : productLightColors;
+  const paymentMethodColors = isDarkMode ? paymentMethodDarkColors : paymentMethodLightColors;
 
   // Buscar dados de receita mensal
   const { data: revenueData, isLoading: isLoadingRevenue } = trpc.analytics.getMonthlyRevenue.useQuery({
@@ -101,13 +132,15 @@ export default function AnalyticsPage() {
   const pieChartDataByCount = paymentMethodData?.map(method => ({
     name: method.name,
     value: method.value || 0, // % baseada no número de transações
-    color: paymentMethodColors[method.name]
+    color: paymentMethodColors[method.name],
+    darkColor: paymentMethodDarkColors[method.name]
   })) || [];
 
   const pieChartDataByRevenue = paymentMethodData?.map(method => ({
     name: method.name,
     value: method.percentage || 0, // % baseada no valor total
-    color: paymentMethodColors[method.name]
+    color: paymentMethodColors[method.name],
+    darkColor: paymentMethodDarkColors[method.name]
   })) || [];
 
   // Estado para controlar qual visualização mostrar
@@ -122,20 +155,26 @@ export default function AnalyticsPage() {
 
     // Calcular a porcentagem com base na receita total dos produtos
     const totalProductRevenue = topProductsData.reduce((acc, item) => acc + (item.revenue || 0), 0);
-    
+
+    // Verificar se o total é maior que zero para evitar divisão por zero
+    if (totalProductRevenue <= 0) {
+      console.warn('Receita total de produtos é zero ou negativa:', totalProductRevenue);
+      return [];
+    }
+
     return topProductsData.map((product, index) => {
-      const percentage = totalProductRevenue > 0 
-        ? Math.round((product.revenue / totalProductRevenue) * 100) 
-        : 0;
-      
+      const percentage = Math.round((product.revenue / totalProductRevenue) * 100);
+
       return {
         name: product.name || `Produto ${index + 1}`,
-        value: product.revenue || 0,
+        value: percentage, // Usar a porcentagem em vez do valor absoluto
+        revenue: product.revenue || 0, // Manter o valor absoluto para o tooltip
         percentage: percentage,
-        color: productColors[index % productColors.length]
+        color: productColors[index % productColors.length],
+        darkColor: productDarkColors[index % productDarkColors.length]
       };
-    }).filter(item => item.value > 0); // Filtrar itens com valor zero
-  }, [topProductsData, productColors]);
+    }).filter(item => item.percentage > 0); // Filtrar itens com porcentagem zero
+  }, [topProductsData, productColors, productDarkColors, isDarkMode]);
 
   useEffect(() => {
     setIsMounted(true);
@@ -184,6 +223,20 @@ export default function AnalyticsPage() {
       console.log('Dados do gráfico de produtos vazios ou inválidos:', productPieChartData);
     }
   }, [productPieChartData]);
+
+  // Log adicional para depuração dos métodos de pagamento
+  useEffect(() => {
+    if (pieChartDataByRevenue && pieChartDataByRevenue.length > 0) {
+      console.log('Dados do gráfico de métodos de pagamento prontos para renderização:', {
+        length: pieChartDataByRevenue.length,
+        names: pieChartDataByRevenue.map(item => item.name),
+        values: pieChartDataByRevenue.map(item => item.value),
+        total: pieChartDataByRevenue.reduce((acc, item) => acc + item.value, 0)
+      });
+    } else {
+      console.log('Dados do gráfico de métodos de pagamento vazios ou inválidos:', pieChartDataByRevenue);
+    }
+  }, [pieChartDataByRevenue]);
 
   return (
     <Layout>
@@ -297,15 +350,15 @@ export default function AnalyticsPage() {
                       isLoadingRevenue ? (
                         <Skeleton className="h-[240px] w-full" />
                       ) : (
-                        <DynamicRevenueChart 
-                          data={Array.isArray(revenueData) && revenueData.length > 0 
+                        <DynamicRevenueChart
+                          data={Array.isArray(revenueData) && revenueData.length > 0
                             ? revenueData.map(item => ({
-                                name: typeof item.name === 'string' ? item.name : '',
-                                date: typeof item.date === 'string' ? item.date : '',
-                                total: typeof item.total === 'number' ? item.total : 0
-                              }))
+                              name: typeof item.name === 'string' ? item.name : '',
+                              date: typeof item.date === 'string' ? item.date : '',
+                              total: typeof item.total === 'number' ? item.total : 0
+                            }))
                             : []
-                          } 
+                          }
                         />
                       )
                     ) : (
@@ -334,18 +387,18 @@ export default function AnalyticsPage() {
                     </div>
                     <div className="flex items-center justify-center">
                       <div className="inline-flex items-center rounded-md border p-1 bg-muted/30">
-                        <button 
+                        <button
                           onClick={() => setShowByRevenue(true)}
-                          className={`px-3 py-1.5 text-sm font-medium rounded-sm transition-colors ${showByRevenue 
-                            ? 'bg-background text-foreground shadow-sm' 
+                          className={`px-3 py-1.5 text-sm font-medium rounded-sm transition-colors ${showByRevenue
+                            ? 'bg-background text-foreground shadow-sm'
                             : 'text-muted-foreground hover:text-foreground'}`}
                         >
                           Por Receita
                         </button>
-                        <button 
+                        <button
                           onClick={() => setShowByRevenue(false)}
-                          className={`px-3 py-1.5 text-sm font-medium rounded-sm transition-colors ${!showByRevenue 
-                            ? 'bg-background text-foreground shadow-sm' 
+                          className={`px-3 py-1.5 text-sm font-medium rounded-sm transition-colors ${!showByRevenue
+                            ? 'bg-background text-foreground shadow-sm'
                             : 'text-muted-foreground hover:text-foreground'}`}
                         >
                           Por Transações
@@ -353,8 +406,8 @@ export default function AnalyticsPage() {
                       </div>
                     </div>
                     <p className="text-xs text-muted-foreground text-center">
-                      {showByRevenue 
-                        ? "Visualizando a distribuição com base no valor total de cada método de pagamento" 
+                      {showByRevenue
+                        ? "Visualizando a distribuição com base no valor total de cada método de pagamento"
                         : "Visualizando a distribuição com base no número de transações de cada método de pagamento"}
                     </p>
                   </CardHeader>
@@ -364,8 +417,14 @@ export default function AnalyticsPage() {
                         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                       </div>
                     ) : (showByRevenue ? pieChartDataByRevenue : pieChartDataByCount).length > 0 ? (
-                      <DynamicPieChart 
-                        data={(showByRevenue ? pieChartDataByRevenue : pieChartDataByCount).filter(item => item.value > 0)}
+                      <DynamicPieChart
+                        data={(showByRevenue ? pieChartDataByRevenue : pieChartDataByCount)
+                          .filter(item =>
+                            item &&
+                            typeof item.name === 'string' &&
+                            typeof item.value === 'number' &&
+                            item.value > 0
+                          )}
                         type="donut"
                         height={300}
                         showTotal={true}
@@ -375,7 +434,7 @@ export default function AnalyticsPage() {
                         tooltipFormatter={(value, name) => {
                           const method = paymentMethodData?.find(m => m.name === name);
                           if (!method) return '';
-                          return showByRevenue 
+                          return showByRevenue
                             ? `${formatCurrency(method.total)} (${value.toFixed(1)}%)`
                             : `${method.count} transações (${value.toFixed(1)}%)`;
                         }}
@@ -412,7 +471,7 @@ export default function AnalyticsPage() {
                       {paymentMethodData.map((method) => (
                         <div key={method.name} className="grid grid-cols-4 items-center gap-4 border-b pb-4 last:border-0 last:pb-0">
                           <div className="space-y-1">
-                            <div 
+                            <div
                               className="w-3 h-3 rounded-full inline-block mr-2"
                               style={{ backgroundColor: paymentMethodColors[method.name] || '#6b7280' }}
                             ></div>
@@ -430,8 +489,8 @@ export default function AnalyticsPage() {
                             <div className="flex items-center justify-end gap-2">
                               <span className="text-xs text-muted-foreground">Transações</span>
                               <div className="w-24 h-2 bg-muted rounded-full overflow-hidden">
-                                <div 
-                                  className="h-full bg-primary" 
+                                <div
+                                  className="h-full bg-primary"
                                   style={{ width: `${method.value}%` }}
                                 ></div>
                               </div>
@@ -439,8 +498,8 @@ export default function AnalyticsPage() {
                             <div className="flex items-center justify-end gap-2">
                               <span className="text-xs text-muted-foreground">Receita</span>
                               <div className="w-24 h-2 bg-muted rounded-full overflow-hidden">
-                                <div 
-                                  className="h-full bg-primary" 
+                                <div
+                                  className="h-full bg-primary"
                                   style={{ width: `${method.percentage}%` }}
                                 ></div>
                               </div>
@@ -474,7 +533,7 @@ export default function AnalyticsPage() {
                   </SelectContent>
                 </Select>
               </div>
-              
+
               <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
                 <Card>
                   <CardHeader>
@@ -498,7 +557,7 @@ export default function AnalyticsPage() {
                           return (
                             <div key={product._id} className="grid grid-cols-4 items-center gap-4 border-b pb-4 last:border-0 last:pb-0">
                               <div className="space-y-1">
-                                <div 
+                                <div
                                   className="w-3 h-3 rounded-full inline-block mr-2"
                                   style={{ backgroundColor: productColors[index % productColors.length] }}
                                 ></div>
@@ -516,8 +575,8 @@ export default function AnalyticsPage() {
                                 <div className="flex items-center justify-end gap-2">
                                   <span className="text-xs text-muted-foreground">Receita</span>
                                   <div className="w-24 h-2 bg-muted rounded-full overflow-hidden">
-                                    <div 
-                                      className="h-full bg-primary" 
+                                    <div
+                                      className="h-full bg-primary"
                                       style={{ width: `${percentage}%` }}
                                     ></div>
                                   </div>
@@ -548,18 +607,24 @@ export default function AnalyticsPage() {
                         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                       </div>
                     ) : productPieChartData && productPieChartData.length > 0 && isMounted ? (
-                      <DynamicPieChart 
-                        data={productPieChartData}
+                      <DynamicPieChart
+                        data={productPieChartData.filter(item =>
+                          item &&
+                          typeof item.name === 'string' &&
+                          typeof item.value === 'number' &&
+                          item.value > 0
+                        )}
                         type="pie"
                         height={300}
                         showTotal={false}
                         title="Distribuição por Receita"
-                        valueFormatter={(value) => formatCurrency(value)}
+                        valueFormatter={(value) => `${value}%`}
                         tooltipFormatter={(value, name) => {
                           const product = topProductsData?.find(p => p.name === name);
                           if (!product) return '';
-                          const percentage = productPieChartData.find(p => p.name === name)?.percentage || 0;
-                          return `${product.quantity} unidades - ${formatCurrency(value)} (${percentage}%)`;
+                          const item = productPieChartData.find(p => p.name === name);
+                          if (!item) return '';
+                          return `${product.quantity} unidades - ${formatCurrency(item.revenue)} (${value}%)`;
                         }}
                       />
                     ) : (
