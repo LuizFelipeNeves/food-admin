@@ -32,8 +32,8 @@ export const roadmapData: RoadmapItem[] = [
   },
   {
     id: '3',
-    title: 'Upload de Arquivos',
-    description: 'Sistema de upload para logo da empresa e fotos de produtos',
+    title: 'Carrinho atualizado',
+    description: 'Carrinho atualizado quando carregar a tela de produtos',
     status: 'planned',
     quarter: 'Q1',
     year: 2025,
@@ -79,16 +79,6 @@ export const roadmapData: RoadmapItem[] = [
     year: 2025,
     category: 'core',
     priority: 'high',
-  },
-  {
-    id: '9',
-    title: 'Melhorias no Roadmap',
-    description: 'Melhorar responsividade, rolagem e migrar para Kanban',
-    status: 'planned',
-    quarter: 'Q2',
-    year: 2025,
-    category: 'core',
-    priority: 'low',
   },
   {
     id: '10',

@@ -6,6 +6,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import dynamic from 'next/dynamic'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useState, useEffect } from 'react'
+import { trpc } from '../_trpc/client'
+import { useParams } from 'next/navigation'
+import { format, parseISO } from 'date-fns'
+import { ptBR } from 'date-fns/locale'
+import { Loader2 } from 'lucide-react'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 // Importação dinâmica do componente de gráfico
 const DynamicRevenueChart = dynamic(
@@ -16,47 +22,70 @@ const DynamicRevenueChart = dynamic(
   }
 );
 
-const data = [
-  {
-    name: 'Jan',
-    total: Math.floor(Math.random() * 5000) + 1000,
-  },
-  {
-    name: 'Fev',
-    total: Math.floor(Math.random() * 5000) + 1000,
-  },
-  {
-    name: 'Mar',
-    total: Math.floor(Math.random() * 5000) + 1000,
-  },
-  {
-    name: 'Abr',
-    total: Math.floor(Math.random() * 5000) + 1000,
-  },
-  {
-    name: 'Mai',
-    total: Math.floor(Math.random() * 5000) + 1000,
-  },
-  {
-    name: 'Jun',
-    total: Math.floor(Math.random() * 5000) + 1000,
-  },
-]
-
-const topProducts = [
-  { name: 'X-Tudo', quantity: 150, revenue: 3000 },
-  { name: 'X-Bacon', quantity: 120, revenue: 2400 },
-  { name: 'X-Salada', quantity: 100, revenue: 1800 },
-  { name: 'X-Egg', quantity: 80, revenue: 1400 },
-  { name: 'Refrigerante', quantity: 200, revenue: 1000 },
-]
-
 export default function AnalyticsPage() {
   const [isMounted, setIsMounted] = useState(false);
+  const [selectedPeriod, setSelectedPeriod] = useState<'day' | 'week' | 'month'>('month');
+  const params = useParams();
+  const storeId = params.storeId as string;
+
+  // Buscar dados de receita mensal
+  const { data: revenueData, isLoading: isLoadingRevenue } = trpc.analytics.getMonthlyRevenue.useQuery({
+    storeId,
+    months: 6
+  }, {
+    enabled: !!storeId && isMounted
+  });
+
+  // Buscar dados de produtos mais vendidos
+  const { data: topProductsData, isLoading: isLoadingProducts } = trpc.analytics.getTopProducts.useQuery({
+    storeId,
+    limit: 5,
+    period: selectedPeriod
+  }, {
+    enabled: !!storeId && isMounted
+  });
+
+  // Buscar dados de clientes
+  const { data: customerData, isLoading: isLoadingCustomers } = trpc.analytics.getCustomerStats.useQuery({
+    storeId,
+    limit: 5
+  }, {
+    enabled: !!storeId && isMounted
+  });
+
+  // Buscar dados de métodos de pagamento
+  const { data: paymentMethodData, isLoading: isLoadingPayments } = trpc.analytics.getPaymentMethodStats.useQuery({
+    storeId,
+    period: selectedPeriod
+  }, {
+    enabled: !!storeId && isMounted
+  });
+
+  // Calcular totais
+  const totalRevenue = revenueData?.reduce((acc: number, item: { total: number }) => acc + item.total, 0) || 0;
+  const totalOrders = topProductsData?.reduce((acc: number, item: { quantity: number }) => acc + item.quantity, 0) || 0;
+  const averageTicket = totalOrders > 0 ? totalRevenue / totalOrders : 0;
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
+
+  // Função para formatar valores monetários
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+    }).format(value);
+  };
+
+  // Função para formatar datas
+  const formatDate = (dateString: string) => {
+    try {
+      return format(parseISO(dateString), 'dd/MM/yyyy', { locale: ptBR });
+    } catch (error) {
+      return dateString;
+    }
+  };
 
   return (
     <Layout>
@@ -89,10 +118,16 @@ export default function AnalyticsPage() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">R$ 45.231,89</div>
-                    <p className="text-xs text-muted-foreground">
-                      +20.1% em relação ao mês anterior
-                    </p>
+                    {isLoadingRevenue ? (
+                      <Skeleton className="h-8 w-32" />
+                    ) : (
+                      <>
+                        <div className="text-2xl font-bold">{formatCurrency(totalRevenue)}</div>
+                        <p className="text-xs text-muted-foreground">
+                          Últimos 6 meses
+                        </p>
+                      </>
+                    )}
                   </CardContent>
                 </Card>
                 <Card>
@@ -102,10 +137,16 @@ export default function AnalyticsPage() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">+573</div>
-                    <p className="text-xs text-muted-foreground">
-                      +12% em relação ao mês anterior
-                    </p>
+                    {isLoadingProducts ? (
+                      <Skeleton className="h-8 w-32" />
+                    ) : (
+                      <>
+                        <div className="text-2xl font-bold">{totalOrders}</div>
+                        <p className="text-xs text-muted-foreground">
+                          No período selecionado
+                        </p>
+                      </>
+                    )}
                   </CardContent>
                 </Card>
                 <Card>
@@ -115,10 +156,16 @@ export default function AnalyticsPage() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">R$ 78,94</div>
-                    <p className="text-xs text-muted-foreground">
-                      +2% em relação ao mês anterior
-                    </p>
+                    {isLoadingRevenue || isLoadingProducts ? (
+                      <Skeleton className="h-8 w-32" />
+                    ) : (
+                      <>
+                        <div className="text-2xl font-bold">{formatCurrency(averageTicket)}</div>
+                        <p className="text-xs text-muted-foreground">
+                          No período selecionado
+                        </p>
+                      </>
+                    )}
                   </CardContent>
                 </Card>
                 <Card>
@@ -128,67 +175,154 @@ export default function AnalyticsPage() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">+125</div>
-                    <p className="text-xs text-muted-foreground">
-                      +10% em relação ao mês anterior
-                    </p>
+                    {isLoadingCustomers ? (
+                      <Skeleton className="h-8 w-32" />
+                    ) : (
+                      <>
+                        <div className="text-2xl font-bold">+{customerData?.stats.newCustomers || 0}</div>
+                        <p className="text-xs text-muted-foreground">
+                          Este mês
+                        </p>
+                      </>
+                    )}
                   </CardContent>
                 </Card>
               </div>
 
               <Card>
-                <CardHeader>
+                <CardHeader className="flex flex-row items-center justify-between">
                   <CardTitle>Receita Mensal</CardTitle>
                 </CardHeader>
                 <CardContent className="pl-2">
                   {isMounted ? (
-                    <DynamicRevenueChart 
-                      data={Array.isArray(data) && data.length > 0 
-                        ? data.map(item => ({
-                            name: typeof item.name === 'string' ? item.name : '',
-                            total: typeof item.total === 'number' ? item.total : 0
-                          }))
-                        : []
-                      } 
-                    />
+                    isLoadingRevenue ? (
+                      <Skeleton className="h-[240px] w-full" />
+                    ) : (
+                      <DynamicRevenueChart 
+                        data={Array.isArray(revenueData) && revenueData.length > 0 
+                          ? revenueData.map(item => ({
+                              name: typeof item.name === 'string' ? item.name : '',
+                              date: typeof item.date === 'string' ? item.date : '',
+                              total: typeof item.total === 'number' ? item.total : 0
+                            }))
+                          : []
+                        } 
+                      />
+                    )
                   ) : (
                     <Skeleton className="h-[240px] w-full" />
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <CardTitle>Métodos de Pagamento</CardTitle>
+                  <Select
+                    value={selectedPeriod}
+                    onValueChange={(value) => setSelectedPeriod(value as 'day' | 'week' | 'month')}
+                  >
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="Selecione o período" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="day">Hoje</SelectItem>
+                      <SelectItem value="week">Esta semana</SelectItem>
+                      <SelectItem value="month">Este mês</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </CardHeader>
+                <CardContent>
+                  {isLoadingPayments ? (
+                    <div className="flex items-center justify-center h-[200px]">
+                      <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                    </div>
+                  ) : paymentMethodData && paymentMethodData.length > 0 ? (
+                    <div className="space-y-8">
+                      {paymentMethodData.map((method) => (
+                        <div key={method.name} className="flex items-center">
+                          <div className="space-y-1 flex-1">
+                            <p className="text-sm font-medium leading-none">
+                              {method.name}
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                              {method.count} transações ({method.percentage}%)
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-sm font-medium leading-none">
+                              {formatCurrency(method.total)}
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                              Receita
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-center h-[200px]">
+                      <p className="text-muted-foreground">Nenhum dado disponível</p>
+                    </div>
                   )}
                 </CardContent>
               </Card>
             </TabsContent>
 
             <TabsContent value="products" className="space-y-4">
+              <div className="flex justify-end mb-4">
+                <Select
+                  value={selectedPeriod}
+                  onValueChange={(value) => setSelectedPeriod(value as 'day' | 'week' | 'month')}
+                >
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Selecione o período" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="day">Hoje</SelectItem>
+                    <SelectItem value="week">Esta semana</SelectItem>
+                    <SelectItem value="month">Este mês</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
               <Card>
                 <CardHeader>
                   <CardTitle>Top Produtos</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-8">
-                    {topProducts.map((product) => (
-                      <div key={product.name} className="flex items-center">
-                        <div className="space-y-1 flex-1">
-                          <p className="text-sm font-medium leading-none">
-                            {product.name}
-                          </p>
-                          <p className="text-sm text-muted-foreground">
-                            {product.quantity} unidades vendidas
-                          </p>
+                  {isLoadingProducts ? (
+                    <div className="flex items-center justify-center h-[200px]">
+                      <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                    </div>
+                  ) : topProductsData && topProductsData.length > 0 ? (
+                    <div className="space-y-8">
+                      {topProductsData.map((product) => (
+                        <div key={product._id} className="flex items-center">
+                          <div className="space-y-1 flex-1">
+                            <p className="text-sm font-medium leading-none">
+                              {product.name}
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                              {product.quantity} unidades vendidas
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-sm font-medium leading-none">
+                              {formatCurrency(product.revenue)}
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                              Receita
+                            </p>
+                          </div>
                         </div>
-                        <div className="text-right">
-                          <p className="text-sm font-medium leading-none">
-                            {new Intl.NumberFormat('pt-BR', {
-                              style: 'currency',
-                              currency: 'BRL',
-                            }).format(product.revenue)}
-                          </p>
-                          <p className="text-sm text-muted-foreground">
-                            Receita
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-center h-[200px]">
+                      <p className="text-muted-foreground">Nenhum produto vendido no período selecionado</p>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>
@@ -196,24 +330,77 @@ export default function AnalyticsPage() {
             <TabsContent value="customers" className="space-y-4">
               <Card>
                 <CardHeader>
-                  <CardTitle>Clientes</CardTitle>
+                  <CardTitle>Estatísticas de Clientes</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <div className="space-y-8">
-                      <div className="flex items-center">
-                        <div className="ml-4 space-y-1 flex-1">
-                          <p className="text-sm font-medium leading-none">
-                            João Silva
-                          </p>
-                          <p className="text-sm text-muted-foreground">
-                            15 pedidos este mês
-                          </p>
-                        </div>
-                        <div className="ml-auto font-medium">
-                          R$ 450,00
-                        </div>
+                  {isLoadingCustomers ? (
+                    <div className="flex items-center justify-center h-[100px]">
+                      <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                    </div>
+                  ) : customerData ? (
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+                      <div className="bg-muted p-4 rounded-lg">
+                        <p className="text-sm text-muted-foreground">Total de Clientes</p>
+                        <p className="text-2xl font-bold">{customerData.stats.totalCustomers}</p>
+                      </div>
+                      <div className="bg-muted p-4 rounded-lg">
+                        <p className="text-sm text-muted-foreground">Novos Clientes</p>
+                        <p className="text-2xl font-bold">{customerData.stats.newCustomers}</p>
+                      </div>
+                      <div className="bg-muted p-4 rounded-lg">
+                        <p className="text-sm text-muted-foreground">Clientes Recorrentes</p>
+                        <p className="text-2xl font-bold">{customerData.stats.returningCustomers}</p>
+                      </div>
+                      <div className="bg-muted p-4 rounded-lg">
+                        <p className="text-sm text-muted-foreground">Taxa de Retenção</p>
+                        <p className="text-2xl font-bold">{customerData.stats.retentionRate}%</p>
                       </div>
                     </div>
+                  ) : (
+                    <div className="flex items-center justify-center h-[100px]">
+                      <p className="text-muted-foreground">Nenhum dado disponível</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Top Clientes</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {isLoadingCustomers ? (
+                    <div className="flex items-center justify-center h-[200px]">
+                      <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                    </div>
+                  ) : customerData && customerData.topCustomers.length > 0 ? (
+                    <div className="space-y-8">
+                      {customerData.topCustomers.map((customer) => (
+                        <div key={customer._id} className="flex items-center">
+                          <div className="space-y-1 flex-1">
+                            <p className="text-sm font-medium leading-none">
+                              {customer.customerName || 'Cliente sem nome'}
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                              {customer.orderCount} pedidos | Último: {formatDate(customer.lastOrder)}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-sm font-medium leading-none">
+                              {formatCurrency(customer.totalSpent)}
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                              Total gasto
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-center h-[200px]">
+                      <p className="text-muted-foreground">Nenhum cliente encontrado</p>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>
