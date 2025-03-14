@@ -6,13 +6,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import dynamic from 'next/dynamic'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useState, useEffect } from 'react'
-import { trpc } from '../_trpc/client'
+import { trpc } from '@/app/_trpc/client'
+import { useParams } from 'next/navigation'
 import { format, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { Loader2 } from 'lucide-react'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
-// Importação dinâmica do componente de gráfico
+// Importação dinâmica dos componentes de gráfico
 const DynamicRevenueChart = dynamic(
   () => import('@/components/analytics/revenue-chart'),
   { 
@@ -21,10 +22,29 @@ const DynamicRevenueChart = dynamic(
   }
 );
 
+const DynamicPieChart = dynamic(
+  () => import('@/components/ui/pie-chart'),
+  { 
+    ssr: false, 
+    loading: () => <Skeleton className="h-[300px] w-full" /> 
+  }
+);
+
+// Configuração de cores para os métodos de pagamento
+const paymentMethodColors = {
+  'Cartão de Crédito': '#4f46e5', // Indigo
+  'Cartão de Débito': '#0ea5e9', // Sky
+  'PIX': '#10b981', // Emerald
+  'Dinheiro': '#f59e0b', // Amber
+  'Vale Refeição': '#ec4899', // Pink
+  'Outros': '#6b7280', // Gray
+};
+
 export default function AnalyticsPage() {
   const [isMounted, setIsMounted] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState<'day' | 'week' | 'month'>('month');
-  const storeId = '67a05b53927e38337439322f';
+  const params = useParams();
+  const storeId = params.storeId as string;
 
   // Buscar dados de receita mensal
   const { data: revenueData, isLoading: isLoadingRevenue } = trpc.analytics.getMonthlyRevenue.useQuery({
@@ -63,6 +83,12 @@ export default function AnalyticsPage() {
   const totalRevenue = revenueData?.reduce((acc: number, item: { total: number }) => acc + item.total, 0) || 0;
   const totalOrders = topProductsData?.reduce((acc: number, item: { quantity: number }) => acc + item.quantity, 0) || 0;
   const averageTicket = totalOrders > 0 ? totalRevenue / totalOrders : 0;
+
+  // Preparar dados para o gráfico de pizza
+  const pieChartData = paymentMethodData?.map(method => ({
+    name: method.name,
+    value: method.percentage
+  })) || [];
 
   useEffect(() => {
     setIsMounted(true);
@@ -187,48 +213,80 @@ export default function AnalyticsPage() {
                 </Card>
               </div>
 
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
-                  <CardTitle>Receita Mensal</CardTitle>
-                </CardHeader>
-                <CardContent className="pl-2">
-                  {isMounted ? (
-                    isLoadingRevenue ? (
-                      <Skeleton className="h-[240px] w-full" />
+              <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between">
+                    <CardTitle>Receita Mensal</CardTitle>
+                  </CardHeader>
+                  <CardContent className="pl-2">
+                    {isMounted ? (
+                      isLoadingRevenue ? (
+                        <Skeleton className="h-[240px] w-full" />
+                      ) : (
+                        <DynamicRevenueChart 
+                          data={Array.isArray(revenueData) && revenueData.length > 0 
+                            ? revenueData.map(item => ({
+                                name: typeof item.name === 'string' ? item.name : '',
+                                date: typeof item.date === 'string' ? item.date : '',
+                                total: typeof item.total === 'number' ? item.total : 0
+                              }))
+                            : []
+                          } 
+                        />
+                      )
                     ) : (
-                      <DynamicRevenueChart 
-                        data={Array.isArray(revenueData) && revenueData.length > 0 
-                          ? revenueData.map(item => ({
-                              name: typeof item.name === 'string' ? item.name : '',
-                              date: typeof item.date === 'string' ? item.date : '',
-                              total: typeof item.total === 'number' ? item.total : 0
-                            }))
-                          : []
-                        } 
+                      <Skeleton className="h-[240px] w-full" />
+                    )}
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between">
+                    <CardTitle>Métodos de Pagamento</CardTitle>
+                    <Select
+                      value={selectedPeriod}
+                      onValueChange={(value) => setSelectedPeriod(value as 'day' | 'week' | 'month')}
+                    >
+                      <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder="Selecione o período" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="day">Hoje</SelectItem>
+                        <SelectItem value="week">Esta semana</SelectItem>
+                        <SelectItem value="month">Este mês</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </CardHeader>
+                  <CardContent>
+                    {isLoadingPayments ? (
+                      <div className="flex items-center justify-center h-[300px]">
+                        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                      </div>
+                    ) : paymentMethodData && paymentMethodData.length > 0 ? (
+                      <DynamicPieChart 
+                        data={pieChartData}
+                        type="donut"
+                        height={300}
+                        showTotal={true}
+                        totalLabel="Total"
+                        colorMap={paymentMethodColors}
+                        tooltipFormatter={(value, name) => {
+                          const method = paymentMethodData.find(m => m.name === name);
+                          return method ? `${method.count} transações (${value.toFixed(1)}%)` : '';
+                        }}
                       />
-                    )
-                  ) : (
-                    <Skeleton className="h-[240px] w-full" />
-                  )}
-                </CardContent>
-              </Card>
+                    ) : (
+                      <div className="flex items-center justify-center h-[300px]">
+                        <p className="text-muted-foreground">Nenhum dado disponível</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
 
               <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
-                  <CardTitle>Métodos de Pagamento</CardTitle>
-                  <Select
-                    value={selectedPeriod}
-                    onValueChange={(value) => setSelectedPeriod(value as 'day' | 'week' | 'month')}
-                  >
-                    <SelectTrigger className="w-[180px]">
-                      <SelectValue placeholder="Selecione o período" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="day">Hoje</SelectItem>
-                      <SelectItem value="week">Esta semana</SelectItem>
-                      <SelectItem value="month">Este mês</SelectItem>
-                    </SelectContent>
-                  </Select>
+                <CardHeader>
+                  <CardTitle>Detalhes dos Métodos de Pagamento</CardTitle>
                 </CardHeader>
                 <CardContent>
                   {isLoadingPayments ? (
@@ -284,45 +342,79 @@ export default function AnalyticsPage() {
                 </Select>
               </div>
               
-              <Card>
-                <CardHeader>
-                  <CardTitle>Top Produtos</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {isLoadingProducts ? (
-                    <div className="flex items-center justify-center h-[200px]">
-                      <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                    </div>
-                  ) : topProductsData && topProductsData.length > 0 ? (
-                    <div className="space-y-8">
-                      {topProductsData.map((product) => (
-                        <div key={product._id} className="flex items-center">
-                          <div className="space-y-1 flex-1">
-                            <p className="text-sm font-medium leading-none">
-                              {product.name}
-                            </p>
-                            <p className="text-sm text-muted-foreground">
-                              {product.quantity} unidades vendidas
-                            </p>
+              <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Top Produtos</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {isLoadingProducts ? (
+                      <div className="flex items-center justify-center h-[200px]">
+                        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                      </div>
+                    ) : topProductsData && topProductsData.length > 0 ? (
+                      <div className="space-y-8">
+                        {topProductsData.map((product) => (
+                          <div key={product._id} className="flex items-center">
+                            <div className="space-y-1 flex-1">
+                              <p className="text-sm font-medium leading-none">
+                                {product.name}
+                              </p>
+                              <p className="text-sm text-muted-foreground">
+                                {product.quantity} unidades vendidas
+                              </p>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-sm font-medium leading-none">
+                                {formatCurrency(product.revenue)}
+                              </p>
+                              <p className="text-sm text-muted-foreground">
+                                Receita
+                              </p>
+                            </div>
                           </div>
-                          <div className="text-right">
-                            <p className="text-sm font-medium leading-none">
-                              {formatCurrency(product.revenue)}
-                            </p>
-                            <p className="text-sm text-muted-foreground">
-                              Receita
-                            </p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="flex items-center justify-center h-[200px]">
-                      <p className="text-muted-foreground">Nenhum produto vendido no período selecionado</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-center h-[200px]">
+                        <p className="text-muted-foreground">Nenhum produto vendido no período selecionado</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Distribuição de Vendas por Produto</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {isLoadingProducts ? (
+                      <div className="flex items-center justify-center h-[300px]">
+                        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                      </div>
+                    ) : topProductsData && topProductsData.length > 0 ? (
+                      <DynamicPieChart 
+                        data={topProductsData.map(product => ({
+                          name: product.name,
+                          value: product.revenue
+                        }))}
+                        type="pie"
+                        height={300}
+                        showTotal={false}
+                        valueFormatter={(value) => formatCurrency(value)}
+                        tooltipFormatter={(value, name) => {
+                          const product = topProductsData.find(p => p.name === name);
+                          return product ? `${product.quantity} unidades - ${formatCurrency(value)}` : '';
+                        }}
+                      />
+                    ) : (
+                      <div className="flex items-center justify-center h-[300px]">
+                        <p className="text-muted-foreground">Nenhum produto vendido no período selecionado</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
             </TabsContent>
 
             <TabsContent value="customers" className="space-y-4">
