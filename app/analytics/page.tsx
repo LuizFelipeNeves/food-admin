@@ -7,7 +7,6 @@ import dynamic from 'next/dynamic'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useState, useEffect } from 'react'
 import { trpc } from '@/app/_trpc/client'
-import { useParams } from 'next/navigation'
 import { format, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { Loader2 } from 'lucide-react'
@@ -43,8 +42,7 @@ const paymentMethodColors = {
 export default function AnalyticsPage() {
   const [isMounted, setIsMounted] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState<'day' | 'week' | 'month'>('month');
-  const params = useParams();
-  const storeId = params.storeId as string;
+  const storeId = '67a05b53927e38337439322f'
 
   // Buscar dados de receita mensal
   const { data: revenueData, isLoading: isLoadingRevenue } = trpc.analytics.getMonthlyRevenue.useQuery({
