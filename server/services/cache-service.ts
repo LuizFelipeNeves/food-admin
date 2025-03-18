@@ -1,4 +1,4 @@
-import { CacheModel, ICache } from '../models/cache';
+import { CacheModel } from '../models/cache';
 
 export interface CacheOptions {
   storeId: string;
@@ -21,6 +21,10 @@ export class CacheService {
       }).lean();
 
       if (!cache) {
+        return null;
+      }
+
+      if (!cache || typeof cache !== 'object' || !('data' in cache)) {
         return null;
       }
 

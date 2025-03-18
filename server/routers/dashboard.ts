@@ -51,7 +51,7 @@ export const dashboardRouter = router({
       };
       
       const cachedData = await CacheService.getCache(cacheKey);
-      if (cachedData) {
+      if (cachedData && typeof cachedData.data === "object") {
         return {
           ...cachedData.data,
           timestamp: cachedData.timestamp,
@@ -223,7 +223,7 @@ export const dashboardRouter = router({
       };
       
       const cachedData = await CacheService.getCache(cacheKey);
-      if (cachedData) {
+      if (cachedData && typeof cachedData.data === "object") {
         return {
           ...cachedData.data,
           timestamp: cachedData.timestamp,
@@ -374,7 +374,7 @@ export const dashboardRouter = router({
       };
       
       const cachedData = await CacheService.getCache(cacheKey);
-      if (cachedData) {
+      if (cachedData && typeof cachedData.data === "object") {
         return {
           data: cachedData.data,
           timestamp: cachedData.timestamp,
@@ -458,7 +458,7 @@ export const dashboardRouter = router({
       };
       
       const cachedData = await CacheService.getCache(cacheKey);
-      if (cachedData) {
+      if (cachedData && typeof cachedData.data === "object") {
         return {
           data: cachedData.data,
           timestamp: cachedData.timestamp,
@@ -497,7 +497,7 @@ export const dashboardRouter = router({
       };
       
       const cachedData = await CacheService.getCache(cacheKey);
-      if (cachedData) {
+      if (cachedData && typeof cachedData.data === "object") {
         return {
           data: cachedData.data,
           timestamp: cachedData.timestamp,
@@ -626,7 +626,7 @@ export const dashboardRouter = router({
       };
       
       const cachedData = await CacheService.getCache(cacheKey);
-      if (cachedData) {
+      if (cachedData && typeof cachedData.data === "object") {
         return {
           data: cachedData.data,
           timestamp: cachedData.timestamp,

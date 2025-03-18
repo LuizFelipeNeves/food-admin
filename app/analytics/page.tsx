@@ -27,7 +27,7 @@ const DynamicPieChart = dynamic(
   () => import('@/components/ui/pie-chart'),
   {
     ssr: false,
-    loading: () => <Skeleton className="h-[300px] w-full" />
+    loading: () => <Skeleton className="h-[400px] w-full" />
   }
 );
 
@@ -78,6 +78,50 @@ const productDarkColors: string[] = [
   '#a3e635', // Lime mais brilhante
   '#d1d5db', // Gray mais brilhante
 ];
+
+// Interfaces para tipagem
+interface CustomerStats {
+  totalCustomers: number;
+  newCustomers: number;
+  returningCustomers: number;
+  retentionRate: number;
+}
+
+interface Customer {
+  _id: string;
+  name: string;
+  email: string;
+  orderCount: number;
+  totalSpent: number;
+  lastOrder: string;
+  customerName?: string;
+}
+
+interface CustomerData {
+  stats: CustomerStats;
+  topCustomers: Customer[];
+}
+
+interface PaymentMethod {
+  name: string;
+  count: number;
+  countPercentage: number;
+  total: number;
+  percentage: number;
+}
+
+interface Product {
+  _id: string;
+  name: string;
+  quantity: number;
+  revenue: number;
+}
+
+interface ApiResponse<T> {
+  data: T;
+  timestamp: string;
+  fromCache: boolean;
+}
 
 export default function AnalyticsPage() {
   const [isMounted, setIsMounted] = useState(false);
@@ -133,7 +177,7 @@ export default function AnalyticsPage() {
     }
   });
 
-  const topProductsData = topProductsResponse?.data || [];
+  const topProductsData = (topProductsResponse?.data || []) as Product[];
 
   // Buscar dados de clientes
   const { data: customerResponse, isLoading: isLoadingCustomers, refetch: refetchCustomers } = trpc.analytics.getCustomerStats.useQuery({
@@ -151,7 +195,15 @@ export default function AnalyticsPage() {
     }
   });
 
-  const customerData = customerResponse?.data;
+  const customerData = (customerResponse?.data || { 
+    stats: { 
+      totalCustomers: 0, 
+      newCustomers: 0, 
+      returningCustomers: 0, 
+      retentionRate: 0 
+    }, 
+    topCustomers: [] 
+  }) as CustomerData;
 
   // Buscar dados de métodos de pagamento
   const { data: paymentMethodResponse, isLoading: isLoadingPayments, refetch: refetchPayments } = trpc.analytics.getPaymentMethodStats.useQuery({
@@ -169,7 +221,7 @@ export default function AnalyticsPage() {
     }
   });
 
-  const paymentMethodData = paymentMethodResponse?.data || [];
+  const paymentMethodData = (paymentMethodResponse?.data || []) as PaymentMethod[];
 
   // Calcular totais usando useMemo
   const totalRevenue = useMemo(() => {
@@ -188,36 +240,77 @@ export default function AnalyticsPage() {
     return totalOrders > 0 ? totalRevenue / totalOrders : 0;
   }, [totalRevenue, totalOrders]);
 
-  // Preparar dados para o gráfico de pizza usando useMemo
+  // Preparar dados para o gráfico de pizza de métodos de pagamento (por contagem)
   const pieChartDataByCount = useMemo(() => {
-    return Array.isArray(paymentMethodData) 
-      ? paymentMethodData.map((method: any) => ({
-          name: method.name,
-          value: method.value || 0, // % baseada no número de transações
-          color: paymentMethodColors[method.name],
-          darkColor: paymentMethodDarkColors[method.name]
-        })) 
-      : [];
+    if (!Array.isArray(paymentMethodData) || paymentMethodData.length === 0) {
+      return [];
+    }
+    
+    // Verificar se os dados de contagem estão presentes e calcular percentuais se necessário
+    const totalCount = paymentMethodData.reduce((acc, method) => acc + (method.count || 0), 0);
+    
+    return paymentMethodData.map(method => {
+      // Se countPercentage não existir, calcular com base nos counts disponíveis
+      let valuePercentage = 0;
+      
+      if (typeof method.countPercentage === 'number') {
+        valuePercentage = method.countPercentage;
+      } else if (totalCount > 0 && typeof method.count === 'number') {
+        valuePercentage = Math.round((method.count / totalCount) * 100);
+      }
+      
+      return {
+        name: method.name,
+        value: valuePercentage,
+        count: method.count || 0,
+        color: paymentMethodColors[method.name] || '#6b7280',
+        darkColor: paymentMethodDarkColors[method.name] || '#d1d5db'
+      };
+    }).filter(item => item.value > 0);
   }, [paymentMethodData, paymentMethodColors, paymentMethodDarkColors]);
 
   const pieChartDataByRevenue = useMemo(() => {
-    return Array.isArray(paymentMethodData) 
-      ? paymentMethodData.map((method: any) => ({
-          name: method.name,
-          value: method.percentage || 0, // % baseada no valor total
-          color: paymentMethodColors[method.name],
-          darkColor: paymentMethodDarkColors[method.name]
-        })) 
-      : [];
+    if (!Array.isArray(paymentMethodData) || paymentMethodData.length === 0) {
+      return [];
+    }
+    
+    return paymentMethodData.map(method => ({
+      name: method.name,
+      value: typeof method.percentage === 'number' ? method.percentage : 0,
+      total: method.total || 0,
+      color: paymentMethodColors[method.name] || '#6b7280',
+      darkColor: paymentMethodDarkColors[method.name] || '#d1d5db'
+    })).filter(item => item.value > 0);
   }, [paymentMethodData, paymentMethodColors, paymentMethodDarkColors]);
 
   // Estado para controlar qual visualização mostrar
   const [showByRevenue, setShowByRevenue] = useState(true);
+  const [isChangingView, setIsChangingView] = useState(false);
+
+  // Função para alternar o modo de visualização com efeito de carregamento
+  const toggleView = (showRevenue: boolean) => {
+    if (showByRevenue !== showRevenue) {
+      setIsChangingView(true);
+      
+      // Verifica se há dados para o modo selecionado
+      const hasData = showRevenue 
+        ? pieChartDataByRevenue.filter(item => item && typeof item.value === 'number' && item.value > 0).length > 0
+        : pieChartDataByCount.filter(item => item && typeof item.value === 'number' && item.value > 0).length > 0;
+      
+      console.log(`Alterando para modo ${showRevenue ? 'Valor' : 'Quantidade'}. Dados disponíveis: ${hasData ? 'Sim' : 'Não'}`);
+      
+      setShowByRevenue(showRevenue);
+      
+      // Simular um pequeno delay para a transição
+      setTimeout(() => {
+        setIsChangingView(false);
+      }, 300);
+    }
+  };
 
   // Preparar dados para o gráfico de pizza de produtos
   const productPieChartData = useMemo(() => {
     if (!topProductsData || !Array.isArray(topProductsData) || topProductsData.length === 0) {
-      console.log('Dados de produtos inválidos:', topProductsData);
       return [];
     }
 
@@ -226,7 +319,6 @@ export default function AnalyticsPage() {
 
     // Verificar se o total é maior que zero para evitar divisão por zero
     if (totalProductRevenue <= 0) {
-      console.warn('Receita total de produtos é zero ou negativa:', totalProductRevenue);
       return [];
     }
 
@@ -237,40 +329,33 @@ export default function AnalyticsPage() {
         name: product.name || `Produto ${index + 1}`,
         value: percentage, // Usar a porcentagem em vez do valor absoluto
         revenue: product.revenue || 0, // Manter o valor absoluto para o tooltip
-        percentage: percentage,
         color: productColors[index % productColors.length],
         darkColor: productDarkColors[index % productDarkColors.length]
       };
-    }).filter(item => item.percentage > 0); // Filtrar itens com porcentagem zero
-  }, [topProductsData, productColors, productDarkColors, isDarkMode]);
+    }).filter(item => item.value > 0); // Filtrar itens com porcentagem zero
+  }, [topProductsData, productColors, productDarkColors]);
 
   useEffect(() => {
     setIsMounted(true);
     console.log('StoreId:', storeId);
   }, [storeId]);
 
-  // Função para formatar valores monetários
+  // Função para formatar moeda
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
-      currency: 'BRL',
+      currency: 'BRL'
     }).format(value);
   };
 
-  // Função para formatar datas
-  const formatDate = (dateString: string) => {
+  // Função para formatar data e hora
+  const formatDateTime = (date: Date | string) => {
     try {
-      return format(parseISO(dateString), 'dd/MM/yyyy', { locale: ptBR });
+      const dateObj = typeof date === 'string' ? parseISO(date) : date;
+      return format(dateObj, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR });
     } catch (error) {
-      return dateString;
+      return 'Data inválida';
     }
-  };
-
-  // Função para formatar a data e hora
-  const formatDateTime = (date?: Date) => {
-    if (!date) return 'Não disponível';
-    
-    return format(date, 'dd/MM/yyyy HH:mm:ss', { locale: ptBR });
   };
 
   // Função para atualizar todos os dados
@@ -287,15 +372,47 @@ export default function AnalyticsPage() {
 
   // Verificar se há dados para exibir
   useEffect(() => {
-    if (paymentMethodData) {
-      console.log('Payment Method Data:', paymentMethodData);
-      console.log('Pie Chart Data:', pieChartDataByCount);
+    if (paymentMethodData && paymentMethodData.length > 0) {
+      console.log('Payment Method Data Completo:', JSON.stringify(paymentMethodData, null, 2));
+      
+      // Verificação detalhada dos dados
+      const paymentDataDiagnostics = paymentMethodData.map(method => ({
+        name: method.name,
+        hasCount: typeof method.count === 'number',
+        countValue: method.count,
+        hasCountPercentage: typeof method.countPercentage === 'number',
+        countPercentageValue: method.countPercentage,
+        hasPercentage: typeof method.percentage === 'number',
+        percentageValue: method.percentage,
+        hasTotal: typeof method.total === 'number',
+        totalValue: method.total
+      }));
+      
+      console.log('Diagnóstico de dados:', paymentDataDiagnostics);
+      
+      // Verificar se os dados de contagem estão presentes
+      const hasMissingCountData = paymentMethodData.some(method => 
+        typeof method.countPercentage === 'undefined' || 
+        method.countPercentage === null
+      );
+      
+      if (hasMissingCountData) {
+        console.warn('⚠️ Alguns métodos de pagamento não têm dados de contagem percentual');
+      }
+
+      // Verificar se os dados filtrados para cada visualização estão presentes
+      console.log('Dados filtrados (Valor):', 
+        pieChartDataByRevenue.filter(item => item && typeof item.value === 'number' && item.value > 0)
+      );
+      console.log('Dados filtrados (Quantidade):', 
+        pieChartDataByCount.filter(item => item && typeof item.value === 'number' && item.value > 0)
+      );
     }
     if (topProductsData) {
       console.log('Top Products Data:', topProductsData);
       console.log('Product Pie Chart Data:', productPieChartData);
     }
-  }, [paymentMethodData, topProductsData, pieChartDataByCount, productPieChartData]);
+  }, [paymentMethodData, pieChartDataByCount, pieChartDataByRevenue, topProductsData, productPieChartData]);
 
   // Log adicional para depuração
   useEffect(() => {
@@ -324,6 +441,25 @@ export default function AnalyticsPage() {
       console.log('Dados do gráfico de métodos de pagamento vazios ou inválidos:', pieChartDataByRevenue);
     }
   }, [pieChartDataByRevenue]);
+
+  // Verificar se o método existe no paymentMethodData
+  const tooltipFormatter = (value: number, name: string) => {
+    if (!Array.isArray(paymentMethodData)) return '';
+    const method = paymentMethodData.find(m => m.name === name);
+    if (!method) return '';
+    
+    if (showByRevenue) {
+      return `${formatCurrency(method.total || 0)} (${value}%)`;
+    } else {
+      // Dados por quantidade
+      const totalCount = paymentMethodData.reduce((acc, m) => acc + (m.count || 0), 0);
+      const countPercent = totalCount > 0 && method.count 
+        ? Math.round((method.count / totalCount) * 100)
+        : value;
+        
+      return `${method.count || 0} pedidos (${countPercent}%)`;
+    }
+  };
 
   return (
     <Layout>
@@ -367,9 +503,9 @@ export default function AnalyticsPage() {
                       <Skeleton className="h-8 w-32" />
                     ) : (
                       <>
-                        <div className="text-2xl font-bold">{formatCurrency(totalRevenue)}</div>
+                        <div className="text-lg sm:text-xl md:text-2xl font-bold">{formatCurrency(totalRevenue)}</div>
                     <p className="text-xs text-muted-foreground">
-                          Últimos 6 meses
+                          No período selecionado
                     </p>
                       </>
                     )}
@@ -424,7 +560,7 @@ export default function AnalyticsPage() {
                       <Skeleton className="h-8 w-32" />
                     ) : (
                       <>
-                        <div className="text-2xl font-bold">+{customerData?.stats.newCustomers || 0}</div>
+                        <div className="text-2xl font-bold">+{customerData.stats?.newCustomers || 0}</div>
                     <p className="text-xs text-muted-foreground">
                           Este mês
                         </p>
@@ -465,74 +601,88 @@ export default function AnalyticsPage() {
                   <CardHeader className="flex flex-col space-y-2">
                     <div className="flex flex-row items-center justify-between">
                       <CardTitle>Métodos de Pagamento</CardTitle>
-                      <Select
-                        value={selectedPeriod}
-                        onValueChange={(value) => setSelectedPeriod(value as 'day' | 'week' | 'month')}
-                      >
-                        <SelectTrigger className="w-[180px]">
-                          <SelectValue placeholder="Selecione o período" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="day">Hoje</SelectItem>
-                          <SelectItem value="week">Esta semana</SelectItem>
-                          <SelectItem value="month">Este mês</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="flex items-center justify-center">
-                      <div className="inline-flex items-center rounded-md border p-1 bg-muted/30">
-                        <button
-                          onClick={() => setShowByRevenue(true)}
-                          className={`px-3 py-1.5 text-sm font-medium rounded-sm transition-colors ${showByRevenue
-                            ? 'bg-background text-foreground shadow-sm'
-                            : 'text-muted-foreground hover:text-foreground'}`}
+                      <div className="flex gap-2">
+                        <div className="inline-flex items-center rounded-md border p-1.5 bg-muted/30">
+                          <div className="flex items-center space-x-2">
+                            <button
+                              onClick={() => toggleView(true)}
+                              className={`px-3 py-1 text-sm rounded-md ${
+                                showByRevenue 
+                                  ? 'bg-primary text-primary-foreground' 
+                                  : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                              }`}
+                            >
+                              Por Valor
+                            </button>
+                            <button
+                              onClick={() => toggleView(false)}
+                              className={`px-3 py-1 text-sm rounded-md ${
+                                !showByRevenue 
+                                  ? 'bg-primary text-primary-foreground' 
+                                  : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                              }`}
+                            >
+                              Por Quantidade
+                            </button>
+                          </div>
+                        </div>
+                        <Select
+                          value={selectedPeriod}
+                          onValueChange={(value) => setSelectedPeriod(value as 'day' | 'week' | 'month')}
                         >
-                          Por Receita
-                        </button>
-                        <button
-                          onClick={() => setShowByRevenue(false)}
-                          className={`px-3 py-1.5 text-sm font-medium rounded-sm transition-colors ${!showByRevenue
-                            ? 'bg-background text-foreground shadow-sm'
-                            : 'text-muted-foreground hover:text-foreground'}`}
-                        >
-                          Por Transações
-                        </button>
+                          <SelectTrigger className="w-[130px]">
+                            <SelectValue placeholder="Período" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="day">Hoje</SelectItem>
+                            <SelectItem value="week">Esta semana</SelectItem>
+                            <SelectItem value="month">Este mês</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
                     </div>
-                    <p className="text-xs text-muted-foreground text-center">
-                      {showByRevenue
-                        ? "Visualizando a distribuição com base no valor total de cada método de pagamento"
-                        : "Visualizando a distribuição com base no número de transações de cada método de pagamento"}
-                    </p>
                   </CardHeader>
                   <CardContent>
-                    {isLoadingPayments ? (
+                    {isLoadingPayments || isChangingView ? (
                       <div className="flex items-center justify-center h-[300px]">
                         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                       </div>
-                    ) : (showByRevenue ? pieChartDataByRevenue : pieChartDataByCount).length > 0 ? (
-                      <DynamicPieChart
-                        data={(showByRevenue ? pieChartDataByRevenue : pieChartDataByCount)
-                          .filter(item =>
-                            item &&
-                            typeof item.name === 'string' &&
-                            typeof item.value === 'number' &&
-                            item.value > 0
-                          )}
-                        type="donut"
-                        height={260}
-                        showTotal={true}
-                        totalLabel="Total"
-                        colorMap={paymentMethodColors}
-                        title={showByRevenue ? "Distribuição por Receita" : "Distribuição por Transações"}
-                        tooltipFormatter={(value, name) => {
-                          const method = paymentMethodData?.find(m => m.name === name);
-                          if (!method) return '';
-                          return showByRevenue
-                            ? `${formatCurrency(method.total)} (${value.toFixed(1)}%)`
-                            : `${method.count} transações (${value.toFixed(1)}%)`;
-                        }}
-                      />
+                    ) : Array.isArray(paymentMethodData) && paymentMethodData.length > 0 ? (
+                      <>
+                        {showByRevenue ? (
+                          pieChartDataByRevenue.filter(item => item && typeof item.value === 'number' && item.value > 0).length > 0 ? (
+                            <DynamicPieChart
+                              data={pieChartDataByRevenue.filter(item => item && typeof item.value === 'number' && item.value > 0)}
+                              type="donut"
+                              height={380}
+                              showTotal={true}
+                              title=""
+                              valueFormatter={(value) => `${value}%`}
+                              tooltipFormatter={tooltipFormatter}
+                            />
+                          ) : (
+                            <div className="flex items-center justify-center h-[300px]">
+                              <p className="text-muted-foreground">Nenhum dado de valor disponível</p>
+                            </div>
+                          )
+                        ) : (
+                          pieChartDataByCount.filter(item => item && typeof item.value === 'number' && item.value > 0).length > 0 ? (
+                            <DynamicPieChart
+                              data={pieChartDataByCount.filter(item => item && typeof item.value === 'number' && item.value > 0)}
+                              type="donut"
+                              height={380}
+                              showTotal={true}
+                              title=""
+                              valueFormatter={(value) => `${value}%`}
+                              tooltipFormatter={tooltipFormatter}
+                            />
+                          ) : (
+                            <div className="flex items-center justify-center h-[300px]">
+                              <p className="text-muted-foreground">Nenhum dado de quantidade disponível</p>
+                            </div>
+                          )
+                        )}
+                      </>
                     ) : (
                       <div className="flex items-center justify-center h-[300px]">
                         <p className="text-muted-foreground">Nenhum dado disponível</p>
@@ -550,53 +700,35 @@ export default function AnalyticsPage() {
                   </p>
                 </CardHeader>
                 <CardContent>
-                  {isLoadingPayments ? (
+                  {isLoadingPayments || isChangingView ? (
                     <div className="flex items-center justify-center h-[200px]">
                       <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                     </div>
-                  ) : paymentMethodData && paymentMethodData.length > 0 ? (
-                    <div className="space-y-8">
-                      <div className="grid grid-cols-4 text-xs font-medium text-muted-foreground mb-2">
-                        <div>Método</div>
-                        <div>Transações</div>
-                        <div>Receita</div>
-                        <div className="text-right">Distribuição</div>
+                  ) : Array.isArray(paymentMethodData) && paymentMethodData.length > 0 ? (
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 text-sm font-medium text-muted-foreground py-2 border-b border-muted">
+                        <div>Método de Pagamento</div>
+                        <div className="text-right">{showByRevenue ? 'Valor' : 'Quantidade'}</div>
                       </div>
-                      {paymentMethodData.map((method) => (
-                        <div key={method.name} className="grid grid-cols-4 items-center gap-4 border-b pb-4 last:border-0 last:pb-0">
-                          <div className="space-y-1">
+                      {paymentMethodData.map((method: any) => (
+                        <div key={method.name} className="grid grid-cols-1 sm:grid-cols-2 items-center py-2 border-b border-muted">
+                          <div className="flex items-center gap-2">
                             <div
-                              className="w-3 h-3 rounded-full inline-block mr-2"
+                              className="w-3 h-3 rounded-full"
                               style={{ backgroundColor: paymentMethodColors[method.name] || '#6b7280' }}
                             ></div>
                             <span className="text-sm font-medium">{method.name}</span>
                           </div>
-                          <div className="space-y-1">
-                            <p className="text-sm font-medium">{method.count}</p>
-                            <p className="text-xs text-muted-foreground">{method.value}% do total</p>
-                          </div>
-                          <div className="space-y-1">
-                            <p className="text-sm font-medium">{formatCurrency(method.total)}</p>
-                            <p className="text-xs text-muted-foreground">{method.percentage}% do total</p>
-                          </div>
-                          <div className="space-y-2 text-right">
-                            <div className="flex items-center justify-end gap-2">
-                              <span className="text-xs text-muted-foreground">Transações</span>
-                              <div className="w-24 h-2 bg-muted rounded-full overflow-hidden">
-                                <div
-                                  className="h-full bg-primary"
-                                  style={{ width: `${method.value}%` }}
-                                ></div>
-                              </div>
+                          <div className="flex items-center justify-end gap-2">
+                            <div className="text-sm text-right">
+                              {showByRevenue 
+                                ? formatCurrency(method.total || 0) 
+                                : `${method.count || 0} pedidos`}
                             </div>
-                            <div className="flex items-center justify-end gap-2">
-                              <span className="text-xs text-muted-foreground">Receita</span>
-                              <div className="w-24 h-2 bg-muted rounded-full overflow-hidden">
-                                <div
-                                  className="h-full bg-primary"
-                                  style={{ width: `${method.percentage}%` }}
-                                ></div>
-                              </div>
+                            <div className="text-sm font-medium w-12 text-right">
+                              {showByRevenue 
+                                ? (typeof method.percentage === 'number' ? method.percentage : 0)
+                                : (typeof method.countPercentage === 'number' ? method.countPercentage : 0)}%
                             </div>
                           </div>
                         </div>
@@ -605,7 +737,7 @@ export default function AnalyticsPage() {
                   ) : (
                     <div className="flex items-center justify-center h-[200px]">
                       <p className="text-muted-foreground">Nenhum dado disponível</p>
-                  </div>
+                    </div>
                   )}
                 </CardContent>
               </Card>
@@ -638,7 +770,7 @@ export default function AnalyticsPage() {
                       <div className="flex items-center justify-center h-[200px]">
                         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                       </div>
-                    ) : topProductsData && topProductsData.length > 0 ? (
+                    ) : Array.isArray(topProductsData) && topProductsData.length > 0 ? (
                   <div className="space-y-8">
                         <div className="grid grid-cols-4 text-xs font-medium text-muted-foreground mb-2">
                           <div>Produto</div>
@@ -646,35 +778,21 @@ export default function AnalyticsPage() {
                           <div>Receita</div>
                           <div className="text-right">Distribuição</div>
                         </div>
-                        {topProductsData.map((product, index) => {
-                          const percentage = productPieChartData.find(p => p.name === product.name)?.percentage || 0;
+                        {topProductsData.map((product: any, index: number) => {
+                          const percentage = productPieChartData.find(p => p.name === product.name)?.value || 0;
                           return (
-                            <div key={product._id} className="grid grid-cols-4 items-center gap-4 border-b pb-4 last:border-0 last:pb-0">
-                              <div className="space-y-1">
-                                <div
-                                  className="w-3 h-3 rounded-full inline-block mr-2"
-                                  style={{ backgroundColor: productColors[index % productColors.length] }}
-                                ></div>
-                                <span className="text-sm font-medium">{product.name}</span>
-                              </div>
-                              <div className="space-y-1">
-                                <p className="text-sm font-medium">{product.quantity}</p>
-                                <p className="text-xs text-muted-foreground">unidades</p>
-                              </div>
-                              <div className="space-y-1">
-                                <p className="text-sm font-medium">{formatCurrency(product.revenue)}</p>
-                                <p className="text-xs text-muted-foreground">{percentage}% do total</p>
-                              </div>
-                              <div className="space-y-2 text-right">
-                                <div className="flex items-center justify-end gap-2">
-                                  <span className="text-xs text-muted-foreground">Receita</span>
-                                  <div className="w-24 h-2 bg-muted rounded-full overflow-hidden">
-                                    <div
-                                      className="h-full bg-primary"
-                                      style={{ width: `${percentage}%` }}
-                                    ></div>
-                                  </div>
+                            <div key={product._id || index} className="grid grid-cols-4 items-center py-2 border-b border-muted">
+                              <div className="text-sm font-medium truncate">{product.name}</div>
+                              <div className="text-sm">{product.quantity}</div>
+                              <div className="text-sm">{formatCurrency(product.revenue)}</div>
+                              <div className="flex items-center justify-end gap-2">
+                                <div className="w-16 h-2 bg-muted rounded-full overflow-hidden">
+                                  <div
+                                    className="h-full bg-primary"
+                                    style={{ width: `${percentage}%` }}
+                                  />
                                 </div>
+                                <span className="text-xs sm:text-sm font-medium w-9 text-right">{percentage}%</span>
                               </div>
                             </div>
                           );
@@ -709,7 +827,7 @@ export default function AnalyticsPage() {
                           item.value > 0
                         )}
                         type="pie"
-                        height={300}
+                        height={400}
                         showTotal={false}
                         title="Distribuição por Receita"
                         valueFormatter={(value) => `${value}%`}
@@ -742,22 +860,22 @@ export default function AnalyticsPage() {
                       <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                     </div>
                   ) : customerData ? (
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+                    <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-8">
                       <div className="bg-muted p-4 rounded-lg">
                         <p className="text-sm text-muted-foreground">Total de Clientes</p>
-                        <p className="text-2xl font-bold">{customerData.stats.totalCustomers}</p>
+                        <p className="text-lg sm:text-xl md:text-2xl font-bold">{customerData.stats?.totalCustomers || 0}</p>
                       </div>
                       <div className="bg-muted p-4 rounded-lg">
                         <p className="text-sm text-muted-foreground">Novos Clientes</p>
-                        <p className="text-2xl font-bold">{customerData.stats.newCustomers}</p>
+                        <p className="text-lg sm:text-xl md:text-2xl font-bold">{customerData.stats?.newCustomers || 0}</p>
                       </div>
                       <div className="bg-muted p-4 rounded-lg">
                         <p className="text-sm text-muted-foreground">Clientes Recorrentes</p>
-                        <p className="text-2xl font-bold">{customerData.stats.returningCustomers}</p>
+                        <p className="text-lg sm:text-xl md:text-2xl font-bold">{customerData.stats?.returningCustomers || 0}</p>
                       </div>
                       <div className="bg-muted p-4 rounded-lg">
                         <p className="text-sm text-muted-foreground">Taxa de Retenção</p>
-                        <p className="text-2xl font-bold">{customerData.stats.retentionRate}%</p>
+                        <p className="text-lg sm:text-xl md:text-2xl font-bold">{customerData.stats?.retentionRate || 0}%</p>
                       </div>
                     </div>
                   ) : (
@@ -786,7 +904,7 @@ export default function AnalyticsPage() {
                               {customer.customerName || 'Cliente sem nome'}
                             </p>
                             <p className="text-sm text-muted-foreground">
-                              {customer.orderCount} pedidos | Último: {formatDate(customer.lastOrder)}
+                              {customer.orderCount} pedidos | Último: {formatDateTime(customer.lastOrder)}
                             </p>
                           </div>
                           <div className="text-right">

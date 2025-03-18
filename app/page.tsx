@@ -155,7 +155,7 @@ export default function HomePage() {
       <div className="flex-1 space-y-4 p-2 sm:p-4 md:p-6 lg:p-8 pt-4 sm:pt-6 max-w-[2000px] mx-auto overflow-y-auto">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
           <div>
-            <h1 className="text-1xl sm:text-2xl font-bold tracking-tight">Dashboard</h1>
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Dashboard</h1>
             <p className="text-sm text-muted-foreground">
               {format(new Date(), "EEEE, dd 'de' MMMM", { locale: ptBR })}
             </p>
@@ -176,7 +176,7 @@ export default function HomePage() {
           </div>
         </div>
 
-        <div className="grid gap-3 sm:gap-4 grid-cols-1 xs:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
           <Card className="dark:border-muted">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
@@ -189,7 +189,7 @@ export default function HomePage() {
                 <Skeleton className="h-8 w-28" />
               ) : (
                 <>
-                  <div className="text-lg xs:text-xl sm:text-2xl font-bold">
+                  <div className="text-lg sm:text-xl md:text-2xl font-bold">
                     R$ {stats?.dailySales.toFixed(2)}
                   </div>
                   <p className="text-xs text-muted-foreground">
@@ -212,7 +212,7 @@ export default function HomePage() {
                 <Skeleton className="h-8 w-28" />
               ) : (
                 <>
-                  <div className="text-lg xs:text-xl sm:text-2xl font-bold">{stats?.dailyOrders ?? 0}</div>
+                  <div className="text-lg sm:text-xl md:text-2xl font-bold">{stats?.dailyOrders ?? 0}</div>
                   <p className="text-xs text-muted-foreground">
                     {stats?.lastHourOrders ? `+${stats.lastHourOrders} pedidos` : 'Nenhum pedido'} na última hora
                   </p>
@@ -238,7 +238,7 @@ export default function HomePage() {
                 <Skeleton className="h-8 w-28" />
               ) : (
                 <>
-                  <div className="text-lg xs:text-xl sm:text-2xl font-bold">{stats?.activeCustomers}</div>
+                  <div className="text-lg sm:text-xl md:text-2xl font-bold">{stats?.activeCustomers}</div>
                   <p className="text-xs text-muted-foreground">
                     +{stats?.newCustomers} novos hoje
                   </p>
