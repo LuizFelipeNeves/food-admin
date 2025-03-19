@@ -92,8 +92,8 @@ export const roadmapData: RoadmapItem[] = [
   },
   {
     id: '11',
-    title: 'Analytics e Métricas',
-    description: 'APIs de analytics, métricas mensais e relatórios',
+    title: 'Relatórios',
+    description: 'Relatórios de vendas, produtos, clientes, etc.',
     status: 'planned',
     quarter: 'Q3',
     year: 2025,
