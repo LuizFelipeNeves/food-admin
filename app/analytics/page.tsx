@@ -737,7 +737,7 @@ export default function AnalyticsPage() {
                   ) : (
                     <div className="flex items-center justify-center h-[200px]">
                       <p className="text-muted-foreground">Nenhum dado disponível</p>
-                    </div>
+                  </div>
                   )}
                 </CardContent>
               </Card>
