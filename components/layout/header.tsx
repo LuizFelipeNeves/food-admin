@@ -11,9 +11,13 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { NotificationsPopover } from '@/components/ui/notifications';
+import { LogoutButton } from '@/components/auth/LogoutButton';
+import { useSession } from 'next-auth/react';
+import Link from 'next/link';
 
 export function Header({ children }: { children?: React.ReactNode }) {
   const { setTheme } = useTheme();
+  const { data: session } = useSession();
 
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
@@ -55,23 +59,24 @@ export function Header({ children }: { children?: React.ReactNode }) {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Avatar className="cursor-pointer">
-              <AvatarImage src="https://github.com/shadcn.png" />
-              <AvatarFallback>AD</AvatarFallback>
+              <AvatarImage src={session?.user?.image || undefined} />
+              <AvatarFallback>{session?.user?.name?.[0]?.toUpperCase() || 'U'}</AvatarFallback>
             </Avatar>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuItem>
-              <User className="mr-2 h-4 w-4" />
-              <span>Perfil</span>
+            <DropdownMenuItem asChild>
+              <Link href="/profile">
+                <User className="mr-2 h-4 w-4" />
+                <span>Perfil</span>
+              </Link>
             </DropdownMenuItem>
-            <DropdownMenuItem>
-              <Settings className="mr-2 h-4 w-4" />
-              <span>Configurações</span>
+            <DropdownMenuItem asChild>
+              <Link href="/settings">
+                <Settings className="mr-2 h-4 w-4" />
+                <span>Configurações</span>
+              </Link>
             </DropdownMenuItem>
-            <DropdownMenuItem className="text-red-600 dark:text-red-400">
-              <LogOut className="mr-2 h-4 w-4" />
-              <span>Sair</span>
-            </DropdownMenuItem>
+            <LogoutButton variant="menu" />
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

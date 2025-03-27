@@ -13,7 +13,7 @@ export const roadmapData: RoadmapItem[] = [
   {
     id: '1',
     title: 'Salvar Preço',
-    description: 'Salvar price nos itens na criação do pedido',
+    description: 'Salvar price nos itens na criação do pedido no cardápio digital',
     status: 'planned',
     quarter: 'Q1',
     year: 2025,
@@ -23,7 +23,7 @@ export const roadmapData: RoadmapItem[] = [
   {
     id: '2',
     title: 'Gestão de Produtos',
-    description: 'Imagens, estoque, revalidação e campos adicionais',
+    description: 'Imagens, estoque, revalidação e campos adicionais no cardápio digital',
     status: 'planned',
     quarter: 'Q1',
     year: 2025,
@@ -33,7 +33,7 @@ export const roadmapData: RoadmapItem[] = [
   {
     id: '3',
     title: 'Carrinho atualizado',
-    description: 'Carrinho atualizado quando carregar a tela de produtos',
+    description: 'Carrinho atualizado quando carregar a tela de produtos no cardápio digital',
     status: 'planned',
     quarter: 'Q1',
     year: 2025,

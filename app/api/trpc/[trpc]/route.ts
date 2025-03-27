@@ -7,7 +7,10 @@ const handler = async (req: Request) => {
     endpoint: '/api/trpc',
     req,
     router: appRouter,
-    createContext: async () => await createContext({ req, res: new Response() }),
+    createContext: () => createContext({ 
+      req,
+      resHeaders: new Headers()
+    }),
     onError({ error }) {
       if (error.code === 'INTERNAL_SERVER_ERROR') {
         console.error('Something went wrong', error);

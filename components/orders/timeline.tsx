@@ -10,6 +10,7 @@ import {
   PackageSearch,
   Truck,
 } from "lucide-react"
+import { TimeDisplay } from "@/components/ui/time-display"
 
 interface TimelineProps {
   events: OrderEvent[]
@@ -51,9 +52,7 @@ export function Timeline({ events }: TimelineProps) {
             <div className="flex flex-col gap-1 pl-6">
               <p className="text-sm font-medium leading-relaxed">{event.description}</p>
               <time className="text-sm text-muted-foreground">
-                {format(new Date(event.date), "dd 'de' MMMM 'às' HH:mm", {
-                  locale: ptBR,
-                })}
+                {format(new Date(event.date), "dd 'de' MMMM", { locale: ptBR })} às <TimeDisplay fixedDate={event.date} />
               </time>
             </div>
           </div>

@@ -50,3 +50,74 @@ Contato com clientes sem pedidos a 30 dias.
 Automação de Storys
 
 Programa de Fidelidade
+-----------
+
+### 1. Gestão de Pedidos
+- [ ] Notificações de novos pedidos
+- [ ] Alteração em lote de status
+- [ ] Histórico de alterações
+- [ ] Reordenação de pedidos por prioridade
+
+### 2. Clientes
+- [ ] Base de clientes frequentes
+- [ ] Histórico de pedidos por cliente
+- [ ] Endereços favoritos
+- [ ] Preferências de pagamento
+
+### 3. Produtos
+- [ ] Gestão de estoque
+- [ ] Variações de produtos
+- [ ] Adicionais e opcionais
+- [ ] Categorias e tags
+
+### 4. Entregas
+- [ ] Atribuição de entregadores
+- [ ] Roteirização
+- [ ] Rastreamento em tempo real
+- [ ] Áreas de entrega e taxas
+
+### 5. Relatórios
+- [ ] Vendas por período
+- [ ] Produtos mais vendidos
+- [ ] Desempenho de entregadores
+- [ ] Tempo médio de entrega
+- [ ] Cancelamentos e motivos
+
+## Integrações
+
+### 1. Pagamentos
+- [ ] Integração com gateway de pagamento
+- [ ] Suporte a múltiplos métodos
+- [ ] Controle de troco
+- [ ] Split de pagamentos
+
+### 2. Logística
+- [ ] Integração com serviços de entrega
+- [ ] Cálculo automático de frete
+- [ ] Tracking de entregas
+- [ ] Notificações por SMS/WhatsApp
+
+### 3. Fiscal
+- [ ] Emissão de NF-e
+- [ ] Controle de impostos
+- [ ] Relatórios fiscais
+
+## Melhorias Técnicas
+
+### 1. Performance
+- [ ] Otimização de queries
+- [ ] Implementar cache
+- [ ] Lazy loading de componentes
+- [ ] Paginação infinita
+
+### 2. UX/UI
+- [ ] Modo escuro
+- [ ] Responsividade
+- [ ] Feedback visual de ações
+- [ ] Atalhos de teclado
+
+### 3. Segurança
+- [ ] Logs de ações
+- [ ] Permissões por função
+- [ ] Backup automático
+- [ ] Auditoria de alterações

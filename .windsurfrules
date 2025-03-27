@@ -1,0 +1,7 @@
+1. Always run the build after a change. 
+2. Always review where the component is being used, before changing the component.
+3. Always have a permission to execute a npm run build.
+4. Always check that you haven't forgotten anything before you commit.
+5. Always check for updated documentation before you commit.
+6. Try to fix without removing features!
+7. Always write mobile first components.

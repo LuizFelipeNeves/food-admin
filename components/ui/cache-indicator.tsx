@@ -1,12 +1,11 @@
 'use client';
 
 import React from 'react';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
 import { Clock, Database, RefreshCw } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { TimeDisplay } from '@/components/ui/time-display';
 
 interface DataTimestamp {
   time: Date;
@@ -37,13 +36,15 @@ export function CacheIndicator({
   // Verificar se algum dado veio do cache
   const hasCache = Object.values(dataTimestamps).some(data => data?.fromCache);
 
+  const latestTimestamp = getLatestTimestamp();
+
   return (
     <div className="flex items-center gap-2">
       {/* Indicador de cache */}
       <div className="text-xs text-muted-foreground flex items-center gap-1">
         <Clock className="h-3.5 w-3.5" />
         <span>
-          Atualizado: {format(getLatestTimestamp(), 'HH:mm:ss', { locale: ptBR })}
+          Atualizado: <TimeDisplay fixedDate={latestTimestamp} className="inline" />
         </span>
         <span className="mx-1">•</span>
         <Database className="h-3.5 w-3.5" />

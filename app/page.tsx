@@ -19,6 +19,7 @@ import { GenerateDataButton } from '@/components/dashboard/generate-data-button'
 import { DeliveryStats } from '@/components/dashboard/delivery-stats'
 import { useState } from 'react'
 import { CacheIndicator } from '@/components/ui/cache-indicator'
+import { TimeDisplay } from '@/components/ui/time-display'
 
 export default function HomePage() {
   const storeId = '67a05b53927e38337439322f';
@@ -156,8 +157,8 @@ export default function HomePage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
           <div>
             <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Dashboard</h1>
-            <p className="text-sm text-muted-foreground">
-              {format(new Date(), "EEEE, dd 'de' MMMM", { locale: ptBR })}
+            <p className="text-sm text-muted-foreground flex items-center gap-1">
+              {format(new Date(), "EEEE, dd 'de' MMMM", { locale: ptBR })} • <TimeDisplay />
             </p>
           </div>
           
