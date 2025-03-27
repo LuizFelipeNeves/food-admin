@@ -1,14 +1,20 @@
 import { PerfilUsuario } from "@/components/auth/PerfilUsuario";
+import { Layout } from "@/components/layout/layout";
 
 export default function ProfilePage() {
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-5xl mx-auto">
-        <h1 className="text-3xl font-bold mb-8 px-4 sm:px-0">Meu Perfil</h1>
-        <div className="bg-white shadow rounded-lg overflow-hidden">
+    <Layout>
+      <div className="flex-1 space-y-4 p-4 md:p-6">
+        <div className="flex flex-col space-y-2">
+          <h1 className="text-2xl font-bold tracking-tight">Meu Perfil</h1>
+          <p className="text-sm text-muted-foreground">
+            Gerencie suas informações pessoais
+          </p>
+        </div>
+        <div className="bg-card rounded-lg border shadow-sm">
           <PerfilUsuario />
         </div>
       </div>
-    </div>
+    </Layout>
   );
 } 

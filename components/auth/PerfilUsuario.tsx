@@ -3,33 +3,33 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { toast } from "react-hot-toast";
 import { trpc } from "@/app/_trpc/client";
+import { toast } from "sonner";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Eye, EyeOff } from "lucide-react";
+import { PerfilSchema, SenhaSchema } from "@/lib/validations/auth";
 
-// Schema para atualização de perfil
-const PerfilSchema = z.object({
-  name: z.string().min(3, "Nome deve ter pelo menos 3 caracteres"),
-  phone: z.string().optional(),
-});
+type PerfilData = {
+  name: string;
+  phone: string;
+};
 
-// Schema para alterar senha
-const SenhaSchema = z.object({
-  currentPassword: z.string().min(1, "Senha atual é obrigatória"),
-  newPassword: z.string().min(8, "Nova senha deve ter pelo menos 8 caracteres"),
-  confirmPassword: z.string(),
-}).refine((data) => data.newPassword === data.confirmPassword, {
-  message: "As senhas não coincidem",
-  path: ["confirmPassword"],
-});
-
-type PerfilData = z.infer<typeof PerfilSchema>;
-type SenhaData = z.infer<typeof SenhaSchema>;
+type SenhaData = {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+};
 
 export function PerfilUsuario() {
-  const [abaAtiva, setAbaAtiva] = useState<"perfil" | "senha">("perfil");
   const [loadingPerfil, setLoadingPerfil] = useState(false);
   const [loadingSenha, setLoadingSenha] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // Consulta para obter dados do perfil
   const { data: user, isLoading: isLoadingUser } = trpc.auth.getProfile.useQuery();
@@ -50,7 +50,6 @@ export function PerfilUsuario() {
     onSuccess: () => {
       toast.success("Senha alterada com sucesso!");
       setLoadingSenha(false);
-      resetSenhaForm();
     },
     onError: (error) => {
       toast.error(error.message || "Erro ao alterar senha");
@@ -59,12 +58,7 @@ export function PerfilUsuario() {
   });
 
   // Form para atualização de perfil
-  const {
-    register: registerPerfil,
-    handleSubmit: handleSubmitPerfil,
-    formState: { errors: errorsPerfil },
-    reset: resetPerfilForm,
-  } = useForm<PerfilData>({
+  const perfilForm = useForm<PerfilData>({
     resolver: zodResolver(PerfilSchema),
     defaultValues: {
       name: user?.name || "",
@@ -77,12 +71,7 @@ export function PerfilUsuario() {
   });
 
   // Form para alterar senha
-  const {
-    register: registerSenha,
-    handleSubmit: handleSubmitSenha,
-    formState: { errors: errorsSenha },
-    reset: resetSenhaForm,
-  } = useForm<SenhaData>({
+  const senhaForm = useForm<SenhaData>({
     resolver: zodResolver(SenhaSchema),
     defaultValues: {
       currentPassword: "",
@@ -116,162 +105,205 @@ export function PerfilUsuario() {
   // Loading state
   if (isLoadingUser) {
     return (
-      <div className="w-full max-w-2xl mx-auto p-4">
-        <div className="flex justify-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="p-6">
+        <div className="space-y-4">
+          <div className="h-8 w-32 bg-muted animate-pulse rounded" />
+          <div className="h-4 w-64 bg-muted animate-pulse rounded" />
+          <div className="space-y-2">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-10 w-full bg-muted animate-pulse rounded" />
+            ))}
+          </div>
         </div>
-        <p className="text-center mt-4 text-gray-600">Carregando dados do perfil...</p>
       </div>
     );
   }
 
   return (
-    <div className="w-full max-w-2xl mx-auto p-4">
-      <h2 className="text-2xl font-bold mb-6">Meu Perfil</h2>
+    <Tabs defaultValue="perfil" className="w-full">
+      <TabsList className="grid w-full grid-cols-2">
+        <TabsTrigger value="perfil">Informações Pessoais</TabsTrigger>
+        <TabsTrigger value="senha">Alterar Senha</TabsTrigger>
+      </TabsList>
       
-      {/* Abas */}
-      <div className="flex border-b mb-6">
-        <button
-          onClick={() => setAbaAtiva("perfil")}
-          className={`py-2 px-4 ${
-            abaAtiva === "perfil"
-              ? "border-b-2 border-blue-500 text-blue-600"
-              : "text-gray-500 hover:text-gray-700"
-          }`}
-        >
-          Informações Pessoais
-        </button>
-        <button
-          onClick={() => setAbaAtiva("senha")}
-          className={`py-2 px-4 ${
-            abaAtiva === "senha"
-              ? "border-b-2 border-blue-500 text-blue-600"
-              : "text-gray-500 hover:text-gray-700"
-          }`}
-        >
-          Alterar Senha
-        </button>
-      </div>
-      
-      {/* Conteúdo das Abas */}
-      {abaAtiva === "perfil" ? (
-        <div>
-          <form onSubmit={handleSubmitPerfil(onSubmitPerfil)}>
-            <div className="mb-4">
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-                Nome completo
-              </label>
-              <input
-                id="name"
-                type="text"
-                {...registerPerfil("name")}
-                className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              {errorsPerfil.name && (
-                <p className="mt-1 text-sm text-red-600">{errorsPerfil.name.message}</p>
-              )}
-            </div>
-            
-            <div className="mb-4">
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                Email
-              </label>
-              <input
-                id="email"
-                type="email"
-                value={user?.email || ""}
-                disabled
-                className="w-full px-4 py-2 border rounded-md bg-gray-100 text-gray-600"
-              />
-              <p className="mt-1 text-xs text-gray-500">O email não pode ser alterado</p>
-            </div>
-            
-            <div className="mb-6">
-              <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
-                Telefone
-              </label>
-              <input
-                id="phone"
-                type="tel"
-                {...registerPerfil("phone")}
-                className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              {errorsPerfil.phone && (
-                <p className="mt-1 text-sm text-red-600">{errorsPerfil.phone.message}</p>
-              )}
-            </div>
-            
-            <div>
-              <button
-                type="submit"
-                disabled={loadingPerfil}
-                className="w-full py-2 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-              >
-                {loadingPerfil ? "Salvando..." : "Salvar Alterações"}
-              </button>
-            </div>
-          </form>
-        </div>
-      ) : (
-        <div>
-          <form onSubmit={handleSubmitSenha(onSubmitSenha)}>
-            <div className="mb-4">
-              <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-700 mb-1">
-                Senha atual
-              </label>
-              <input
-                id="currentPassword"
-                type="password"
-                {...registerSenha("currentPassword")}
-                className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              {errorsSenha.currentPassword && (
-                <p className="mt-1 text-sm text-red-600">{errorsSenha.currentPassword.message}</p>
-              )}
-            </div>
-            
-            <div className="mb-4">
-              <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 mb-1">
-                Nova senha
-              </label>
-              <input
-                id="newPassword"
-                type="password"
-                {...registerSenha("newPassword")}
-                className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              {errorsSenha.newPassword && (
-                <p className="mt-1 text-sm text-red-600">{errorsSenha.newPassword.message}</p>
-              )}
-            </div>
-            
-            <div className="mb-6">
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
-                Confirmar nova senha
-              </label>
-              <input
-                id="confirmPassword"
-                type="password"
-                {...registerSenha("confirmPassword")}
-                className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              {errorsSenha.confirmPassword && (
-                <p className="mt-1 text-sm text-red-600">{errorsSenha.confirmPassword.message}</p>
-              )}
-            </div>
-            
-            <div>
-              <button
-                type="submit"
-                disabled={loadingSenha}
-                className="w-full py-2 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-              >
-                {loadingSenha ? "Alterando..." : "Alterar Senha"}
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
-    </div>
+      <TabsContent value="perfil">
+        <Card>
+          <CardHeader>
+            <CardTitle>Informações Pessoais</CardTitle>
+            <CardDescription>
+              Atualize suas informações pessoais
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Form {...perfilForm}>
+              <form onSubmit={perfilForm.handleSubmit(onSubmitPerfil)} className="space-y-4">
+                <FormField
+                  control={perfilForm.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Nome completo</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Digite seu nome" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={perfilForm.control}
+                  name="phone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Telefone</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Digite seu telefone" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <div>
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input value={user?.email || ""} disabled />
+                    </FormControl>
+                    <p className="text-sm text-muted-foreground">
+                      O email não pode ser alterado
+                    </p>
+                  </FormItem>
+                </div>
+
+                <Button type="submit" className="w-full" disabled={loadingPerfil}>
+                  {loadingPerfil ? "Salvando..." : "Salvar Alterações"}
+                </Button>
+              </form>
+            </Form>
+          </CardContent>
+        </Card>
+      </TabsContent>
+
+      <TabsContent value="senha">
+        <Card>
+          <CardHeader>
+            <CardTitle>Alterar Senha</CardTitle>
+            <CardDescription>
+              Altere sua senha de acesso ao sistema
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Form {...senhaForm}>
+              <form onSubmit={senhaForm.handleSubmit(onSubmitSenha)} className="space-y-4">
+                <FormField
+                  control={senhaForm.control}
+                  name="currentPassword"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Senha atual</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Input
+                            type={showPassword ? "text" : "password"}
+                            placeholder="Digite sua senha atual"
+                            {...field}
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                            onClick={() => setShowPassword(!showPassword)}
+                          >
+                            {showPassword ? (
+                              <EyeOff className="h-4 w-4 text-muted-foreground" />
+                            ) : (
+                              <Eye className="h-4 w-4 text-muted-foreground" />
+                            )}
+                          </Button>
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={senhaForm.control}
+                  name="newPassword"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Nova senha</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Input
+                            type={showNewPassword ? "text" : "password"}
+                            placeholder="Digite sua nova senha"
+                            {...field}
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                            onClick={() => setShowNewPassword(!showNewPassword)}
+                          >
+                            {showNewPassword ? (
+                              <EyeOff className="h-4 w-4 text-muted-foreground" />
+                            ) : (
+                              <Eye className="h-4 w-4 text-muted-foreground" />
+                            )}
+                          </Button>
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={senhaForm.control}
+                  name="confirmPassword"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Confirmar nova senha</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Input
+                            type={showConfirmPassword ? "text" : "password"}
+                            placeholder="Confirme sua nova senha"
+                            {...field}
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                          >
+                            {showConfirmPassword ? (
+                              <EyeOff className="h-4 w-4 text-muted-foreground" />
+                            ) : (
+                              <Eye className="h-4 w-4 text-muted-foreground" />
+                            )}
+                          </Button>
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <Button type="submit" className="w-full" disabled={loadingSenha}>
+                  {loadingSenha ? "Alterando..." : "Alterar Senha"}
+                </Button>
+              </form>
+            </Form>
+          </CardContent>
+        </Card>
+      </TabsContent>
+    </Tabs>
   );
 } 
