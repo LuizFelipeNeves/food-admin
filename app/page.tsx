@@ -130,8 +130,8 @@ export default function HomePage() {
   });
 
   // Extrair os dados das respostas
-  const stats = statsResponse;
-  const salesData = salesResponse;
+  const stats = statsResponse?.data;
+  const salesData = salesResponse?.data;
   const topProducts = topProductsResponse?.data || [];
   const systemStatus = systemStatusResponse?.data || [];
   const ordersByCategory = ordersByCategoryResponse?.data || [];

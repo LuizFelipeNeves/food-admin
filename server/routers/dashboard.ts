@@ -53,7 +53,7 @@ export const dashboardRouter = router({
       const cachedData = await CacheService.getCache(cacheKey);
       if (cachedData && typeof cachedData.data === "object") {
         return {
-          ...cachedData.data,
+          data: cachedData.data,
           timestamp: cachedData.timestamp,
           fromCache: true
         };
@@ -203,12 +203,14 @@ export const dashboardRouter = router({
         averageDeliveryTime: Math.round(todayStats.averageDeliveryTime || 0),
         deliveryTimeChange: Math.round(deliveryTimeChange),
         lastHourOrders,
-        timestamp: new Date(),
-        fromCache: false
       };
       
       await CacheService.setCache(cacheKey, result);
-      return result;
+      return {
+        data: result,
+        timestamp: new Date(),
+        fromCache: false
+      };
     }),
 
   getSalesChart: publicProcedure
@@ -225,7 +227,7 @@ export const dashboardRouter = router({
       const cachedData = await CacheService.getCache(cacheKey);
       if (cachedData && typeof cachedData.data === "object") {
         return {
-          ...cachedData.data,
+          data: cachedData.data,
           timestamp: cachedData.timestamp,
           fromCache: true
         };
@@ -354,12 +356,14 @@ export const dashboardRouter = router({
             pending: totals.pending
           }
         },
-        timestamp: new Date(),
-        fromCache: false
       };
       
       await CacheService.setCache(cacheKey, result);
-      return result;
+      return {
+        data: result,
+        timestamp: new Date(),
+        fromCache: false
+      };
     }),
 
   getTopProducts: publicProcedure
@@ -442,7 +446,7 @@ export const dashboardRouter = router({
         fromCache: false
       };
       
-      await CacheService.setCache(cacheKey, result);
+      await CacheService.setCache(cacheKey, topItems);
       return result;
     }),
 
@@ -481,7 +485,7 @@ export const dashboardRouter = router({
         fromCache: false
       };
       
-      await CacheService.setCache(cacheKey, result);
+      await CacheService.setCache(cacheKey, systemStatus);
       return result;
     }),
 
@@ -610,7 +614,7 @@ export const dashboardRouter = router({
         fromCache: false
       };
       
-      await CacheService.setCache(cacheKey, result);
+      await CacheService.setCache(cacheKey, categories);
       return result;
     }),
 
@@ -682,7 +686,7 @@ export const dashboardRouter = router({
         fromCache: false
       };
       
-      await CacheService.setCache(cacheKey, result);
+      await CacheService.setCache(cacheKey, methods);
       return result;
     })
 }); 
