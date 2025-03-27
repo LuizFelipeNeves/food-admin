@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, ChangeEvent } from 'react';
 import { trpc } from '@/app/_trpc/client';
 import { Button } from '@/components/ui/button';
 import {
@@ -51,14 +51,19 @@ interface User {
   lastLogin?: Date;
   createdAt: Date;
   phone?: string;
+  isPasswordChange?: boolean;
 }
+
+type StaffUser = Omit<User, 'role'> & {
+  role: 'admin' | 'employee';
+};
 
 export function GerenciamentoUsuarios() {
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<User | undefined>();
+  const [selectedUser, setSelectedUser] = useState<StaffUser | undefined>();
 
   // Queries e Mutations
   const { data: users, isLoading } = trpc.user.list.useQuery();
@@ -87,7 +92,7 @@ export function GerenciamentoUsuarios() {
   };
 
   // Função para filtrar usuários
-  const filteredUsers = users?.filter((user) => {
+  const filteredUsers = users?.filter((user: User) => {
     const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          user.email.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesRole = roleFilter === 'all' || user.role === roleFilter;
@@ -126,7 +131,8 @@ export function GerenciamentoUsuarios() {
   };
 
   const handleEditUser = (user: User) => {
-    setSelectedUser(user);
+    if (user.role === 'user') return;
+    setSelectedUser(user as StaffUser);
     setDialogOpen(true);
   };
 
@@ -147,10 +153,13 @@ export function GerenciamentoUsuarios() {
   };
 
   const handleChangePassword = (user: User) => {
-    setSelectedUser(user);
+    if (user.role === 'user') return;
+    setSelectedUser({ ...user, isPasswordChange: true } as StaffUser);
     setDialogOpen(true);
-    // Adicionar flag para indicar que é alteração de senha
-    setSelectedUser({ ...user, isPasswordChange: true });
+  };
+
+  const handleSearchChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
   };
 
   if (isLoading) {
@@ -211,7 +220,7 @@ export function GerenciamentoUsuarios() {
                   placeholder="Buscar por nome ou email..."
                   className="pl-9"
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onChange={handleSearchChange}
                 />
               </div>
             </div>
@@ -254,7 +263,7 @@ export function GerenciamentoUsuarios() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredUsers.map((user) => (
+                {filteredUsers.map((user: User) => (
                   <TableRow key={user._id}>
                     <TableCell className="font-medium">{user.name}</TableCell>
                     <TableCell>{user.email}</TableCell>

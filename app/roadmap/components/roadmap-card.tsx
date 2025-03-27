@@ -1,13 +1,13 @@
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { RoadmapItem } from '../data'
-import { Calendar, CheckCircle2, CircleDashed, Clock } from 'lucide-react'
+import { Calendar, CheckCircle2, CircleDashed, Clock, LucideIcon } from 'lucide-react'
 
 type StatusInfo = {
   color: string
   textColor: string
   bgColor: string
-  icon: React.ElementType
+  icon: LucideIcon
   label: string
 }
 

@@ -38,7 +38,7 @@ const baseUserSchema = {
   name: z.string().min(3, 'Nome deve ter pelo menos 3 caracteres'),
   email: z.string().email('Email inválido'),
   phone: z.string().optional(),
-  role: z.enum(['admin', 'employee', 'user'] as const),
+  role: z.enum(['admin', 'employee'] as const),
 };
 
 // Schema para criação de usuário
@@ -77,7 +77,7 @@ interface UserDialogProps {
     _id: string;
     name: string;
     email: string;
-    role: 'admin' | 'employee' | 'user';
+    role: 'admin' | 'employee';
     phone?: string;
     isPasswordChange?: boolean;
   };
@@ -97,12 +97,12 @@ export function UserDialog({ open, onOpenChange, user }: UserDialogProps) {
       name: user.name,
       email: user.email,
       phone: user.phone || '',
-      role: user.role,
+      role: user.role as 'admin' | 'employee',
     } : {
       name: '',
       email: '',
       phone: '',
-      role: 'user' as const,
+      role: 'employee' as const,
       password: '',
       confirmPassword: '',
     },
@@ -336,7 +336,6 @@ export function UserDialog({ open, onOpenChange, user }: UserDialogProps) {
                       <SelectContent>
                         <SelectItem value="admin">Administrador</SelectItem>
                         <SelectItem value="employee">Funcionário</SelectItem>
-                        <SelectItem value="user">Usuário</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -422,7 +421,7 @@ export function UserDialog({ open, onOpenChange, user }: UserDialogProps) {
                 >
                   Cancelar
                 </Button>
-                <Button type="submit" disabled={isCreating || isUpdating}>
+                <Button type="submit" disabled={isSubmitting}>
                   {isEditing ? 'Salvar Alterações' : 'Criar Usuário'}
                 </Button>
               </DialogFooter>
