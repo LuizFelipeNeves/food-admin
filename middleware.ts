@@ -23,13 +23,15 @@ export async function middleware(request: NextRequest) {
     '/reports',
     '/profile',
     '/settings',
-    '/settings/users'
+    '/devices',
+    '/subscription',
+    '/all-orders'
   ];
   
   // Rotas que exigem permissão de administrador
   const adminRoutes = [
     '/settings/users',
-    '/reports/admin',
+    '/roadmap'
   ];
   
   // Rotas que exigem permissão de funcionário ou administrador
@@ -38,6 +40,7 @@ export async function middleware(request: NextRequest) {
     '/orders',
     '/all-orders',
     '/products',
+    '/customers'
   ];
   
   // Verificar se a rota atual é protegida
@@ -86,7 +89,7 @@ export async function middleware(request: NextRequest) {
   }
   
   // Verificar permissão de funcionário ou admin
-  if (isEmployeeRoute && token?.role !== 'employee' && token?.role !== 'admin') {
+  if (isEmployeeRoute && token?.role !== 'employee' && token?.role !== 'admin' && token?.role !== 'user') {
     return NextResponse.redirect(new URL('/', request.url));
   }
   

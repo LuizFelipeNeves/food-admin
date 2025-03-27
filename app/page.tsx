@@ -20,10 +20,15 @@ import { DeliveryStats } from '@/components/dashboard/delivery-stats'
 import { useState } from 'react'
 import { CacheIndicator } from '@/components/ui/cache-indicator'
 import { TimeDisplay } from '@/components/ui/time-display'
+import { useSession } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
+import { Button } from '@/components/ui/button'
 
 export default function HomePage() {
   const storeId = '67a05b53927e38337439322f';
   const [refreshing, setRefreshing] = useState(false);
+  const { data: session } = useSession();
+  const router = useRouter();
   const [dataTimestamps, setDataTimestamps] = useState<{
     stats?: { time: Date; fromCache: boolean };
     sales?: { time: Date; fromCache: boolean };
@@ -171,8 +176,20 @@ export default function HomePage() {
             />
             
             <div className="flex items-center space-x-2">
-              <SeedButton />
-              <GenerateDataButton storeId={storeId} />
+              {session?.user?.role === 'admin' && (
+                <>
+                  <SeedButton />
+                  <GenerateDataButton storeId={storeId} />
+                </>
+              )}
+              {(session?.user?.role) && (
+                <Button 
+                  variant="default" 
+                  onClick={() => router.push('/pos')}
+                >
+                  Novo Pedido
+                </Button>
+              )}
             </div>
           </div>
         </div>
