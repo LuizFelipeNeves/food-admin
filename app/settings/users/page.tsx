@@ -1,14 +1,12 @@
-import { GerenciamentoUsuarios } from "@/components/auth/GerenciamentoUsuarios";
+import { GerenciamentoUsuarios } from '@/components/auth/GerenciamentoUsuarios';
+import { Layout } from '@/components/layout/layout';
 
-export default function UsersAdminPage() {
+export default function UsersPage() {
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto">
-        <h1 className="text-3xl font-bold mb-8 px-4 sm:px-0">Gerenciamento de Usuários</h1>
-        <div className="bg-white shadow rounded-lg overflow-hidden">
-          <GerenciamentoUsuarios />
-        </div>
+    <Layout>
+      <div className="flex-1 space-y-4 p-2 sm:p-4 md:p-6 lg:p-8 pt-4 sm:pt-6 max-w-[2000px] mx-auto">
+        <GerenciamentoUsuarios />
       </div>
-    </div>
+    </Layout>
   );
 } 

@@ -22,23 +22,17 @@ import { usePathname } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 
 // Links baseados em permissões
-const adminLinks = [
+const dashboardLinks = [
   {
-    title: 'Usuários',
-    href: '/settings/users',
-    icon: Users,
-    color: 'text-pink-700',
-    roles: ['admin'],
-  },
-  {
-    title: 'Roadmap',
-    href: '/roadmap',
-    icon: Map,
-    roles: ['admin'],
+    title: 'Visão Geral',
+    href: '/',
+    icon: LayoutDashboard,
+    color: 'text-sky-500',
+    roles: ['admin', 'employee', 'user'],
   },
 ];
 
-const employeeLinks = [
+const operationalLinks = [
   {
     title: 'PDV',
     href: '/pos',
@@ -60,13 +54,9 @@ const employeeLinks = [
     color: 'text-lime-500',
     roles: ['admin', 'employee', 'user'],
   },
-  {
-    title: 'Clientes',
-    href: '/customers',
-    icon: Users,
-    color: 'text-pink-700',
-    roles: ['admin', 'employee', 'user'],
-  },
+];
+
+const catalogLinks = [
   {
     title: 'Produtos',
     href: '/products',
@@ -74,21 +64,21 @@ const employeeLinks = [
     color: 'text-violet-500',
     roles: ['admin', 'employee', 'user'],
   },
-];
-
-const generalLinks = [
   {
-    title: 'Visão Geral',
-    href: '/',
-    icon: LayoutDashboard,
-    color: 'text-sky-500',
+    title: 'Clientes',
+    href: '/customers',
+    icon: Users,
+    color: 'text-pink-700',
     roles: ['admin', 'employee', 'user'],
   },
+];
+
+const systemLinks = [
   {
-    title: 'Dispositivos',
-    href: '/devices',
-    icon: Smartphone,
-    color: 'text-blue-500',
+    title: 'Analytics',
+    href: '/analytics',
+    icon: BarChart3,
+    color: 'text-orange-500',
     roles: ['admin', 'user'],
   },
   {
@@ -99,10 +89,10 @@ const generalLinks = [
     roles: ['admin', 'user'],
   },
   {
-    title: 'Analytics',
-    href: '/analytics',
-    icon: BarChart3,
-    color: 'text-orange-500',
+    title: 'Dispositivos',
+    href: '/devices',
+    icon: Smartphone,
+    color: 'text-blue-500',
     roles: ['admin', 'user'],
   },
   {
@@ -112,15 +102,41 @@ const generalLinks = [
     color: 'text-yellow-500',
     roles: ['admin', 'user'],
   },
+];
+
+const adminLinks = [
+  {
+    title: 'Usuários',
+    href: '/settings/users',
+    icon: Users,
+    color: 'text-pink-700',
+    roles: ['admin'],
+  },
+  {
+    title: 'Roadmap',
+    href: '/roadmap',
+    icon: Map,
+    color: 'text-blue-700',
+    roles: ['admin'],
+  },
   {
     title: 'Configurações',
     href: '/settings',
     icon: Settings,
+    color: 'text-gray-500',
     roles: ['admin', 'user'],
   },
 ];
 
-export const sidebarLinks = [...generalLinks, ...employeeLinks, ...adminLinks];
+const allLinks = [
+  ...dashboardLinks,
+  ...operationalLinks,
+  ...catalogLinks,
+  ...systemLinks,
+  ...adminLinks,
+]
+
+export const sidebarLinks = allLinks;
 
 export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
@@ -134,8 +150,7 @@ export function Sidebar() {
   };
 
   // Combinar todos os links e filtrar baseado na role do usuário
-  const allLinks = [...generalLinks, ...employeeLinks, ...adminLinks]
-    .filter(link => hasAccess(link.roles));
+  allLinks.filter(link => hasAccess(link.roles));
 
   return (
     <div
