@@ -4,8 +4,8 @@ interface MainContentProps {
 
 export function MainContent({ children }: MainContentProps) {
   return (
-    <main className="flex-1 overflow-y-auto scrollbar-hide">
-      <div className="h-full">
+    <main className="flex-1 overflow-hidden">
+      <div className="h-full w-full">
         {children}
       </div>
     </main>

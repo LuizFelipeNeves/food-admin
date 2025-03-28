@@ -195,49 +195,51 @@ export default function PosPage() {
 
   return (
     <Layout>
-      <div className="h-[calc(100vh-4rem)]">
-        <PosLayout
-          orderSummary={
-            <OrderSummary
-              items={orderItems}
-              onUpdateQuantity={handleUpdateQuantity}
-              onRemoveItem={handleRemoveItem}
-              onAddNote={handleAddNote}
-              onCheckout={handleCheckout}
-              onClearOrder={handleClearOrder}
-            />
-          }
-        >
-          <div className="flex flex-col h-full">
-            <CategoryTabs
-              categories={typedCategories}
-              selectedCategory={selectedCategory}
-              onSelectCategory={handleSelectCategory}
-              isLoading={isLoadingCategories}
-            />
-            <div className="flex-1 overflow-hidden">
-              <ProductGrid
-                products={typedProducts}
-                onSelectProduct={handleSelectProduct}
-                isLoading={isLoadingProducts && !allProducts}
+      <div className="h-[calc(100vh-4rem)] w-full overflow-hidden">
+        <div className="h-full w-full p-2 sm:p-4">
+          <PosLayout
+            orderSummary={
+              <OrderSummary
+                items={orderItems}
+                onUpdateQuantity={handleUpdateQuantity}
+                onRemoveItem={handleRemoveItem}
+                onAddNote={handleAddNote}
+                onCheckout={handleCheckout}
+                onClearOrder={handleClearOrder}
               />
+            }
+          >
+            <div className="flex flex-col h-full overflow-hidden">
+              <CategoryTabs
+                categories={typedCategories}
+                selectedCategory={selectedCategory}
+                onSelectCategory={handleSelectCategory}
+                isLoading={isLoadingCategories}
+              />
+              <div className="flex-1 min-h-0 overflow-hidden">
+                <ProductGrid
+                  products={typedProducts}
+                  onSelectProduct={handleSelectProduct}
+                  isLoading={isLoadingProducts && !allProducts}
+                />
+              </div>
             </div>
-          </div>
+          </PosLayout>
+        </div>
 
-          <PaymentModal
-            isOpen={isPaymentModalOpen}
-            onClose={() => setIsPaymentModalOpen(false)}
-            onConfirm={handleConfirmPayment}
-            items={orderItems}
-          />
+        <PaymentModal
+          isOpen={isPaymentModalOpen}
+          onClose={() => setIsPaymentModalOpen(false)}
+          onConfirm={handleConfirmPayment}
+          items={orderItems}
+        />
 
-          <ProductModal
-            isOpen={isProductModalOpen}
-            onClose={() => setIsProductModalOpen(false)}
-            product={selectedProduct}
-            onAddToOrder={addProductToOrder}
-          />
-        </PosLayout>
+        <ProductModal
+          isOpen={isProductModalOpen}
+          onClose={() => setIsProductModalOpen(false)}
+          product={selectedProduct}
+          onAddToOrder={addProductToOrder}
+        />
       </div>
     </Layout>
   );

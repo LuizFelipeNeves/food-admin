@@ -84,13 +84,13 @@ export function OrderSummary({
 
   return (
     <div className="flex flex-col h-full">
-      <div className="p-3 sm:p-4 border-b bg-card sticky top-0 z-10">
+      <div className="p-2 sm:p-3 md:p-4 border-b bg-card sticky top-0 z-10">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Receipt className="h-5 w-5 text-primary" />
-            <h2 className="text-lg font-semibold">Pedido Atual</h2>
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <Receipt className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+            <h2 className="text-base sm:text-lg font-semibold">Pedido Atual</h2>
             {totalItems > 0 && (
-              <Badge variant="secondary" className="ml-1">
+              <Badge variant="secondary" className="ml-1 text-xs sm:text-sm">
                 {totalItems} {totalItems === 1 ? 'item' : 'itens'}
               </Badge>
             )}
@@ -100,19 +100,19 @@ export function OrderSummary({
               variant="ghost"
               size="sm"
               onClick={onClearOrder}
-              className="h-8 px-2 text-destructive hover:text-destructive hover:bg-destructive/10"
+              className="h-7 sm:h-8 px-1.5 sm:px-2 text-destructive hover:text-destructive hover:bg-destructive/10"
             >
-              <Trash2 className="h-4 w-4 mr-1" />
-              Limpar
+              <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1" />
+              <span className="text-xs sm:text-sm">Limpar</span>
             </Button>
           )}
         </div>
       </div>
 
       {items.length === 0 ? (
-        <div className="flex-1 flex flex-col items-center justify-center p-4 text-center">
-          <ShoppingCart className="h-12 w-12 text-muted-foreground mb-3 opacity-50" />
-          <p className="text-muted-foreground">
+        <div className="flex-1 flex flex-col items-center justify-center p-3 sm:p-4 text-center">
+          <ShoppingCart className="h-10 sm:h-12 w-10 sm:w-12 text-muted-foreground mb-2 sm:mb-3 opacity-50" />
+          <p className="text-sm text-muted-foreground">
             Nenhum item adicionado ao pedido
           </p>
           <p className="text-xs text-muted-foreground mt-1">
@@ -122,21 +122,21 @@ export function OrderSummary({
       ) : (
         <>
           <ScrollArea className="flex-1">
-            <div className="p-3 sm:p-4 space-y-2">
+            <div className="p-2 sm:p-3 md:p-4 space-y-2">
               {items.map((item) => (
                 <Card key={item._id} className="p-2 border-muted hover:border-border transition-colors">
                   <div className="flex justify-between">
-                    <div className="flex-1">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h3 className="font-medium text-sm">{item.name}</h3>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex justify-between items-start gap-2">
+                        <div className="min-w-0">
+                          <h3 className="font-medium text-sm truncate">{item.name}</h3>
                           <p className="text-xs text-muted-foreground">
                             {formatCurrency(item.price)}
                           </p>
                         </div>
                         <button
                           onClick={() => onRemoveItem(item._id)}
-                          className="text-muted-foreground hover:text-destructive transition-colors"
+                          className="text-muted-foreground hover:text-destructive transition-colors shrink-0"
                         >
                           <X className="h-4 w-4" />
                         </button>
@@ -253,27 +253,27 @@ export function OrderSummary({
             </div>
           </ScrollArea>
 
-          <div className="p-3 sm:p-4 border-t mt-auto bg-card">
+          <div className="p-2 sm:p-3 md:p-4 border-t mt-auto bg-card">
             <div className="space-y-3">
-              <div className="flex justify-between">
-                <span className="text-sm">Subtotal</span>
-                <span className="text-sm font-medium">
+              <div className="flex justify-between text-sm">
+                <span>Subtotal</span>
+                <span className="font-medium">
                   {formatCurrency(subtotal)}
                 </span>
               </div>
               <Separator />
-              <div className="flex justify-between">
+              <div className="flex justify-between items-baseline">
                 <span className="font-medium">Total</span>
-                <span className="font-bold text-lg text-primary">
+                <span className="font-bold text-base sm:text-lg text-primary">
                   {formatCurrency(subtotal)}
                 </span>
               </div>
               <Button 
-                className="w-full mt-2" 
+                className="w-full" 
                 onClick={onCheckout}
                 size="lg"
               >
-                Finalizar Pedido
+                <span className="text-sm sm:text-base">Finalizar Pedido</span>
               </Button>
             </div>
           </div>
