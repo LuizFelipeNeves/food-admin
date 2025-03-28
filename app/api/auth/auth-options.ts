@@ -32,30 +32,43 @@ export const authOptions: AuthOptions = {
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
-          throw new Error("Credenciais inválidas");
+          throw new Error("Email e senha são obrigatórios");
         }
 
-        await connectDB();
+        try {
+          await connectDB();
 
-        const user = await Account.findOne({ email: credentials.email });
+          const user = await Account.findOne({ email: credentials.email });
 
-        if (!user || !user.isActive) {
-          throw new Error("Usuário não encontrado ou inativo");
+          if (!user) {
+            throw new Error("Credenciais inválidas");
+          }
+
+          if (!user.isActive) {
+            throw new Error("Conta desativada");
+          }
+
+          if (!user.emailVerified) {
+            throw new Error("Email não verificado");
+          }
+
+          const isValid = await user.comparePassword(credentials.password);
+
+          if (!isValid) {
+            throw new Error("Credenciais inválidas");
+          }
+
+          return {
+            id: user._id.toString(),
+            name: user.name,
+            email: user.email,
+            role: user.role,
+            emailVerified: user.emailVerified,
+          };
+        } catch (error) {
+          console.error("Erro na autorização:", error);
+          throw error;
         }
-
-        const isValid = await user.comparePassword(credentials.password);
-
-        if (!isValid) {
-          throw new Error("Senha incorreta");
-        }
-
-        return {
-          id: user._id.toString(),
-          name: user.name,
-          email: user.email,
-          role: user.role,
-          emailVerified: user.emailVerified,
-        };
       },
     }),
   ],

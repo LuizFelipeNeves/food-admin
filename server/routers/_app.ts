@@ -1,5 +1,6 @@
 import { router } from '../trpc';
 import { userRouter } from './user';
+import { storesRouter } from './stores';
 
 import { productsRouter } from './products';
 import { categoriesRouter } from './categories';
@@ -25,7 +26,8 @@ export const appRouter = router({
   dashboard: dashboardRouter,
   data: dataRouter,
   pos: posRouter,
-  analytics: analyticsRouter
+  analytics: analyticsRouter,
+  stores: storesRouter
 });
 
 export type AppRouter = typeof appRouter;

@@ -4,6 +4,8 @@ import { Account } from "@/models/auth";
 import { TRPCError } from "@trpc/server";
 import { randomBytes } from "crypto";
 import { sendPasswordResetEmail, sendVerificationEmail, sendWelcomeEmail } from "@/lib/email";
+import { signIn } from 'next-auth/react';
+import { User, UserStore } from '@/models';
 
 export const authRouter = router({
   // Registrar um novo usuário
@@ -341,5 +343,99 @@ export const authRouter = router({
       await user.save();
 
       return { success: true };
+    }),
+
+  login: publicProcedure
+    .input(z.object({
+      email: z.string().email(),
+      password: z.string().min(6),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      try {
+        const account = await Account.findOne({ email: input.email });
+        
+        if (!account || !account.isActive) {
+          throw new TRPCError({
+            code: 'UNAUTHORIZED',
+            message: 'Credenciais inválidas',
+          });
+        }
+
+        const isValidPassword = await account.comparePassword(input.password);
+        
+        if (!isValidPassword) {
+          throw new TRPCError({
+            code: 'UNAUTHORIZED',
+            message: 'Credenciais inválidas',
+          });
+        }
+
+        const result = await signIn('credentials', {
+          email: input.email,
+          password: input.password,
+          redirect: false,
+        });
+
+        if (result?.error) {
+          throw new TRPCError({
+            code: 'UNAUTHORIZED',
+            message: 'Erro ao realizar login',
+          });
+        }
+
+        return { 
+          success: true,
+          user: {
+            id: account._id,
+            name: account.name,
+            email: account.email,
+            role: account.role
+          }
+        };
+      } catch (error) {
+        if (error instanceof TRPCError) {
+          throw error;
+        }
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Erro ao fazer login',
+        });
+      }
+    }),
+
+  logout: publicProcedure
+    .mutation(async () => {
+      return { success: true };
+    }),
+
+  getUser: publicProcedure
+    .query(async ({ ctx }) => {
+      if (!ctx.session?.user) {
+        return null;
+      }
+
+      const user = await User.findById(ctx.session.user.id);
+      if (!user) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Usuário não encontrado',
+        });
+      }
+
+      return user;
+    }),
+
+  getUserStores: publicProcedure
+    .query(async ({ ctx }) => {
+      if (!ctx.session?.user) {
+        return [];
+      }
+
+      const userStores = await UserStore.find({ 
+        user: ctx.session.user.id,
+        active: true 
+      }).populate('store');
+
+      return userStores;
     }),
 }); 

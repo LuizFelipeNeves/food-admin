@@ -256,6 +256,33 @@ const orderSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+const userStoreSchema = new mongoose.Schema(
+  {
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    store: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Store",
+      required: true,
+    },
+    role: {
+      type: String,
+      enum: ["owner", "admin", "employee"],
+      required: true,
+    },
+    active: {
+      type: Boolean,
+      default: true,
+    }
+  },
+  { timestamps: true }
+);
+
+userStoreSchema.index({ user: 1, store: 1 }, { unique: true });
+
 // Indexação para otimização de buscas
 storeSchema.index({ title: 1 });
 itemSchema.index({ store: 1, category: 1 });
@@ -274,6 +301,7 @@ export const Promotion = mongoose.models.Promotion || mongoose.model('Promotion'
 export const User = mongoose.models.User || mongoose.model('User', userSchema);
 export const UserAddress = mongoose.models.UserAddress || mongoose.model('UserAddress', userAddressSchema);
 export const Order = mongoose.models.Order || mongoose.model('Order', orderSchema);
+export const UserStore = mongoose.models.UserStore || mongoose.model('UserStore', userStoreSchema);
 
 export interface IOrder {
   paymentStatus: string;

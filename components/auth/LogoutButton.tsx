@@ -2,10 +2,10 @@
 
 import { useState } from "react";
 import { signOut } from "next-auth/react";
-import { useRouter } from "next/navigation";
 import { LogOut } from "lucide-react";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { toast } from "react-hot-toast";
+import useCurrentStore from "@/hooks/useCurrentStore";
 
 interface LogoutButtonProps {
   variant?: "default" | "small" | "icon" | "menu";
@@ -13,13 +13,16 @@ interface LogoutButtonProps {
 }
 
 export function LogoutButton({ variant = "default", className = "" }: LogoutButtonProps) {
-  const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const { setStore } = useCurrentStore();
 
   const handleLogout = async () => {
     setIsLoading(true);
     try {
-      // Chamar signOut com callbackUrl para garantir o redirecionamento
+      // 1. Limpar estado do store e remover cookie
+      setStore(null);
+
+      // 2. Fazer logout no NextAuth
       await signOut({ 
         redirect: true,
         callbackUrl: "/auth/login"
