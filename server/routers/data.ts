@@ -3,6 +3,7 @@ import { router, publicProcedure } from '../trpc';
 import { Order, Item, Category } from '@/models';
 import { subDays } from 'date-fns';
 import { generateOrdersForTimeRange, generateRandomDeliveryTime, generateRandomPrice } from '../utils/seed-helpers';
+import { CacheService } from '../services/cache-service';
 
 export const dataRouter = router({
   seed: publicProcedure
@@ -199,6 +200,13 @@ export const dataRouter = router({
         );
 
         await Order.insertMany(orders);
+
+        // Limpar todos os caches relacionados
+        await CacheService.clearCacheByPattern(input.storeId, 'dashboard.*');
+        await CacheService.clearCacheByPattern(input.storeId, 'products.*');
+        await CacheService.clearCacheByPattern(input.storeId, 'categories.*');
+        await CacheService.clearCacheByPattern(input.storeId, 'orders.*');
+        await CacheService.clearCacheByPattern(input.storeId, 'analytics.*');
 
         return {
           message: 'Dados de teste gerados com sucesso',

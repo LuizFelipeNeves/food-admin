@@ -90,4 +90,25 @@ export class CacheService {
       return false;
     }
   }
+
+  /**
+   * Limpa o cache usando um padrão de dataType
+   * @param options Opções parciais de cache (apenas storeId obrigatório)
+   * @param pattern Padrão para matching de dataType (ex: 'dashboard.*')
+   * @returns Resultado da operação
+   */
+  static async clearCacheByPattern(storeId: string, pattern: string): Promise<boolean> {
+    try {
+      const regex = new RegExp(pattern.replace('.', '\\.').replace('*', '.*'));
+      await CacheModel.deleteMany({
+        storeId,
+        dataType: { $regex: regex }
+      });
+
+      return true;
+    } catch (error) {
+      console.error('Erro ao limpar cache por padrão:', error);
+      return false;
+    }
+  }
 } 
