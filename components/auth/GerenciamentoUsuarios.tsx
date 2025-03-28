@@ -46,7 +46,7 @@ interface User {
   _id: string;
   name: string;
   email: string;
-  role: 'admin' | 'employee' | 'user';
+  role: 'admin' | 'user';
   isActive: boolean;
   lastLogin?: Date;
   createdAt: Date;
@@ -55,7 +55,7 @@ interface User {
 }
 
 type StaffUser = Omit<User, 'role'> & {
-  role: 'admin' | 'employee';
+  role: 'admin';
 };
 
 export function GerenciamentoUsuarios() {
@@ -106,13 +106,12 @@ export function GerenciamentoUsuarios() {
   const getRoleBadge = (role: string) => {
     const roleStyles = {
       admin: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
-      employee: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
       user: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
     }[role] || 'bg-gray-100 text-gray-800';
 
     return (
       <Badge variant="outline" className={roleStyles}>
-        {role === 'admin' ? 'Administrador' : role === 'employee' ? 'Funcionário' : 'Usuário'}
+        {role === 'admin' ? 'Administrador' : 'Usuário'}
       </Badge>
     );
   };
@@ -232,7 +231,6 @@ export function GerenciamentoUsuarios() {
                 <SelectContent>
                   <SelectItem value="all">Todas as funções</SelectItem>
                   <SelectItem value="admin">Administrador</SelectItem>
-                  <SelectItem value="employee">Funcionário</SelectItem>
                   <SelectItem value="user">Usuário</SelectItem>
                 </SelectContent>
               </Select>

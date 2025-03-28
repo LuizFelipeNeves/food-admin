@@ -37,15 +37,6 @@ export async function middleware(request: NextRequest) {
     '/settings/users',
     '/roadmap'
   ];
-
-  // Rotas que exigem role de funcionário ou admin
-  const employeeRoutes = [
-    '/pos',
-    '/orders',
-    '/all-orders',
-    '/products',
-    '/customers'
-  ];
   
   // Permitir acesso às rotas públicas e API
   if (isPublicRoute || isApiRoute) {
@@ -81,13 +72,6 @@ export async function middleware(request: NextRequest) {
   const userRole = token.role as string;
   const currentPath = request.nextUrl.pathname;
 
-  // Verificar acesso a rotas de funcionário
-  if (employeeRoutes.some(route => currentPath.startsWith(route))) {
-    if (userRole !== 'employee' && userRole !== 'admin') {
-      return NextResponse.redirect(new URL('/', request.url));
-    }
-  }
-
   // Verificar acesso a rotas de admin
   if (adminRoutes.some(route => currentPath.startsWith(route))) {
     if (userRole !== 'admin') {
@@ -109,36 +93,9 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL('/store/select', request.url));
     }
 
-    try {
-      // Verifica apenas se o usuário tem acesso à loja selecionada
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/trpc/auth.checkStoreAccess?input=${encodeURIComponent(JSON.stringify({ storeId: selectedStore.value }))}`, {
-        headers: {
-          Cookie: request.headers.get('cookie') || '',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error('Erro ao verificar acesso à loja');
-      }
-
-      const { result } = await response.json();
-      const hasAccess = result.data;
-
-      if (!hasAccess) {
-        // Se não tiver acesso à loja selecionada, redireciona para seleção
-        const response = NextResponse.redirect(new URL('/store/select', request.url));
-        response.cookies.delete('selectedStore');
-        return response;
-      }
-
-      // Adicionar o ID da loja atual no header para uso nas APIs
-      const nextResponse = NextResponse.next();
-      nextResponse.headers.set('x-store-id', selectedStore.value);
-      return nextResponse;
-    } catch (error) {
-      console.error('Erro ao verificar acesso à loja:', error);
-      return NextResponse.redirect(new URL('/auth/login', request.url));
-    }
+    const nextResponse = NextResponse.next();
+    nextResponse.headers.set('x-store-id', selectedStore.value);
+    return nextResponse;
   }
   
   return NextResponse.next();

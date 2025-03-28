@@ -231,7 +231,7 @@ export const authRouter = router({
       z.object({
         page: z.number().default(1),
         limit: z.number().default(10),
-        role: z.enum(["user", "employee", "admin"]).optional(),
+        role: z.enum(["user", "admin"]).optional(),
       })
     )
     .query(async ({ input }) => {
@@ -266,7 +266,7 @@ export const authRouter = router({
         email: z.string().email(),
         password: z.string().min(8),
         phone: z.string().optional(),
-        role: z.enum(["employee", "admin"]),
+        role: z.enum(["user", "admin"]),
       })
     )
     .mutation(async ({ input }) => {
@@ -301,7 +301,7 @@ export const authRouter = router({
     .input(
       z.object({
         userId: z.string(),
-        role: z.enum(["user", "employee", "admin"]),
+        role: z.enum(["user", "admin"]),
       })
     )
     .mutation(async ({ input }) => {

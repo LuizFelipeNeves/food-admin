@@ -28,7 +28,7 @@ const dashboardLinks = [
     href: '/',
     icon: LayoutDashboard,
     color: 'text-sky-500',
-    roles: ['admin', 'employee', 'user'],
+    roles: ['admin', 'user'],
   },
 ];
 
@@ -38,21 +38,21 @@ const operationalLinks = [
     href: '/pos',
     icon: CreditCard,
     color: 'text-green-500',
-    roles: ['admin', 'employee', 'user'],
+    roles: ['admin', 'user'],
   },
   {
     title: 'Pedidos',
     href: '/orders',
     icon: ShoppingCart,
     color: 'text-violet-500',
-    roles: ['admin', 'employee', 'user'],
+    roles: ['admin', 'user'],
   },
   {
     title: 'Todos os Pedidos',
     href: '/all-orders',
     icon: Package,
     color: 'text-lime-500',
-    roles: ['admin', 'employee', 'user'],
+    roles: ['admin', 'user'],
   },
 ];
 
@@ -62,14 +62,14 @@ const catalogLinks = [
     href: '/products',
     icon: Package,
     color: 'text-violet-500',
-    roles: ['admin', 'employee', 'user'],
+    roles: ['admin', 'user'],
   },
   {
     title: 'Clientes',
     href: '/customers',
     icon: Users,
     color: 'text-pink-700',
-    roles: ['admin', 'employee', 'user'],
+    roles: ['admin', 'user'],
   },
 ];
 

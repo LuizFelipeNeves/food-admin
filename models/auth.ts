@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 
-export type Role = "user" | "employee" | "admin";
+export type Role = "user" | "admin";
 
 export interface IAccount {
   _id: string;
@@ -27,7 +27,7 @@ const accountSchema = new mongoose.Schema(
     password: { type: String, required: true },
     role: { 
       type: String, 
-      enum: ["user", "employee", "admin"], 
+      enum: ["user", "admin"], 
       default: "user" 
     },
     phone: { type: String, trim: true },

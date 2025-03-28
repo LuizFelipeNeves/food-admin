@@ -7,7 +7,7 @@ import { Account } from '@/models/auth';
 const userFormSchema = z.object({
   name: z.string().min(3, 'Nome deve ter no mínimo 3 caracteres'),
   email: z.string().email('Email inválido'),
-  role: z.enum(['admin', 'employee'], {
+  role: z.enum(['user', 'admin'], {
     required_error: 'Selecione uma função',
   }),
   password: z.string().min(6, 'Senha deve ter no mínimo 6 caracteres').optional(),
@@ -54,7 +54,7 @@ export const userRouter = router({
       id: z.string(),
       name: z.string().min(3),
       email: z.string().email(),
-      role: z.enum(['admin', 'employee']),
+      role: z.enum(['user', 'admin']),
     }))
     .mutation(async ({ input }) => {
       const { id, name, email, role } = input;

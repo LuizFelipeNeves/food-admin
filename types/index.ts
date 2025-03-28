@@ -2,7 +2,7 @@ export interface Account {
   id: string;
   name: string;
   email: string;
-  role: 'admin' | 'employee' | 'user';
+  role: 'admin' | 'user';
   isActive: boolean;
   lastLogin?: Date;
   createdAt: Date;
@@ -12,7 +12,7 @@ export interface Account {
 export interface AccountFormData {
   name: string;
   email: string;
-  role: 'admin' | 'employee' | 'user';
+  role: 'admin' | 'user';
   password?: string;
   phone?: string;
 }

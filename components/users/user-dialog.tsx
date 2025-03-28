@@ -38,7 +38,7 @@ const baseUserSchema = {
   name: z.string().min(3, 'Nome deve ter pelo menos 3 caracteres'),
   email: z.string().email('Email inválido'),
   phone: z.string().optional(),
-  role: z.enum(['admin', 'employee'] as const),
+  role: z.enum(['admin', 'user'] as const),
 };
 
 // Schema para criação de usuário
@@ -77,7 +77,7 @@ interface UserDialogProps {
     _id: string;
     name: string;
     email: string;
-    role: 'admin' | 'employee';
+    role: 'admin' | 'user';
     phone?: string;
     isPasswordChange?: boolean;
   };
@@ -97,12 +97,12 @@ export function UserDialog({ open, onOpenChange, user }: UserDialogProps) {
       name: user.name,
       email: user.email,
       phone: user.phone || '',
-      role: user.role as 'admin' | 'employee',
+      role: user.role as 'admin' | 'user',
     } : {
       name: '',
       email: '',
       phone: '',
-      role: 'employee' as const,
+      role: 'user' as const,
       password: '',
       confirmPassword: '',
     },
@@ -335,7 +335,7 @@ export function UserDialog({ open, onOpenChange, user }: UserDialogProps) {
                       </FormControl>
                       <SelectContent>
                         <SelectItem value="admin">Administrador</SelectItem>
-                        <SelectItem value="employee">Funcionário</SelectItem>
+                        <SelectItem value="user">Usuário</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
