@@ -13,6 +13,7 @@ import { Loader2 } from 'lucide-react'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useTheme } from 'next-themes'
 import { CacheIndicator } from '@/components/ui/cache-indicator'
+import { useStoreId } from '@/hooks/useStoreId'
 
 // Importação dinâmica dos componentes de gráfico
 const DynamicRevenueChart = dynamic(
@@ -126,7 +127,7 @@ interface ApiResponse<T> {
 export default function AnalyticsPage() {
   const [isMounted, setIsMounted] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState<'day' | 'week' | 'month'>('month');
-  const storeId = '67a05b53927e38337439322f';
+  const storeId = useStoreId();
   const { theme } = useTheme();
   const isDarkMode = theme === 'dark';
 

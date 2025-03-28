@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { Layout } from "@/components/layout/layout";
+import { useStoreId } from '@/hooks/useStoreId';
 
 export default function PosPage() {
   const router = useRouter();
@@ -21,7 +22,7 @@ export default function PosPage() {
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
-  const storeId = '67a05b53927e38337439322f';
+  const storeId = useStoreId();
 
   // Fetch categories
   const { data: categories, isLoading: isLoadingCategories } =

@@ -23,10 +23,7 @@ import { Input } from '@/components/ui/input'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Table } from '@tanstack/react-table'
 import { cn } from '@/lib/utils'
-
-// Enable server-side rendering for this page
-export const dynamic = 'auto';
-export const runtime = 'nodejs';
+import { useStoreId } from '@/hooks/useStoreId'
 
 interface DialogState<T> {
   open: boolean;
@@ -38,14 +35,22 @@ interface DeleteDialogState {
   id: string;
   type: string;
 }
-
 export default function ProductsPage() {
   const utils = trpc.useUtils()
   const [activeTab, setActiveTab] = useState<string>('products')
   const [table, setTable] = useState<Table<any> | null>(null)
 
-  const storeId = '67a05b53927e38337439322f';
+  // Estados para controle dos modais
+  const [productDialog, setProductDialog] = useState<DialogState<Product | null>>({
+    open: false,
+    item: null,
+  })
+  const [categoryDialog, setCategoryDialog] = useState<{ open: boolean; item: ProductCategory | null }>({ open: false, item: null })
+  const [additionalDialog, setAdditionalDialog] = useState<{ open: boolean; item: Additional | null }>({ open: false, item: null })
+  const [additionalGroupDialog, setAdditionalGroupDialog] = useState<{ open: boolean; item: AdditionalGroup | null }>({ open: false, item: null })
+  const [deleteDialog, setDeleteDialog] = useState<DeleteDialogState>({ open: false, id: '', type: '', })
 
+  const storeId = useStoreId();
   const { data: products, isLoading: productsIsLoading } = trpc.products.list.useQuery({
     storeId,
   });
@@ -269,16 +274,6 @@ export default function ProductsPage() {
     }
   };
 
-  // Estados para controle dos modais
-  const [productDialog, setProductDialog] = useState<DialogState<Product | null>>({
-    open: false,
-    item: null,
-  })
-  const [categoryDialog, setCategoryDialog] = useState<{ open: boolean; item: ProductCategory | null }>({ open: false, item: null })
-  const [additionalDialog, setAdditionalDialog] = useState<{ open: boolean; item: Additional | null }>({ open: false, item: null })
-  const [additionalGroupDialog, setAdditionalGroupDialog] = useState<{ open: boolean; item: AdditionalGroup | null }>({ open: false, item: null })
-  const [deleteDialog, setDeleteDialog] = useState<DeleteDialogState>({ open: false, id: '', type: '', })
-
   const handleEditItem = (type: string, item: any) => {
     switch (type) {
       case 'products':
@@ -382,212 +377,208 @@ export default function ProductsPage() {
 
   return (
     <Layout>
-      <div className="flex-1 overflow-hidden">
-        <div className="flex flex-col h-full">
-          <div className="flex-none space-y-4 p-8 pb-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold tracking-tight">
-                {tabs[activeTab as keyof typeof tabs] as string}
-              </h2>
-            </div>
-
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
-                <div className="w-full sm:w-auto overflow-x-auto">
-                  <TabsList className="w-full sm:w-auto">
-                    {Object.keys(tabs).map((key, tIndex) => (
-                      <TabsTrigger key={key} value={key} className={cn("flex-1 sm:flex-none", tIndex === Object.keys(tabs).length - 1 && "whitespace-nowrap")}> {tabs[key as keyof typeof tabs]} </TabsTrigger>
-                    ))}
-                  </TabsList>
-                </div>
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-2">
-                  {activeTab === "products" && (
-                    <>
-                      <Input
-                        placeholder="Filtrar produtos..."
-                        value={(table?.getColumn('name')?.getFilterValue() as string) ?? ''}
-                        onChange={(event) => table?.getColumn('name')?.setFilterValue(event.target.value)}
-                        className="w-full sm:w-[180px]"
-                      />
-                      <Button
-                        onClick={() => setProductDialog({ open: true, item: null })}
-                        disabled={!categories || !additionalGroups}
-                        className="w-full sm:w-auto whitespace-nowrap"
-                      >
-                        <Plus className="mr-2 h-4 w-4" /> Novo Produto
-                      </Button>
-                    </>
-                  )}
-                  {activeTab === "categories" && (
-                    <>
-                      <Input
-                        placeholder="Filtrar categorias..."
-                        value={(table?.getColumn('name')?.getFilterValue() as string) ?? ''}
-                        onChange={(event) => table?.getColumn('name')?.setFilterValue(event.target.value)}
-                        className="w-full sm:w-[180px]"
-                      />
-                      <Button
-                        onClick={() => setCategoryDialog({ open: true, item: null })}
-                        className="w-full sm:w-auto whitespace-nowrap"
-                      >
-                        <Plus className="mr-2 h-4 w-4" /> Nova Categoria
-                      </Button>
-                    </>
-                  )}
-                  {activeTab === "additionals" && (
-                    <>
-                      <Input
-                        placeholder="Filtrar adicionais..."
-                        value={(table?.getColumn('name')?.getFilterValue() as string) ?? ''}
-                        onChange={(event) => table?.getColumn('name')?.setFilterValue(event.target.value)}
-                        className="w-full sm:w-[180px]"
-                      />
-                      <Button
-                        onClick={() => setAdditionalDialog({ open: true, item: null })}
-                        className="w-full sm:w-auto whitespace-nowrap"
-                      >
-                        <Plus className="mr-2 h-4 w-4" /> Novo Adicional
-                      </Button>
-                    </>
-                  )}
-                  {activeTab === "additional-groups" && (
-                    <>
-                      <Input
-                        placeholder="Filtrar categorias..."
-                        value={(table?.getColumn('name')?.getFilterValue() as string) ?? ''}
-                        onChange={(event) => table?.getColumn('name')?.setFilterValue(event.target.value)}
-                        className="w-full sm:w-[180px]"
-                      />
-                      <Button
-                        onClick={() => setAdditionalGroupDialog({ open: true, item: null })}
-                        className="w-full sm:w-auto whitespace-nowrap"
-                      >
-                        <Plus className="mr-2 h-4 w-4" /> Novo Grupo
-                      </Button>
-                    </>
-                  )}
-                </div>
-              </div>
-
-              <div className="flex-1 overflow-auto px-1">
-                <TabsContent value="products" className="h-full">
-                  <div className="space-y-4 h-full">
-                    {productsIsLoading ? (
-                      <div className="w-full h-24 flex items-center justify-center">
-                        <span className="text-muted-foreground">Carregando produtos...</span>
-                      </div>
-                    ) : products && products.length > 0 ? (
-                      <DataTable
-                        columns={productColumns({ onEdit: (item) => handleEditItem('products', item), onDelete: handleDeleteItem })}
-                        data={products}
-                        onTableChange={handleTableChange}
-                      />
-                    ) : (
-                      <div className="w-full h-24 flex items-center justify-center">
-                        <span className="text-muted-foreground">Nenhum produto encontrado</span>
-                      </div>
-                    )}
-                  </div>
-                </TabsContent>
-
-                <TabsContent value="categories" className="h-full">
-                  <div className="space-y-4 h-full">
-                    {categoriesIsLoading ? (
-                      <div className="w-full h-24 flex items-center justify-center">
-                        <span className="text-muted-foreground">Carregando categorias...</span>
-                      </div>
-                    ) : categories && categories.length > 0 ? (
-                      <DataTable
-                        columns={productCategoryColumns({ onEdit: (item) => handleEditItem('categories', item), onDelete: handleDeleteItem })}
-                        data={categories}
-                        onTableChange={handleTableChange}
-                      />
-                    ) : (
-                      <div className="w-full h-24 flex items-center justify-center">
-                        <span className="text-muted-foreground">Nenhuma categoria encontrada</span>
-                      </div>
-                    )}
-                  </div>
-                </TabsContent>
-
-                <TabsContent value="additionals" className="h-full">
-                  <div className="space-y-4 h-full">
-                    {additionalsIsLoading ? (
-                      <div className="w-full h-24 flex items-center justify-center">
-                        <span className="text-muted-foreground">Carregando adicionais...</span>
-                      </div>
-                    ) : additionals && additionals.length > 0 ? (
-                      <DataTable
-                        columns={additionalColumns({ onEdit: (item) => handleEditItem('additionals', item), onDelete: handleDeleteItem })}
-                        data={additionals}
-                        onTableChange={handleTableChange}
-                      />
-                    ) : (
-                      <div className="w-full h-24 flex items-center justify-center">
-                        <span className="text-muted-foreground">Nenhum adicional encontrado</span>
-                      </div>
-                    )}
-                  </div>
-                </TabsContent>
-
-                <TabsContent value="additional-groups" className="h-full">
-                  <div className="space-y-4 h-full">
-                    {additionalGroupsIsLoading ? (
-                      <div className="w-full h-24 flex items-center justify-center">
-                        <span className="text-muted-foreground">Carregando categorias...</span>
-                      </div>
-                    ) : additionalGroups && additionalGroups.length > 0 ? (
-                      <DataTable
-                        columns={additionalGroupColumns({ onEdit: (item) => handleEditItem('additional-groups', item), onDelete: handleDeleteItem })}
-                        data={additionalGroups}
-                        onTableChange={handleTableChange}
-                      />
-                    ) : (
-                      <div className="w-full h-24 flex items-center justify-center">
-                        <span className="text-muted-foreground">Nenhuma categoria encontrada</span>
-                      </div>
-                    )}
-                  </div>
-                </TabsContent>
-              </div>
-            </Tabs>
-          </div>
+      <div className="flex-1 p-8 pt-6 overflow-auto">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-2xl font-bold tracking-tight">
+            {tabs[activeTab as keyof typeof tabs] as string}
+          </h2>
         </div>
-      </div>
 
-      <ProductDialog
-        open={productDialog.open}
-        onOpenChange={(open) => setProductDialog({ open, item: null })}
-        product={productDialog.item || null}
-        categories={categories || []}
-        additionalGroups={additionalGroups || []}
-        onSave={handleSaveProduct}
-      />
-      <CategoryDialog
-        open={categoryDialog.open}
-        onOpenChange={(open) => setCategoryDialog({ open, item: null })}
-        category={categoryDialog.item}
-        onSave={handleSaveCategory}
-      />
-      <AdditionalDialog
-        open={additionalDialog.open}
-        onOpenChange={(open) => setAdditionalDialog({ open, item: null })}
-        additional={additionalDialog.item}
-        onSave={handleSaveAdditional}
-      />
-      <AdditionalGroupDialog
-        open={additionalGroupDialog.open}
-        onOpenChange={(open) => setAdditionalGroupDialog({ open, item: null })}
-        category={additionalGroupDialog.item}
-        additionals={additionals || []}
-        onSave={handleSaveAdditionalGroup}
-        storeId={storeId}
-      />
-      <DeleteDialog
-        {...deleteDialog}
-        {...getDeleteDialogProps()}
-        onOpenChange={(open) => setDeleteDialog({ ...deleteDialog, open })}
-      />
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
+            <div className="w-full sm:w-auto overflow-x-auto">
+              <TabsList className="w-full sm:w-auto">
+                {Object.keys(tabs).map((key, tIndex) => (
+                  <TabsTrigger key={key} value={key} className={cn("flex-1 sm:flex-none", tIndex === Object.keys(tabs).length - 1 && "whitespace-nowrap")}> {tabs[key as keyof typeof tabs]} </TabsTrigger>
+                ))}
+              </TabsList>
+            </div>
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-2">
+              {activeTab === "products" && (
+                <>
+                  <Input
+                    placeholder="Filtrar produtos..."
+                    value={(table?.getColumn('name')?.getFilterValue() as string) ?? ''}
+                    onChange={(event) => table?.getColumn('name')?.setFilterValue(event.target.value)}
+                    className="w-full sm:w-[180px]"
+                  />
+                  <Button
+                    onClick={() => setProductDialog({ open: true, item: null })}
+                    disabled={!categories || !additionalGroups}
+                    className="w-full sm:w-auto whitespace-nowrap"
+                  >
+                    <Plus className="mr-2 h-4 w-4" /> Novo Produto
+                  </Button>
+                </>
+              )}
+              {activeTab === "categories" && (
+                <>
+                  <Input
+                    placeholder="Filtrar categorias..."
+                    value={(table?.getColumn('name')?.getFilterValue() as string) ?? ''}
+                    onChange={(event) => table?.getColumn('name')?.setFilterValue(event.target.value)}
+                    className="w-full sm:w-[180px]"
+                  />
+                  <Button
+                    onClick={() => setCategoryDialog({ open: true, item: null })}
+                    className="w-full sm:w-auto whitespace-nowrap"
+                  >
+                    <Plus className="mr-2 h-4 w-4" /> Nova Categoria
+                  </Button>
+                </>
+              )}
+              {activeTab === "additionals" && (
+                <>
+                  <Input
+                    placeholder="Filtrar adicionais..."
+                    value={(table?.getColumn('name')?.getFilterValue() as string) ?? ''}
+                    onChange={(event) => table?.getColumn('name')?.setFilterValue(event.target.value)}
+                    className="w-full sm:w-[180px]"
+                  />
+                  <Button
+                    onClick={() => setAdditionalDialog({ open: true, item: null })}
+                    className="w-full sm:w-auto whitespace-nowrap"
+                  >
+                    <Plus className="mr-2 h-4 w-4" /> Novo Adicional
+                  </Button>
+                </>
+              )}
+              {activeTab === "additional-groups" && (
+                <>
+                  <Input
+                    placeholder="Filtrar categorias..."
+                    value={(table?.getColumn('name')?.getFilterValue() as string) ?? ''}
+                    onChange={(event) => table?.getColumn('name')?.setFilterValue(event.target.value)}
+                    className="w-full sm:w-[180px]"
+                  />
+                  <Button
+                    onClick={() => setAdditionalGroupDialog({ open: true, item: null })}
+                    className="w-full sm:w-auto whitespace-nowrap"
+                  >
+                    <Plus className="mr-2 h-4 w-4" /> Novo Grupo
+                  </Button>
+                </>
+              )}
+            </div>
+          </div>
+
+          <div className="flex-1 overflow-auto px-1">
+            <TabsContent value="products" className="h-full">
+              <div className="space-y-4 h-full">
+                {productsIsLoading ? (
+                  <div className="w-full h-24 flex items-center justify-center">
+                    <span className="text-muted-foreground">Carregando produtos...</span>
+                  </div>
+                ) : products && products.length > 0 ? (
+                  <DataTable
+                    columns={productColumns({ onEdit: (item) => handleEditItem('products', item), onDelete: handleDeleteItem })}
+                    data={products}
+                    onTableChange={handleTableChange}
+                  />
+                ) : (
+                  <div className="w-full h-24 flex items-center justify-center">
+                    <span className="text-muted-foreground">Nenhum produto encontrado</span>
+                  </div>
+                )}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="categories" className="h-full">
+              <div className="space-y-4 h-full">
+                {categoriesIsLoading ? (
+                  <div className="w-full h-24 flex items-center justify-center">
+                    <span className="text-muted-foreground">Carregando categorias...</span>
+                  </div>
+                ) : categories && categories.length > 0 ? (
+                  <DataTable
+                    columns={productCategoryColumns({ onEdit: (item) => handleEditItem('categories', item), onDelete: handleDeleteItem })}
+                    data={categories}
+                    onTableChange={handleTableChange}
+                  />
+                ) : (
+                  <div className="w-full h-24 flex items-center justify-center">
+                    <span className="text-muted-foreground">Nenhuma categoria encontrada</span>
+                  </div>
+                )}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="additionals" className="h-full">
+              <div className="space-y-4 h-full">
+                {additionalsIsLoading ? (
+                  <div className="w-full h-24 flex items-center justify-center">
+                    <span className="text-muted-foreground">Carregando adicionais...</span>
+                  </div>
+                ) : additionals && additionals.length > 0 ? (
+                  <DataTable
+                    columns={additionalColumns({ onEdit: (item) => handleEditItem('additionals', item), onDelete: handleDeleteItem })}
+                    data={additionals}
+                    onTableChange={handleTableChange}
+                  />
+                ) : (
+                  <div className="w-full h-24 flex items-center justify-center">
+                    <span className="text-muted-foreground">Nenhum adicional encontrado</span>
+                  </div>
+                )}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="additional-groups" className="h-full">
+              <div className="space-y-4 h-full">
+                {additionalGroupsIsLoading ? (
+                  <div className="w-full h-24 flex items-center justify-center">
+                    <span className="text-muted-foreground">Carregando categorias...</span>
+                  </div>
+                ) : additionalGroups && additionalGroups.length > 0 ? (
+                  <DataTable
+                    columns={additionalGroupColumns({ onEdit: (item) => handleEditItem('additional-groups', item), onDelete: handleDeleteItem })}
+                    data={additionalGroups}
+                    onTableChange={handleTableChange}
+                  />
+                ) : (
+                  <div className="w-full h-24 flex items-center justify-center">
+                    <span className="text-muted-foreground">Nenhuma categoria encontrada</span>
+                  </div>
+                )}
+              </div>
+            </TabsContent>
+          </div>
+        </Tabs>
+
+        <ProductDialog
+          open={productDialog.open}
+          onOpenChange={(open) => setProductDialog({ open, item: null })}
+          product={productDialog.item || null}
+          categories={categories || []}
+          additionalGroups={additionalGroups || []}
+          onSave={handleSaveProduct}
+        />
+        <CategoryDialog
+          open={categoryDialog.open}
+          onOpenChange={(open) => setCategoryDialog({ open, item: null })}
+          category={categoryDialog.item}
+          onSave={handleSaveCategory}
+        />
+        <AdditionalDialog
+          open={additionalDialog.open}
+          onOpenChange={(open) => setAdditionalDialog({ open, item: null })}
+          additional={additionalDialog.item}
+          onSave={handleSaveAdditional}
+        />
+        <AdditionalGroupDialog
+          open={additionalGroupDialog.open}
+          onOpenChange={(open) => setAdditionalGroupDialog({ open, item: null })}
+          category={additionalGroupDialog.item}
+          additionals={additionals || []}
+          onSave={handleSaveAdditionalGroup}
+          storeId={storeId}
+        />
+        <DeleteDialog
+          {...deleteDialog}
+          {...getDeleteDialogProps()}
+          onOpenChange={(open) => setDeleteDialog({ ...deleteDialog, open })}
+        />
+      </div>
     </Layout>
   );
 }

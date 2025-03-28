@@ -38,6 +38,7 @@ import { ImageUpload } from '@/components/ui/image-upload'
 import { deleteImage } from '@/lib/upload-service'
 import { Loader2 } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { useStoreId } from '@/hooks/useStoreId'
 
 const productSchema = z.object({
   name: z.string().min(2, 'Nome muito curto'),
@@ -94,7 +95,7 @@ export function ProductDialog({
   const [isDeleting, setIsDeleting] = useState(false);
   const [uploadedImagePath, setUploadedImagePath] = useState<string | null>(null);
   const [hasUnsavedImage, setHasUnsavedImage] = useState(false);
-  const storeId = '67a05b53927e38337439322f';
+  const storeId = useStoreId();
 
   const form = useForm<z.infer<typeof productSchema>>({
     resolver: zodResolver(productSchema),

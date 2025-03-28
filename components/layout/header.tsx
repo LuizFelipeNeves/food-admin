@@ -14,6 +14,7 @@ import { NotificationsPopover } from '@/components/ui/notifications';
 import { LogoutButton } from '@/components/auth/LogoutButton';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
+import { StoreSelector } from '@/components/store/StoreSelector';
 
 export function Header({ children }: { children?: React.ReactNode }) {
   const { setTheme } = useTheme();
@@ -30,6 +31,9 @@ export function Header({ children }: { children?: React.ReactNode }) {
   return (
     <header className="border-b h-16 flex items-center px-6 sticky top-0 bg-card/90 z-50">
       {children}
+      <div className="ml-4">
+        <StoreSelector />
+      </div>
       <div className="flex-1" />
       <div className="flex items-center gap-4">
         <Button

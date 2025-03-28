@@ -8,10 +8,11 @@ import { PaymentSettings } from '@/components/settings/payment-settings'
 import { BusinessHours } from '@/components/settings/business-hours'
 import { useMediaQuery } from '@/hooks/use-media-query'
 import { Building2, Bell, CreditCard, Clock } from 'lucide-react'
+import { useStoreId } from '@/hooks/useStoreId'
 
 export default function SettingsPage() {
   const isMobile = useMediaQuery('(max-width: 768px)')
-  const storeId = '67a05b53927e38337439322f';
+  const storeId = useStoreId()
 
   return (
     <Layout>

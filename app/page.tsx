@@ -5,7 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   DollarSign,
   ShoppingBag,
-  Clock,
   Users,
   TrendingUp,
 } from 'lucide-react'
@@ -23,9 +22,10 @@ import { TimeDisplay } from '@/components/ui/time-display'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
+import { useStoreId } from '@/hooks/useStoreId'
 
-export default function HomePage() {
-  const storeId = '67a05b53927e38337439322f';
+export default function DashboardPage() {
+  const storeId = useStoreId();
   const [refreshing, setRefreshing] = useState(false);
   const { data: session } = useSession();
   const router = useRouter();
