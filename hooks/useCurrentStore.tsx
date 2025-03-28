@@ -75,18 +75,18 @@ const useCurrentStore = () => {
   // Verifica se o cookie existe mas não tem store no estado
   useEffect(() => {
     const storedId = Cookies.get('selectedStore');
-    if (storedId && !store) {
+    if (storedId && !store && !isLoading) {
       router.refresh();
     }
-  }, [store, router]);
+  }, [store, router, isLoading]);
 
   // Força recarregamento quando a store muda
   useEffect(() => {
     const storedId = Cookies.get('selectedStore');
-    if (storedId && store?._id !== storedId) {
+    if (storedId && store?._id !== storedId && !isLoading) {
       router.refresh();
     }
-  }, [store, router]);
+  }, [store, router, isLoading]);
 
   const setStore = async (newStore: Store | null) => {
     try {
@@ -96,7 +96,9 @@ const useCurrentStore = () => {
       if (newStore) {
         // Se estiver em uma rota protegida, força reload
         if (!pathname.includes('/store/select') && !pathname.includes('/store/register')) {
-          window.location.href = window.location.href;
+          // Usa router.refresh() ao invés de window.location para evitar recargas completas
+          router.refresh();
+          router.push('/');
         } else {
           router.push('/');
         }

@@ -214,6 +214,7 @@ export default function ProductsPage() {
       if (categoryDialog.item) {
         await updateCategory.mutateAsync({
           _id: categoryDialog.item._id,
+          store: storeId,
           ...data,
         });
       } else {

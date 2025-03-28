@@ -10,8 +10,20 @@ export function GenerateDataButton({ storeId }: { storeId: string }) {
       toast.success('Dados gerados com sucesso!', {
         description: `${data.orders} pedidos, ${data.items} produtos e ${data.categories} categorias`
       });
-      // Invalida todas as queries para recarregar  os dados
-      utils.invalidate();
+      
+      // Invalidar queries específicas
+      utils.dashboard.getStats.invalidate();
+      utils.dashboard.getSalesChart.invalidate();
+      utils.dashboard.getTopProducts.invalidate();
+      utils.dashboard.getSystemStatus.invalidate();
+      utils.dashboard.getOrdersByCategory.invalidate();
+      utils.dashboard.getPaymentMethods.invalidate();
+      utils.products.list.invalidate();
+      utils.productCategories.list.invalidate();
+      utils.additionals.list.invalidate();
+      utils.additionalCategories.list.invalidate();
+      utils.orders.getAll.invalidate();
+      utils.analytics.getCustomerStats.invalidate();
     },
     onError: (error) => {
       toast.error('Erro ao gerar dados: ' + error.message);

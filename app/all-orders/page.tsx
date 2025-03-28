@@ -13,6 +13,7 @@ import { useMediaQuery } from '@/hooks/use-media-query'
 import { trpc } from '@/app/_trpc/client'
 import { type Order } from '@/types/order'
 import { EditOrderModal } from '@/components/orders/edit-order-modal'
+import useCurrentStore from '@/hooks/useCurrentStore'
 
 type OrderStats = {
   totalOrders: number
@@ -47,6 +48,7 @@ const defaultStats: OrderStats = {
 }
 
 export default function AllOrdersPage() {
+  const { storeId } = useCurrentStore();
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
   const [editingOrder, setEditingOrder] = useState<Order | null>(null)
   const [filters, setFilters] = useState<Filters>({})
@@ -66,10 +68,17 @@ export default function AllOrdersPage() {
   const { data: ordersData, refetch, isLoading } = trpc.orders.getAll.useQuery({
     ...filters,
     page: currentPage,
-    perPage: pageSize
+    perPage: pageSize,
+    storeId
+  }, {
+    enabled: !!storeId,
   }) as { data: OrdersResponse | undefined, refetch: () => void, isLoading: boolean }
 
-  const { data: stats = defaultStats, isLoading: statsLoading } = trpc.orders.getStats.useQuery()
+  const { data: stats = defaultStats, isLoading: statsLoading } = trpc.orders.getStats.useQuery({
+    storeId
+  }, {
+    enabled: !!storeId,
+  })
 
   const visibleColumns = columns.filter(column => {
     if (!isMobile) return true

@@ -15,6 +15,28 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import toast from 'react-hot-toast';
 
+type Role = 'owner' | 'admin' | 'employee';
+
+interface Store {
+  _id: string;
+  title: string;
+  email: string;
+  phone: string;
+}
+
+interface UserStore {
+  _id: string;
+  store: Store;
+  role: Role;
+  active: boolean;
+}
+
+interface StoresResponse {
+  data: UserStore[];
+  timestamp: string;
+  fromCache: boolean;
+}
+
 const roleColors = {
   owner: 'bg-purple-500/10 text-purple-500 hover:bg-purple-500/20',
   admin: 'bg-blue-500/10 text-blue-500 hover:bg-blue-500/20',
@@ -29,24 +51,19 @@ const roleLabels = {
 
 export function StoreSelector() {
   const { setStore, isLoading: isStoreLoading, storeId, selectedStore } = useCurrentStore();
-  const { data: userStores, isLoading: isLoadingStores } = trpc.stores.getUserStores.useQuery(undefined, {
-    staleTime: 0, // Sempre buscar dados frescos
-    cacheTime: 0, // Não manter cache
-  });
+  const { data, isLoading: isLoadingStores } = trpc.stores.getUserStores.useQuery<StoresResponse>();
+
+  const userStores = data?.data ?? [];
   const utils = trpc.useUtils();
 
   const handleStoreChange = async (storeId: string) => {
     const loadingToast = toast.loading('Alterando empresa...');
     
     try {
-      const selectedUserStore = userStores?.find(us => us.store._id === storeId);
+      const selectedUserStore = userStores.find(us => us.store._id === storeId);
       if (selectedUserStore) {
-        // Primeiro invalida todas as queries
         await utils.invalidate();
-        
-        // Depois atualiza a store
         await setStore(selectedUserStore.store);
-        
         toast.success('Empresa alterada com sucesso!', {
           id: loadingToast
         });
@@ -71,6 +88,10 @@ export function StoreSelector() {
 
   const currentUserStore = userStores.find(us => us.store._id === storeId);
 
+  if (!currentUserStore) {
+    return null;
+  }
+
   return (
     <Select
       value={storeId}
@@ -81,19 +102,17 @@ export function StoreSelector() {
           <div className="flex items-center gap-2">
             <Store className="h-4 w-4 shrink-0 opacity-50" />
             <span className="truncate">{selectedStore}</span>
-            {currentUserStore && (
-              <Badge variant="secondary" className={cn(
-                "font-normal text-xs",
-                roleColors[currentUserStore.role as keyof typeof roleColors]
-              )}>
-                {roleLabels[currentUserStore.role as keyof typeof roleLabels]}
-              </Badge>
-            )}
+            <Badge variant="secondary" className={cn(
+              "font-normal text-xs",
+              roleColors[currentUserStore.role]
+            )}>
+              {roleLabels[currentUserStore.role]}
+            </Badge>
           </div>
         </SelectValue>
       </SelectTrigger>
       <SelectContent>
-        {userStores.map((userStore) => (
+        {userStores.map(userStore => (
           <SelectItem
             key={userStore.store._id}
             value={userStore.store._id}
@@ -104,9 +123,9 @@ export function StoreSelector() {
               <span className="truncate">{userStore.store.title}</span>
               <Badge variant="secondary" className={cn(
                 "font-normal text-xs",
-                roleColors[userStore.role as keyof typeof roleColors]
+                roleColors[userStore.role]
               )}>
-                {roleLabels[userStore.role as keyof typeof roleLabels]}
+                {roleLabels[userStore.role]}
               </Badge>
             </div>
           </SelectItem>

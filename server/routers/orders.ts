@@ -4,6 +4,8 @@ import { IOrder } from '@/types/order'
 import { getStatusDescription } from '@/utils/order-status'
 import { z } from 'zod'
 import { startOfDay, endOfDay, subDays, differenceInMinutes } from 'date-fns'
+import mongoose from 'mongoose'
+import { TRPCError } from '@trpc/server'
 
 export const ordersRouter = router({
   getAll: publicProcedure
@@ -15,15 +17,24 @@ export const ordersRouter = router({
       orderStatus: z.string().optional(),
       page: z.number().default(1),
       perPage: z.number().default(10),
+      storeId: z.string().min(1, 'ID da loja é obrigatório'),
     }))
     .query(async ({ input }) => {
       try {
+        if (!input.storeId) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: 'ID da loja é obrigatório',
+          });
+        }
+
         const now = new Date()
         const startOfYesterday = startOfDay(subDays(now, 1))
         const endOfToday = endOfDay(now)
 
         // Construir o filtro base
         const filter: any = {
+          store: new mongoose.Types.ObjectId(input.storeId),
           createdAt: { 
             $gte: startOfYesterday,
             $lte: endOfToday 
@@ -85,60 +96,80 @@ export const ordersRouter = router({
       }
     }),
 
-  getStats: publicProcedure.query(async () => {
-    try {
-      const [totalOrders, pendingOrders, completedOrders, totalRevenue] = await Promise.all([
-        Order.countDocuments(),
-        Order.countDocuments({ status: 'pending' }),
-        Order.countDocuments({ status: 'completed' }),
-        Order.aggregate([
-          {
-            $match: { status: 'completed' }
-          },
-          {
-            $group: {
-              _id: null,
-              total: { $sum: '$total' }
-            }
-          }
-        ])
-      ])
-
-      return {
-        totalOrders,
-        pendingOrders,
-        completedOrders,
-        totalRevenue: totalRevenue[0]?.total || 0
-      }
-    } catch (error) {
-      console.error('Erro ao buscar estatísticas:', error)
-      throw new Error('Não foi possível carregar as estatísticas')
-    }
-  }),
-
-  getKanbanOrders: publicProcedure.query(async () => {
-    try {
-      const now = new Date()
-      const startOfYesterday = startOfDay(subDays(now, 1))
-      const endOfToday = endOfDay(now)
-
-      const orders = await Order.find({
-        createdAt: { 
-          $gte: startOfYesterday,
-          $lte: endOfToday 
+  getStats: publicProcedure
+    .input(z.object({
+      storeId: z.string().min(1, 'ID da loja é obrigatório'),
+    }))
+    .query(async ({ input }) => {
+      try {
+        if (!input.storeId) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: 'ID da loja é obrigatório',
+          });
         }
-      })
-        .populate('user', 'name phone email')
-        .sort({ createdAt: -1 })
-        .lean()
 
-      return orders
-    } catch (error) {
-      console.log(error)
-      console.error('Erro ao buscar pedidos do kanban:', error)
-      throw new Error('Não foi possível carregar os pedidos')
-    }
-  }),
+        const filter = { store: new mongoose.Types.ObjectId(input.storeId) };
+        const [totalOrders, pendingOrders, completedOrders, totalRevenue] = await Promise.all([
+          Order.countDocuments(filter),
+          Order.countDocuments({ ...filter, status: 'pending' }),
+          Order.countDocuments({ ...filter, status: 'completed' }),
+          Order.aggregate([
+            {
+              $match: { 
+                ...filter,
+                status: 'completed' 
+              }
+            },
+            {
+              $group: {
+                _id: null,
+                total: { $sum: '$total' }
+              }
+            }
+          ])
+        ])
+
+        return {
+          totalOrders,
+          pendingOrders,
+          completedOrders,
+          totalRevenue: totalRevenue[0]?.total || 0
+        }
+      } catch (error) {
+        console.error('Erro ao buscar estatísticas:', error)
+        throw new Error('Não foi possível carregar as estatísticas')
+      }
+    }),
+
+  getKanbanOrders: publicProcedure
+    .input(z.object({
+      storeId: z.string(),
+    }))
+    .query(async ({ input }) => {
+      try {
+        const now = new Date()
+        const startOfYesterday = startOfDay(subDays(now, 1))
+        const endOfToday = endOfDay(now)
+
+        const orders = await Order.find({
+          store: new mongoose.Types.ObjectId(input.storeId),
+          createdAt: { 
+            $gte: startOfYesterday,
+            $lte: endOfToday 
+          }
+        })
+          .populate('user', 'name phone email')
+          .sort({ createdAt: -1 })
+          .lean()
+
+        return orders
+      } catch (error) {
+        console.log(error)
+        console.error('Erro ao buscar pedidos do kanban:', error)
+        throw new Error('Não foi possível carregar os pedidos')
+      }
+    }),
 
   updateStatus: publicProcedure
     .input(z.object({

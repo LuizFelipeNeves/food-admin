@@ -17,15 +17,17 @@ import { trpc as api } from "@/app/_trpc/client";
 import { useToast } from "../ui/use-toast";
 import { Skeleton } from "../ui/skeleton";
 import { EditOrderModal } from "../orders/edit-order-modal";
+import { useStoreId } from "@/hooks/useStoreId";
 
 export function KanbanBoard() {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [editingOrder, setEditingOrder] = useState<Order | null>(null);
   const { toast } = useToast();
   const utils = api.useUtils();
+  const storeId = useStoreId();
 
   const { data: orders = [], isLoading } = api.orders.getKanbanOrders.useQuery(
-    undefined,
+    { storeId },
     {
       refetchInterval: 15000,
       onError: () => {
@@ -44,10 +46,10 @@ export function KanbanBoard() {
       await utils.orders.getKanbanOrders.cancel();
 
       // Snapshot do estado anterior
-      const previousOrders = utils.orders.getKanbanOrders.getData();
+      const previousOrders = utils.orders.getKanbanOrders.getData({ storeId });
 
       // Atualizar a ordem otimisticamente
-      utils.orders.getKanbanOrders.setData(undefined, (old) => {
+      utils.orders.getKanbanOrders.setData({ storeId }, (old) => {
         if (!old) return previousOrders;
         return old.map((order) =>
           order._id === orderId ? { ...order, status } : order
@@ -59,7 +61,7 @@ export function KanbanBoard() {
     onError: (_err, _variables, context: any) => {
       // Reverter para o estado anterior em caso de erro
       if (context?.previousOrders) {
-        utils.orders.getKanbanOrders.setData(undefined, context.previousOrders);
+        utils.orders.getKanbanOrders.setData({ storeId }, context.previousOrders);
       }
       toast({
         variant: "destructive",
@@ -69,7 +71,7 @@ export function KanbanBoard() {
     },
     onSuccess: (data: { order: any }) => {
       // Atualizar o cache com o pedido retornado do servidor
-      utils.orders.getKanbanOrders.setData(undefined, (old) => {
+      utils.orders.getKanbanOrders.setData({ storeId }, (old) => {
         if (!old) return [];
         return old.map((oldOrder: any) => 
           oldOrder._id === data.order._id ? data.order : oldOrder

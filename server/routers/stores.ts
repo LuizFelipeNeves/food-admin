@@ -40,12 +40,36 @@ export const storesRouter = router({
 
   getUserStores: protectedProcedure
     .query(async ({ ctx }) => {
-      const userStores = await UserStore.find({
-        user: ctx.user.id,
-        active: true,
-      }).populate('store');
+      try {
+        const userStores = await UserStore.find({
+          user: ctx.user.id,
+          active: true,
+        })
+        .populate('store')
+        .lean();
 
-      return userStores;
+        return {
+          data: userStores.map(us => ({
+            _id: String(us._id),
+            store: {
+              _id: String(us.store._id),
+              title: us.store.title,
+              email: us.store.email,
+              phone: us.store.phone,
+            },
+            role: us.role,
+            active: us.active,
+          })),
+          timestamp: new Date(),
+          fromCache: false,
+        };
+      } catch (error) {
+        console.error('Erro ao buscar lojas do usuário:', error);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Não foi possível carregar as lojas',
+        });
+      }
     }),
 
   getById: protectedProcedure
