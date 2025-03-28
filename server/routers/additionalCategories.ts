@@ -1,10 +1,10 @@
 import { z } from 'zod';
-import { router, publicProcedure } from '../trpc';
+import { router, protectedProcedure } from '../trpc';
 import { AdditionalGroup } from '../../models';
 import mongoose from 'mongoose';
 
 export const additionalCategoriesRouter = router({
-  list: publicProcedure
+  list: protectedProcedure
     .input(z.object({
       storeId: z.string(),
     }))
@@ -15,7 +15,7 @@ export const additionalCategoriesRouter = router({
         .sort({ name: 1 });
     }),
 
-  create: publicProcedure
+  create: protectedProcedure
     .input(z.object({
       name: z.string(),
       store: z.string(),
@@ -31,7 +31,7 @@ export const additionalCategoriesRouter = router({
       return category;
     }),
 
-  update: publicProcedure
+  update: protectedProcedure
     .input(z.object({
       _id: z.string(),
       name: z.string(),
@@ -48,7 +48,7 @@ export const additionalCategoriesRouter = router({
       return category;
     }),
 
-  delete: publicProcedure
+  delete: protectedProcedure
     .input(z.object({
       _id: z.string(),
     }))

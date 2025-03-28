@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { router, publicProcedure } from '../trpc';
+import { router, protectedProcedure } from '../trpc';
 import { Store } from '@/models';
 
 const businessSchema = z.object({
@@ -36,7 +36,7 @@ const notificationSettingsSchema = z.object({
 });
 
 export const settingsRouter = router({
-  getBusiness: publicProcedure
+  getBusiness: protectedProcedure
     .input(z.object({
       storeId: z.string(),
     }))
@@ -55,7 +55,7 @@ export const settingsRouter = router({
       };
     }),
 
-  updateBusiness: publicProcedure
+  updateBusiness: protectedProcedure
     .input(businessSchema.extend({
       storeId: z.string(),
     }))
@@ -82,7 +82,7 @@ export const settingsRouter = router({
       return updatedStore;
     }),
 
-  getBusinessHours: publicProcedure
+  getBusinessHours: protectedProcedure
     .input(z.object({
       storeId: z.string(),
     }))
@@ -94,7 +94,7 @@ export const settingsRouter = router({
       return store.businessHours || [];
     }),
 
-  updateBusinessHours: publicProcedure
+  updateBusinessHours: protectedProcedure
     .input(z.object({
       storeId: z.string(),
       businessHours: businessHoursSchema,
@@ -115,7 +115,7 @@ export const settingsRouter = router({
       return updatedStore.businessHours;
     }),
 
-  getPaymentMethods: publicProcedure
+  getPaymentMethods: protectedProcedure
     .input(z.object({
       storeId: z.string(),
     }))
@@ -127,7 +127,7 @@ export const settingsRouter = router({
       return store.paymentMethods || [];
     }),
 
-  updatePaymentMethods: publicProcedure
+  updatePaymentMethods: protectedProcedure
     .input(z.object({
       storeId: z.string(),
       paymentMethods: paymentMethodSchema,
@@ -148,7 +148,7 @@ export const settingsRouter = router({
       return updatedStore.paymentMethods;
     }),
 
-  updateNotificationSettings: publicProcedure
+  updateNotificationSettings: protectedProcedure
     .input(notificationSettingsSchema.extend({
       storeId: z.string(),
     }))
@@ -170,7 +170,7 @@ export const settingsRouter = router({
       return { success: true };
     }),
 
-  getNotificationSettings: publicProcedure
+  getNotificationSettings: protectedProcedure
     .input(z.object({
       storeId: z.string(),
     }))

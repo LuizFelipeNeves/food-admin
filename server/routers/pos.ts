@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { router, publicProcedure } from '../trpc';
+import { router, protectedProcedure } from '../trpc';
 import { Item, Category, Order, Additional, AdditionalGroup, Store, User } from '@/models';
 import mongoose from 'mongoose';
 
@@ -19,7 +19,7 @@ interface IAdditionalGroup {
 }
 
 export const posRouter = router({
-  getCategories: publicProcedure
+  getCategories: protectedProcedure
     .input(z.object({
       storeId: z.string(),
     }))
@@ -36,7 +36,7 @@ export const posRouter = router({
       }
     }),
 
-  getProductsByCategory: publicProcedure
+  getProductsByCategory: protectedProcedure
     .input(z.object({
       categoryId: z.string(),
       storeId: z.string(),
@@ -103,7 +103,7 @@ export const posRouter = router({
       }
     }),
 
-  getAllProducts: publicProcedure
+  getAllProducts: protectedProcedure
     .input(z.object({
       storeId: z.string(),
     }))
@@ -169,7 +169,7 @@ export const posRouter = router({
       }
     }),
 
-  createOrder: publicProcedure
+  createOrder: protectedProcedure
     .input(z.object({
       items: z.array(z.object({
         productId: z.string(),

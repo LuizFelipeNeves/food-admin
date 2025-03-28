@@ -1,10 +1,10 @@
 import { z } from 'zod';
-import { router, publicProcedure } from '../trpc';
+import { router, protectedProcedure } from '../trpc';
 import { Additional } from '../../models';
 import mongoose from 'mongoose';
 
 export const additionalsRouter = router({
-  list: publicProcedure
+  list: protectedProcedure
     .input(z.object({
       storeId: z.string(),
     }))
@@ -13,7 +13,7 @@ export const additionalsRouter = router({
         .sort({ name: 1 });
     }),
 
-  create: publicProcedure
+  create: protectedProcedure
     .input(z.object({
       name: z.string(),
       price: z.number(),
@@ -30,7 +30,7 @@ export const additionalsRouter = router({
       return additional;
     }),
 
-  update: publicProcedure
+  update: protectedProcedure
     .input(z.object({
       _id: z.string(),
       name: z.string(),
@@ -48,7 +48,7 @@ export const additionalsRouter = router({
       return additional;
     }),
 
-  delete: publicProcedure
+  delete: protectedProcedure
     .input(z.object({
       _id: z.string(),
     }))

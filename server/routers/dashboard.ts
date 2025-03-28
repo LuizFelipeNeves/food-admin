@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { router, publicProcedure } from '../trpc';
+import { router, protectedProcedure } from '../trpc';
 import { Order } from '@/models';
 import { startOfDay, endOfDay, subDays } from 'date-fns';
 import mongoose from 'mongoose';
@@ -39,7 +39,7 @@ interface HourlyData {
 const methodNames = PAYMENT_METHOD_NAMES
 
 export const dashboardRouter = router({
-  getStats: publicProcedure
+  getStats: protectedProcedure
     .input(z.object({
       storeId: z.string(),
     }))
@@ -213,7 +213,7 @@ export const dashboardRouter = router({
       };
     }),
 
-  getSalesChart: publicProcedure
+  getSalesChart: protectedProcedure
     .input(z.object({
       storeId: z.string(),
     }))
@@ -366,7 +366,7 @@ export const dashboardRouter = router({
       };
     }),
 
-  getTopProducts: publicProcedure
+  getTopProducts: protectedProcedure
     .input(z.object({
       storeId: z.string(),
     }))
@@ -450,7 +450,7 @@ export const dashboardRouter = router({
       return result;
     }),
 
-  getSystemStatus: publicProcedure
+  getSystemStatus: protectedProcedure
     .input(z.object({
       storeId: z.string(),
     }))
@@ -489,7 +489,7 @@ export const dashboardRouter = router({
       return result;
     }),
 
-  getOrdersByCategory: publicProcedure
+  getOrdersByCategory: protectedProcedure
     .input(z.object({
       storeId: z.string(),
     }))
@@ -618,7 +618,7 @@ export const dashboardRouter = router({
       return result;
     }),
 
-  getPaymentMethods: publicProcedure
+  getPaymentMethods: protectedProcedure
     .input(z.object({
       storeId: z.string(),
     }))

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { router, publicProcedure } from '../trpc';
+import { router, protectedProcedure } from '../trpc';
 import { Order } from '@/models';
 import { startOfDay, endOfDay, subDays, subMonths, format, startOfMonth, endOfMonth } from 'date-fns';
 import mongoose from 'mongoose';
@@ -22,7 +22,7 @@ interface CachedResponse<T> {
 
 export const analyticsRouter = router({
   // Obter dados de receita mensal para o gráfico
-  getMonthlyRevenue: publicProcedure
+  getMonthlyRevenue: protectedProcedure
     .input(z.object({
       storeId: z.string(),
       months: z.number().min(1).max(12).default(6), // Número de meses para buscar
@@ -95,7 +95,7 @@ export const analyticsRouter = router({
     }),
 
   // Obter os produtos mais vendidos
-  getTopProducts: publicProcedure
+  getTopProducts: protectedProcedure
     .input(z.object({
       storeId: z.string(),
       limit: z.number().min(1).max(20).default(10), // Número de produtos para retornar
@@ -178,7 +178,7 @@ export const analyticsRouter = router({
     }),
 
   // Obter dados de clientes
-  getCustomerStats: publicProcedure
+  getCustomerStats: protectedProcedure
     .input(z.object({
       storeId: z.string(),
       limit: z.number().min(1).max(20).default(10), // Número de clientes para retornar
@@ -318,7 +318,7 @@ export const analyticsRouter = router({
     }),
 
   // Obter dados de métodos de pagamento
-  getPaymentMethodStats: publicProcedure
+  getPaymentMethodStats: protectedProcedure
     .input(z.object({
       storeId: z.string(),
       period: z.enum(['day', 'week', 'month']).default('month'), // Período para análise

@@ -1,12 +1,12 @@
 import { z } from 'zod';
-import { router, publicProcedure } from '../trpc';
+import { router, protectedProcedure } from '../trpc';
 import { Order, Item, Category } from '@/models';
 import { subDays } from 'date-fns';
 import { generateOrdersForTimeRange, generateRandomDeliveryTime, generateRandomPrice } from '../utils/seed-helpers';
 import { CacheService } from '../services/cache-service';
 
 export const dataRouter = router({
-  seed: publicProcedure
+  seed: protectedProcedure
     .input(z.object({
       storeId: z.string(),
       days: z.number().min(1).max(30).default(2),
@@ -222,7 +222,7 @@ export const dataRouter = router({
       }
     }),
 
-  runMigration: publicProcedure
+  runMigration: protectedProcedure
     .mutation(async () => {
       try {
         const completedOrders = await Order.find({ 

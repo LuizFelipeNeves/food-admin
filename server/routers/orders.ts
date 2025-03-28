@@ -1,4 +1,4 @@
-import { publicProcedure, router } from '../trpc'
+import { protectedProcedure, router } from '../trpc'
 import { Order } from '@/models'
 import { IOrder } from '@/types/order'
 import { getStatusDescription } from '@/utils/order-status'
@@ -8,7 +8,7 @@ import mongoose from 'mongoose'
 import { TRPCError } from '@trpc/server'
 
 export const ordersRouter = router({
-  getAll: publicProcedure
+  getAll: protectedProcedure
     .input(z.object({
       customerName: z.string().optional(),
       date: z.date().or(z.string().transform(val => new Date(val))).optional(),
@@ -96,7 +96,7 @@ export const ordersRouter = router({
       }
     }),
 
-  getStats: publicProcedure
+  getStats: protectedProcedure
     .input(z.object({
       storeId: z.string().min(1, 'ID da loja é obrigatório'),
     }))
@@ -142,7 +142,7 @@ export const ordersRouter = router({
       }
     }),
 
-  getKanbanOrders: publicProcedure
+  getKanbanOrders: protectedProcedure
     .input(z.object({
       storeId: z.string(),
     }))
@@ -171,7 +171,7 @@ export const ordersRouter = router({
       }
     }),
 
-  updateStatus: publicProcedure
+  updateStatus: protectedProcedure
     .input(z.object({
       orderId: z.string(),
       status: z.string()
@@ -221,7 +221,7 @@ export const ordersRouter = router({
       }
     }),
 
-    editOrder: publicProcedure
+    editOrder: protectedProcedure
     .input(z.object({
       orderId: z.string(),
       paymentStatus: z.string(),
