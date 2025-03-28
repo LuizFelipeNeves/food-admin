@@ -404,12 +404,12 @@ export const authRouter = router({
       }
     }),
 
-  logout: publicProcedure
+  logout: protectedProcedure
     .mutation(async () => {
       return { success: true };
     }),
 
-  getUser: publicProcedure
+  getUser: protectedProcedure
     .query(async ({ ctx }) => {
       if (!ctx.session?.user) {
         return null;
@@ -426,7 +426,7 @@ export const authRouter = router({
       return user;
     }),
 
-  getUserStores: publicProcedure
+  getUserStores: protectedProcedure
     .query(async ({ ctx }) => {
       if (!ctx.session?.user) {
         return [];
