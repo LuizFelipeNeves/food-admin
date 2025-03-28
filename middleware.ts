@@ -102,50 +102,41 @@ export async function middleware(request: NextRequest) {
   );
 
   if (needsStoreCheck && !isStoreRegisterRoute && !isStoreSelectRoute) {
+    const selectedStore = request.cookies.get('selectedStore');
+    
+    // Se não tiver loja selecionada, redireciona para seleção
+    if (!selectedStore) {
+      return NextResponse.redirect(new URL('/store/select', request.url));
+    }
+
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/trpc/auth.getUserStores`, {
+      // Verifica apenas se o usuário tem acesso à loja selecionada
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/trpc/auth.checkStoreAccess?input=${encodeURIComponent(JSON.stringify({ storeId: selectedStore.value }))}`, {
         headers: {
           Cookie: request.headers.get('cookie') || '',
         },
       });
 
       if (!response.ok) {
-        throw new Error('Erro ao verificar lojas do usuário');
+        throw new Error('Erro ao verificar acesso à loja');
       }
 
       const { result } = await response.json();
-      const userStores = result.data;
+      const hasAccess = result.data;
 
-      // Se não tiver lojas, redireciona para registro
-      if (!userStores || userStores.length === 0) {
-        return NextResponse.redirect(new URL('/store/register', request.url));
+      if (!hasAccess) {
+        // Se não tiver acesso à loja selecionada, redireciona para seleção
+        const response = NextResponse.redirect(new URL('/store/select', request.url));
+        response.cookies.delete('selectedStore');
+        return response;
       }
 
-      // Se tiver lojas mas não tiver uma selecionada, redireciona para seleção
-      const hasSelectedStore = request.cookies.has('selectedStore');
-      if (!hasSelectedStore) {
-        return NextResponse.redirect(new URL('/store/select', request.url));
-      }
-
-      // Verificar se a loja selecionada existe nas lojas do usuário
-      const selectedStore = request.cookies.get('selectedStore');
-      if (selectedStore) {
-        const storeExists = userStores.some(
-          (us: any) => us.store._id === selectedStore.value
-        );
-        if (!storeExists) {
-          // Se a loja selecionada não existir mais, redireciona para seleção
-          const response = NextResponse.redirect(new URL('/store/select', request.url));
-          response.cookies.delete('selectedStore');
-          return response;
-        }
-        // Adicionar o ID da loja atual no header para uso nas APIs
-        const nextResponse = NextResponse.next();
-        nextResponse.headers.set('x-store-id', selectedStore.value);
-        return nextResponse;
-      }
+      // Adicionar o ID da loja atual no header para uso nas APIs
+      const nextResponse = NextResponse.next();
+      nextResponse.headers.set('x-store-id', selectedStore.value);
+      return nextResponse;
     } catch (error) {
-      console.error('Erro ao verificar lojas do usuário:', error);
+      console.error('Erro ao verificar acesso à loja:', error);
       return NextResponse.redirect(new URL('/auth/login', request.url));
     }
   }

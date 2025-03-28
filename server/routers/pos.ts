@@ -20,9 +20,15 @@ interface IAdditionalGroup {
 
 export const posRouter = router({
   getCategories: publicProcedure
-    .query(async () => {
+    .input(z.object({
+      storeId: z.string(),
+    }))
+    .query(async ({ input }) => {
       try {
-        return await Category.find({ active: true })
+        return await Category.find({ 
+          store: new mongoose.Types.ObjectId(input.storeId),
+          active: true 
+        })
           .sort({ name: 1 });
       } catch (error) {
         console.error('Erro ao buscar categorias:', error);
@@ -32,13 +38,14 @@ export const posRouter = router({
 
   getProductsByCategory: publicProcedure
     .input(z.object({
-      categoryId: z.string().min(1, "ID da categoria é obrigatório"),
+      categoryId: z.string(),
+      storeId: z.string(),
     }))
     .query(async ({ input }) => {
       try {
-        // Buscar produtos da categoria
         const products = await Item.find({
           category: new mongoose.Types.ObjectId(input.categoryId),
+          store: new mongoose.Types.ObjectId(input.storeId),
           active: true
         })
           .populate('category')
@@ -91,16 +98,22 @@ export const posRouter = router({
 
         return productsWithPopulatedGroups;
       } catch (error) {
-        console.error('Erro ao buscar produtos:', error);
-        throw new Error('Não foi possível carregar os produtos');
+        console.error('Erro ao buscar produtos por categoria:', error);
+        throw new Error('Não foi possível carregar os produtos da categoria');
       }
     }),
 
   getAllProducts: publicProcedure
-    .query(async () => {
+    .input(z.object({
+      storeId: z.string(),
+    }))
+    .query(async ({ input }) => {
       try {
         // Buscar todos os produtos ativos
-        const products = await Item.find({ active: true })
+        const products = await Item.find({ 
+          store: new mongoose.Types.ObjectId(input.storeId),
+          active: true 
+        })
           .populate('category')
           .populate('additionals')
           .populate({

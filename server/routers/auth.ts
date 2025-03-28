@@ -6,6 +6,7 @@ import { randomBytes } from "crypto";
 import { sendPasswordResetEmail, sendVerificationEmail, sendWelcomeEmail } from "@/lib/email";
 import { signIn } from 'next-auth/react';
 import { User, UserStore } from '@/models';
+import mongoose from "mongoose";
 
 export const authRouter = router({
   // Registrar um novo usuário
@@ -437,5 +438,31 @@ export const authRouter = router({
       }).populate('store');
 
       return userStores;
+    }),
+
+  // Verificar acesso à loja
+  checkStoreAccess: publicProcedure
+    .input(z.object({
+      storeId: z.string(),
+    }))
+    .query(async ({ input, ctx }) => {
+      try {
+        // Verificar se o usuário está autenticado
+        if (!ctx.session?.user) {
+          return false;
+        }
+
+        // Buscar o vínculo do usuário com a loja
+        const userStore = await UserStore.findOne({
+          user: ctx.session.user.id,
+          store: new mongoose.Types.ObjectId(input.storeId),
+          active: true
+        });
+
+        return !!userStore;
+      } catch (error) {
+        console.error('Erro ao verificar acesso à loja:', error);
+        return false;
+      }
     }),
 }); 

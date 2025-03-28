@@ -26,22 +26,24 @@ export default function PosPage() {
 
   // Fetch categories
   const { data: categories, isLoading: isLoadingCategories } =
-    trpc.pos.getCategories.useQuery(undefined, {
+    trpc.pos.getCategories.useQuery({ storeId: storeId }, {
       onError: (error) => {
         toast.error("Erro ao carregar categorias", {
           description: error.message,
         });
       },
+      enabled: !!storeId,
     });
 
   // Fetch all products at once
   const { data: allProducts, isLoading: isLoadingProducts } =
-    trpc.pos.getAllProducts.useQuery(undefined, {
+    trpc.pos.getAllProducts.useQuery({ storeId: storeId }, {
       onError: (error) => {
         toast.error("Erro ao carregar produtos", {
           description: error.message,
         });
       },
+      enabled: !!storeId,
       // Manter os dados em cache por mais tempo
       staleTime: 5 * 60 * 1000, // 5 minutos
       cacheTime: 10 * 60 * 1000, // 10 minutos
