@@ -62,7 +62,7 @@ export function BusinessHours({ storeId }: { storeId: string }) {
   })
 
   useEffect(() => {
-    if (hoursData) {
+    if (hoursData && hoursData.length > 0) {
       setBusinessHours(hoursData)
     }
   }, [hoursData])
