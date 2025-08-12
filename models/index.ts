@@ -1,7 +1,11 @@
 import mongoose from "mongoose";
 
+// =============================================================================
+// CORE SCHEMAS (Store, User, UserStore)
+// =============================================================================
+
 /**
- * Store (Loja)
+ * Store (Loja) - Schema principal para as lojas
  */
 const storeSchema = new mongoose.Schema(
   {
@@ -49,7 +53,52 @@ const storeSchema = new mongoose.Schema(
 );
 
 /**
- * Category (Categoria)
+ * User - Schema para usuários do sistema
+ */
+const userSchema = new mongoose.Schema(
+  {
+    name: { type: String, required: true, trim: true },
+    email: { type: String, required: true, trim: true },
+    phone: { type: String, required: true, trim: true },
+    favorites: [{ type: String }],
+  },
+  { timestamps: true }
+);
+
+/**
+ * UserStore - Relacionamento many-to-many entre usuários e lojas
+ */
+const userStoreSchema = new mongoose.Schema(
+  {
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    store: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Store",
+      required: true,
+    },
+    role: {
+      type: String,
+      enum: ["owner", "admin", "employee"],
+      required: true,
+    },
+    active: {
+      type: Boolean,
+      default: true,
+    }
+  },
+  { timestamps: true }
+);
+
+// =============================================================================
+// PRODUCT SCHEMAS (Category, Item, Additional, AdditionalGroup)
+// =============================================================================
+
+/**
+ * Category - Categorias de produtos
  */
 const categorySchema = new mongoose.Schema({
   name: { type: String, required: true, trim: true },
@@ -59,7 +108,51 @@ const categorySchema = new mongoose.Schema({
 });
 
 /**
- * Item (Produto)
+ * Additional - Adicionais para produtos
+ */
+const additionalSchema = new mongoose.Schema(
+  {
+    name: { type: String, required: true },
+    price: { type: Number, required: true, min: 0 },
+    stock: { type: Number, required: true, min: 0 },
+    active: { type: Boolean, default: true },
+    store: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Store",
+      required: true,
+    },
+  },
+  { timestamps: true }
+);
+
+/**
+ * AdditionalGroup - Grupos de adicionais
+ */
+const additionalGroupSchema = new mongoose.Schema(
+  {
+    name: { type: String, required: true },
+    active: { type: Boolean, default: true },
+    description: { type: String, trim: true },
+    additionals: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Additional",
+        required: true,
+      },
+    ],
+    minQuantity: { type: Number, min: 0, default: 0 },
+    maxQuantity: { type: Number, min: 0, default: 1 },
+    store: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Store",
+      required: true,
+    },
+  },
+  { timestamps: true }
+);
+
+/**
+ * Item - Produtos/Itens do cardápio
  */
 const itemSchema = new mongoose.Schema(
   {
@@ -98,6 +191,13 @@ const itemSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// =============================================================================
+// PROMOTION SCHEMAS
+// =============================================================================
+
+/**
+ * Promotion - Promoções e campanhas
+ */
 const promotionSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, trim: true },
@@ -125,54 +225,25 @@ const promotionSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-const additionalSchema = new mongoose.Schema(
-  {
-    name: { type: String, required: true },
-    price: { type: Number, required: true, min: 0 },
-    stock: { type: Number, required: true, min: 0 },
-    active: { type: Boolean, default: true },
-    store: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Store",
-      required: true,
-    },
-  },
-  { timestamps: true }
-);
+// =============================================================================
+// ORDER SCHEMAS (Address, UserAddress, Order)
+// =============================================================================
 
-const additionalGroupSchema = new mongoose.Schema(
-  {
-    name: { type: String, required: true },
-    active: { type: Boolean, default: true },
-    description: { type: String, trim: true },
-    additionals: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Additional",
-        required: true,
-      },
-    ],
-    minQuantity: { type: Number, min: 0, default: 0 },
-    maxQuantity: { type: Number, min: 0, default: 1 },
-    store: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Store",
-      required: true,
-    },
-  },
-  { timestamps: true }
-);
+/**
+ * Address - Schema reutilizável para endereços
+ */
+const addressSchema = new mongoose.Schema({
+  street: { type: String, required: true },
+  neighborhood: { type: String, required: true },
+  city: { type: String, required: true },
+  state: { type: String, required: true },
+  cep: { type: String, required: true },
+  complement: { type: String, default: "" },
+});
 
-const userSchema = new mongoose.Schema(
-  {
-    name: { type: String, required: true, trim: true },
-    email: { type: String, required: true, trim: true },
-    phone: { type: String, required: true, trim: true },
-    favorites: [{ type: String }],
-  },
-  { timestamps: true }
-);
-
+/**
+ * UserAddress - Endereços salvos dos usuários
+ */
 const userAddressSchema = new mongoose.Schema(
   {
     user: {
@@ -191,17 +262,9 @@ const userAddressSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-userAddressSchema.index({ user: 1 });
-
-const addressSchema = new mongoose.Schema({
-  street: { type: String, required: true },
-  neighborhood: { type: String, required: true },
-  city: { type: String, required: true },
-  state: { type: String, required: true },
-  cep: { type: String, required: true },
-  complement: { type: String, default: "" },
-})
-
+/**
+ * Order - Pedidos realizados
+ */
 const orderSchema = new mongoose.Schema(
   {
     user: {
@@ -256,52 +319,120 @@ const orderSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-const userStoreSchema = new mongoose.Schema(
+// =============================================================================
+// DEVICE SCHEMAS (Device, DeviceEvent)
+// =============================================================================
+
+/**
+ * Device - Dispositivos WhatsApp conectados
+ */
+const deviceSchema = new mongoose.Schema(
   {
-    user: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      required: true,
+    name: { type: String, required: true, trim: true },
+    phoneNumber: { type: String, required: true, trim: true },
+    deviceHash: { type: String, required: true, trim: true },
+    status: { 
+      type: String, 
+      enum: ['active', 'registered', 'error', 'stopped'], 
+      default: 'registered' 
     },
-    store: {
+    isMain: { type: Boolean, default: false },
+    autoStart: { type: Boolean, default: true },
+    lastSeen: { type: Date, default: null },
+    company: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Store",
       required: true,
     },
-    role: {
-      type: String,
-      enum: ["owner", "admin", "employee"],
-      required: true,
-    },
-    active: {
-      type: Boolean,
-      default: true,
-    }
   },
   { timestamps: true }
 );
 
+/**
+ * DeviceEvent - Histórico de eventos dos dispositivos
+ */
+const deviceEventSchema = new mongoose.Schema(
+  {
+    device: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Device",
+      required: true,
+    },
+    eventType: {
+      type: String,
+      enum: ['connected', 'disconnected', 'error', 'qr_generated', 'authenticated', 'ready', 'message_received', 'message_sent'],
+      required: true,
+    },
+    status: {
+      type: String,
+      enum: ['active', 'registered', 'error', 'stopped'],
+      required: true,
+    },
+    message: { type: String, trim: true },
+    metadata: {
+      type: mongoose.Schema.Types.Mixed,
+      default: {}
+    },
+    timestamp: { type: Date, default: Date.now },
+  },
+  { timestamps: true }
+);
+
+// =============================================================================
+// INDEXES
+// =============================================================================
+
+// Core indexes
+storeSchema.index({ title: 1 });
 userStoreSchema.index({ user: 1, store: 1 }, { unique: true });
 
-// Indexação para otimização de buscas
-storeSchema.index({ title: 1 });
+// Product indexes
 itemSchema.index({ store: 1, category: 1 });
-promotionSchema.index({ store: 1, status: 1 });
 additionalSchema.index({ store: 1 });
 additionalGroupSchema.index({ store: 1 });
+
+// Order indexes
+userAddressSchema.index({ user: 1 });
 orderSchema.index({ user: 1, status: 1 });
 
-// Model exports
+// Promotion indexes
+promotionSchema.index({ store: 1, status: 1 });
+
+// Device indexes
+deviceSchema.index({ company: 1 });
+deviceSchema.index({ phoneNumber: 1 }, { unique: true });
+deviceEventSchema.index({ device: 1, timestamp: -1 });
+deviceEventSchema.index({ eventType: 1, timestamp: -1 });
+
+// =============================================================================
+// MODEL EXPORTS
+// =============================================================================
+
+// Core Models
 export const Store = mongoose.models.Store || mongoose.model('Store', storeSchema);
+export const User = mongoose.models.User || mongoose.model('User', userSchema);
+export const UserStore = mongoose.models.UserStore || mongoose.model('UserStore', userStoreSchema);
+
+// Product Models
 export const Category = mongoose.models.Category || mongoose.model('Category', categorySchema);
 export const Item = mongoose.models.Item || mongoose.model('Item', itemSchema);
 export const Additional = mongoose.models.Additional || mongoose.model('Additional', additionalSchema);
 export const AdditionalGroup = mongoose.models.AdditionalGroup || mongoose.model('AdditionalGroup', additionalGroupSchema);
+
+// Promotion Models
 export const Promotion = mongoose.models.Promotion || mongoose.model('Promotion', promotionSchema);
-export const User = mongoose.models.User || mongoose.model('User', userSchema);
+
+// Order Models
 export const UserAddress = mongoose.models.UserAddress || mongoose.model('UserAddress', userAddressSchema);
 export const Order = mongoose.models.Order || mongoose.model('Order', orderSchema);
-export const UserStore = mongoose.models.UserStore || mongoose.model('UserStore', userStoreSchema);
+
+// Device Models
+export const Device = mongoose.models.Device || mongoose.model('Device', deviceSchema);
+export const DeviceEvent = mongoose.models.DeviceEvent || mongoose.model('DeviceEvent', deviceEventSchema);
+
+// =============================================================================
+// TYPE INTERFACES
+// =============================================================================
 
 export interface IOrder {
   paymentStatus: string;
@@ -311,4 +442,33 @@ export interface IOrder {
       date: Date;
       description: string;
   }>;
+}
+
+export interface IDevice {
+  _id: string;
+  name: string;
+  phoneNumber: string;
+  deviceHash: string;
+  status: 'active' | 'registered' | 'error' | 'stopped';
+  isMain?: boolean;
+  autoStart: boolean;
+  lastSeen?: Date | null;
+  company: {
+    _id: string;
+    title: string;
+  };
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface IDeviceEvent {
+  _id: string;
+  device: string;
+  eventType: 'connected' | 'disconnected' | 'error' | 'qr_generated' | 'authenticated' | 'ready' | 'message_received' | 'message_sent';
+  status: 'active' | 'registered' | 'error' | 'stopped';
+  message?: string;
+  metadata?: any;
+  timestamp: Date;
+  createdAt: Date;
+  updatedAt: Date;
 }

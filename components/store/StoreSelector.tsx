@@ -5,7 +5,6 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
 } from '@/components/ui/select';
 import useCurrentStore from '@/hooks/useCurrentStore';
 import { trpc } from '@/app/_trpc/client';
@@ -50,7 +49,7 @@ const roleLabels = {
 } as const;
 
 export function StoreSelector() {
-  const { setStore, isLoading: isStoreLoading, storeId, selectedStore } = useCurrentStore();
+  const { setStore, isLoading: isStoreLoading, storeId, store } = useCurrentStore();
   const { data, isLoading: isLoadingStores } = trpc.stores.getUserStores.useQuery<StoresResponse>();
 
   const userStores = data?.data ?? [];
@@ -87,29 +86,29 @@ export function StoreSelector() {
   }
 
   const currentUserStore = userStores.find(us => us.store._id === storeId);
-
-  if (!currentUserStore) {
-    return null;
-  }
+  
+  // Se não tem store no estado mas tem storeId do cookie, usa os dados do userStores
+  const displayStore = store || currentUserStore?.store;
+  const displayTitle = displayStore?.title || 'Selecione uma loja';
 
   return (
     <Select
-      value={storeId}
+      value={storeId || ''}
       onValueChange={handleStoreChange}
     >
       <SelectTrigger className="w-[280px]">
-        <SelectValue>
-          <div className="flex items-center gap-2">
-            <Store className="h-4 w-4 shrink-0 opacity-50" />
-            <span className="truncate">{selectedStore}</span>
+        <div className="flex items-center gap-2">
+          <Store className="h-4 w-4 shrink-0 opacity-50" />
+          <span className="truncate">{displayTitle}</span>
+          {currentUserStore && (
             <Badge variant="secondary" className={cn(
               "font-normal text-xs",
               roleColors[currentUserStore.role]
             )}>
               {roleLabels[currentUserStore.role]}
             </Badge>
-          </div>
-        </SelectValue>
+          )}
+        </div>
       </SelectTrigger>
       <SelectContent>
         {userStores.map(userStore => (

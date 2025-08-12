@@ -72,6 +72,11 @@ const useCurrentStore = () => {
   const clearStore = useCurrentStoreState((state) => state.clearStore);
   const getStoreId = useCurrentStoreState((state) => state.getStoreId);
 
+  // Hidrata o estado quando necessário
+  useEffect(() => {
+    useCurrentStoreState.persist.rehydrate();
+  }, []);
+
   // Verifica se o cookie existe mas não tem store no estado
   useEffect(() => {
     const storedId = Cookies.get('selectedStore');
@@ -117,8 +122,7 @@ const useCurrentStore = () => {
     setStore, 
     isLoading, 
     clearStore,
-    storeId: getStoreId(),
-    selectedStore: store?.title || 'Selecione uma empresa'
+    storeId: getStoreId()
   };
 };
 

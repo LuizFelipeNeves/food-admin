@@ -13,6 +13,7 @@ import { dataRouter } from './data';
 import { posRouter } from './pos';
 import { analyticsRouter } from './analytics';
 import { authRouter } from './auth';
+import { devicesRouter } from './devices';
 
 export const appRouter = router({
   user: userRouter,
@@ -27,7 +28,8 @@ export const appRouter = router({
   data: dataRouter,
   pos: posRouter,
   analytics: analyticsRouter,
-  stores: storesRouter
+  stores: storesRouter,
+  devices: devicesRouter
 });
 
 export type AppRouter = typeof appRouter;

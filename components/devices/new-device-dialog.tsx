@@ -26,7 +26,9 @@ import * as z from 'zod'
 
 const formSchema = z.object({
   name: z.string().min(2, 'Nome muito curto'),
+  phoneNumber: z.string().min(10, 'Número de telefone inválido'),
   isMain: z.boolean(),
+  autoStart: z.boolean().default(true),
 })
 
 interface NewDeviceDialogProps {
@@ -46,7 +48,9 @@ export function NewDeviceDialog({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: '',
+      phoneNumber: '',
       isMain: false,
+      autoStart: true,
     },
   })
 
@@ -78,6 +82,41 @@ export function NewDeviceDialog({
                     <Input placeholder="Ex: Caixa Principal" {...field} />
                   </FormControl>
                   <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="phoneNumber"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Número do WhatsApp</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Ex: 5511999999999" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="autoStart"
+              render={({ field }) => (
+                <FormItem className="flex items-center justify-between rounded-lg border p-4">
+                  <div className="space-y-0.5">
+                    <FormLabel>Iniciar Automaticamente</FormLabel>
+                    <div className="text-sm text-muted-foreground">
+                      Iniciar o dispositivo automaticamente após criação
+                    </div>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
                 </FormItem>
               )}
             />
