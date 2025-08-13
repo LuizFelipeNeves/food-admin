@@ -22,8 +22,8 @@ import { ptBR } from 'date-fns/locale'
 import { trpc } from '@/app/_trpc/client'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import useCurrentStore from '@/hooks/useCurrentStore'
-import { Activity, Clock, Wifi, WifiOff, AlertTriangle, CheckCircle, QrCode, MessageCircle } from 'lucide-react'
-import type { Device, DeviceHistoryInput, DeviceStatsInput } from '@/types/devices'
+import { Activity, Wifi, WifiOff, AlertTriangle, CheckCircle, QrCode, MessageCircle, Loader2 } from 'lucide-react'
+import type { Device, DeviceHistoryInput } from '@/types/devices'
 
 interface ConnectionHistoryDialogProps {
   open: boolean
@@ -79,29 +79,12 @@ export function ConnectionHistoryDialog({
     limit: 100
   }
 
-  const statsInput: DeviceStatsInput = {
-    id: device._id,
-    storeId,
-    days: 7
-  }
-
   const { data: historyData, isLoading: isLoadingHistory } = trpc.devices.getHistory.useQuery(
     historyInput,
     { enabled: open && !!storeId }
   )
 
-  const { data: statsData } = trpc.devices.getStats.useQuery(
-    statsInput,
-    { enabled: open && !!storeId }
-  )
-
   const events = historyData?.events || []
-
-  const formatUptime = (seconds: number) => {
-    const hours = Math.floor(seconds / 3600)
-    const minutes = Math.floor((seconds % 3600) / 60)
-    return `${hours}h ${minutes}m`
-  }
 
   const getEventBadgeVariant = (eventType: string) => {
     switch (eventType) {
@@ -123,85 +106,11 @@ export function ConnectionHistoryDialog({
         <DialogHeader>
           <DialogTitle>Histórico do Dispositivo</DialogTitle>
           <DialogDescription>
-            Histórico completo e estatísticas do dispositivo {device.name} ({device.phoneNumber})
+            Histórico de eventos do dispositivo {device.name}
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6">
-          {/* Estatísticas */}
-          {statsData && (
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">
-                    Tempo Online
-                  </CardTitle>
-                  <Clock className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
-                    {formatUptime(statsData.uptime)}
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    {statsData.uptimePercentage}% uptime (7 dias)
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">
-                    Total de Eventos
-                  </CardTitle>
-                  <Activity className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
-                    {statsData.totalEvents}
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Últimos 7 dias
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">
-                    Conexões
-                  </CardTitle>
-                  <Wifi className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
-                    {statsData.stats.find(s => s._id === 'connected')?.total || 0}
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Últimos 7 dias
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">
-                    Mensagens
-                  </CardTitle>
-                  <MessageCircle className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
-                    {(statsData.stats.find(s => s._id === 'message_sent')?.total || 0) +
-                     (statsData.stats.find(s => s._id === 'message_received')?.total || 0)}
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Enviadas + Recebidas
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
-          )}
-
+        <div className="space-y-4">
           {/* Filtro de eventos */}
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
@@ -230,13 +139,18 @@ export function ConnectionHistoryDialog({
             <CardHeader>
               <CardTitle className="text-lg">Histórico de Eventos</CardTitle>
               <CardDescription>
-                {events.length} evento{events.length !== 1 ? 's' : ''} encontrado{events.length !== 1 ? 's' : ''}
+                {isLoadingHistory ? (
+                  <div className="h-4 bg-muted animate-pulse rounded w-32"></div>
+                ) : (
+                  `${events.length} evento${events.length !== 1 ? 's' : ''} encontrado${events.length !== 1 ? 's' : ''}`
+                )}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <ScrollArea className="h-96">
                 {isLoadingHistory ? (
-                  <div className="flex items-center justify-center p-8">
+                  <div className="flex flex-col items-center justify-center p-8 space-y-4">
+                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                     <div className="text-sm text-muted-foreground">Carregando histórico...</div>
                   </div>
                 ) : events.length === 0 ? (

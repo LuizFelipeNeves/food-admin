@@ -3,37 +3,21 @@ import crypto from 'crypto';
 import { Device, DeviceEvent } from '@/models';
 import { connectDB } from '@/lib/mongodb';
 
-interface WebhookPayload {
+interface MessageWebhookPayload {
   device: {
     deviceHash: string;
-    status: string;
   };
-  event: {
+  message: {
+    id: string;
+    from: string;
+    to: string;
+    body?: string;
     type: string;
-    code: string;
-    message: string;
-    data?: any;
+    timestamp: number;
+    fromMe: boolean;
   };
   timestamp: string;
 }
-
-// Mapeamento de eventos do webhook para eventos internos
-const eventTypeMapping: Record<string, string> = {
-  'login_success': 'authenticated',
-  'connected': 'connected',
-  'disconnected': 'disconnected',
-  'auth_failed': 'error',
-  'container_event': 'connected', // Pode ser ajustado baseado no código
-};
-
-// Mapeamento de status do webhook para status interno
-const statusMapping: Record<string, string> = {
-  'connected': 'active',
-  'disconnected': 'registered',
-  'running': 'active',
-  'stopped': 'stopped',
-  'error': 'error',
-};
 
 function validateWebhookSignature(
   payload: string,
@@ -61,11 +45,11 @@ export async function POST(request: NextRequest) {
     await connectDB();
 
     const body = await request.text();
-    const webhookData: WebhookPayload = JSON.parse(body);
+    const webhookData: MessageWebhookPayload = JSON.parse(body);
     
-    const { device: deviceInfo, event, timestamp } = webhookData;
+    const { device: deviceInfo, message, timestamp } = webhookData;
 
-    // Encontrar o dispositivo pelo deviceHash
+    // Encontrar o dispositivo pelo número de telefone
     const device = await Device.findOne({ 
       deviceHash: deviceInfo.deviceHash 
     });
@@ -78,9 +62,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validar assinatura do webhook
-    const webhookSecret = process.env.WHATSAPP_WEBHOOK_SECRET;
-    if (webhookSecret) {
+    // Validar assinatura se houver secret configurado
+    if (device.webhookSecret) {
       const signature = request.headers.get('x-webhook-signature');
       
       if (!signature) {
@@ -91,7 +74,7 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      if (!validateWebhookSignature(body, signature, webhookSecret)) {
+      if (!validateWebhookSignature(body, signature, device.webhookSecret)) {
         console.warn('Webhook signature inválida');
         return NextResponse.json(
           { error: 'Invalid signature' },
@@ -100,50 +83,44 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Mapear tipo de evento
-    let eventType = eventTypeMapping[event.type] || event.type;
+    // Determinar tipo de evento
+    const eventType = message.fromMe ? 'message_sent' : 'message_received';
     
-    // Para eventos de container, ajustar baseado no código
-    if (event.type === 'container_event') {
-      if (event.code === 'CONTAINER_START') {
-        eventType = 'connected';
-      } else if (event.code === 'CONTAINER_STOP') {
-        eventType = 'disconnected';
-      }
-    }
-
-    // Mapear status
-    const mappedStatus = statusMapping[deviceInfo.status] || deviceInfo.status;
-
-    // Atualizar status do dispositivo
-    await Device.findByIdAndUpdate(device._id, {
-      status: mappedStatus,
-      lastSeen: new Date(timestamp),
-      // Se foi autenticado com sucesso, limpar QR code antigo
-      ...(event.type === 'login_success' && { qrCode: null })
-    });
+    // Criar mensagem descritiva
+    const eventMessage = message.fromMe 
+      ? `Mensagem enviada para ${message.to}: ${message.body?.substring(0, 100) || `[${message.type}]`}`
+      : `Mensagem recebida de ${message.from}: ${message.body?.substring(0, 100) || `[${message.type}]`}`;
 
     // Registrar evento no histórico
     await DeviceEvent.create({
       device: device._id,
       eventType,
-      status: mappedStatus,
-      message: event.message,
+      status: device.status,
+      message: eventMessage,
       metadata: {
-        originalEvent: event,
+        messageId: message.id,
+        messageType: message.type,
+        from: message.from,
+        to: message.to,
+        fromMe: message.fromMe,
+        messageTimestamp: message.timestamp,
         webhookTimestamp: timestamp,
-        code: event.code,
-        ...(event.data && { data: event.data })
+        ...(message.body && { messagePreview: message.body.substring(0, 200) })
       },
       timestamp: new Date(timestamp),
     });
 
-    console.log(`Evento registrado para dispositivo ${device.name} (${deviceInfo.deviceHash}): ${eventType}`);
+    // Atualizar última atividade do dispositivo
+    await Device.findByIdAndUpdate(device._id, {
+      lastSeen: new Date(timestamp)
+    });
+
+    console.log(`Mensagem registrada para dispositivo ${device.name}: ${eventType}`);
 
     return NextResponse.json({ success: true });
 
   } catch (error) {
-    console.error('Erro ao processar webhook de status:', error);
+    console.error('Erro ao processar webhook de mensagem:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -155,7 +132,7 @@ export async function POST(request: NextRequest) {
 export async function GET() {
   return NextResponse.json({ 
     status: 'healthy',
-    endpoint: 'device-status-webhook',
+    endpoint: 'device-message-webhook',
     timestamp: new Date().toISOString()
   });
 }

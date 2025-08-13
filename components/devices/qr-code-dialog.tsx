@@ -114,7 +114,7 @@ export function QRCodeDialog({
         <DialogHeader>
           <DialogTitle>QR Code do Dispositivo</DialogTitle>
           <DialogDescription>
-            Escaneie o QR Code para conectar o dispositivo {device.name} ({device.phoneNumber})
+            Escaneie o QR Code para conectar o dispositivo {device.name}
           </DialogDescription>
         </DialogHeader>
         <div className="flex flex-col items-center justify-center p-6 gap-4">

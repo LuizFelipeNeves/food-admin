@@ -329,7 +329,6 @@ const orderSchema = new mongoose.Schema(
 const deviceSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, trim: true },
-    phoneNumber: { type: String, required: true, trim: true },
     deviceHash: { type: String, required: true, trim: true },
     status: { 
       type: String, 
@@ -400,7 +399,6 @@ promotionSchema.index({ store: 1, status: 1 });
 
 // Device indexes
 deviceSchema.index({ company: 1 });
-deviceSchema.index({ phoneNumber: 1 }, { unique: true });
 deviceEventSchema.index({ device: 1, timestamp: -1 });
 deviceEventSchema.index({ eventType: 1, timestamp: -1 });
 
@@ -447,7 +445,6 @@ export interface IOrder {
 export interface IDevice {
   _id: string;
   name: string;
-  phoneNumber: string;
   deviceHash: string;
   status: 'active' | 'registered' | 'error' | 'stopped';
   isMain?: boolean;

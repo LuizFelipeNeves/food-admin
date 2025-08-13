@@ -7,7 +7,6 @@ import { connectDB } from '@/lib/mongodb';
 
 const createDeviceSchema = z.object({
   name: z.string().min(2, 'Nome muito curto'),
-  phoneNumber: z.string().min(10, 'Número de telefone inválido'),
   storeId: z.string(),
   isMain: z.boolean().default(false),
   autoStart: z.boolean().default(true),
@@ -111,30 +110,43 @@ export const devicesRouter = router({
       // Configurar webhooks automaticamente apontando para nossa API
       const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_URL || 'http://localhost:3000';
       const statusWebhookUrl = `${baseUrl}/api/webhooks/device-status`;
-      const statusWebhookSecret = `device-${input.phoneNumber}-${Date.now()}`;
+      const statusWebhookSecret = process.env.WHATSAPP_WEBHOOK_SECRET || 'default-webhook-secret';
 
       // Criar dispositivo no serviço WhatsApp
-      const whatsappDevice = await whatsAppService.createDevice({
-        phoneNumber: input.phoneNumber,
-        name: input.name,
-        statusWebhookUrl,
-        statusWebhookSecret,
-        autoStart: input.autoStart,
-      });
+      let whatsappDevice;
+      try {
+        whatsappDevice = await whatsAppService.createDevice({
+          name: input.name,
+          statusWebhookUrl,
+          statusWebhookSecret,
+          autoStart: input.autoStart,
+        });
+        console.log('WhatsApp device response:', whatsappDevice);
+      } catch (error) {
+        console.error('Erro ao criar dispositivo no WhatsApp:', error);
+        throw new Error(`Falha ao criar dispositivo no WhatsApp: ${error.message}`);
+      }
 
       // Salvar no banco
-      const device = new Device({
-        name: input.name,
-        phoneNumber: input.phoneNumber,
-        deviceHash: whatsappDevice.deviceHash,
-        status: whatsappDevice.status,
-        isMain: input.isMain,
-        autoStart: input.autoStart,
-        company: input.storeId,
-      });
+      let device;
+      try {
+        device = new Device({
+          name: input.name,
+          deviceHash: whatsappDevice.data.deviceHash,
+          status: whatsappDevice.data.status,
+          isMain: input.isMain,
+          autoStart: input.autoStart,
+          company: input.storeId,
+        });
 
-      await device.save();
-      await device.populate('company', 'title');
+        await device.save();
+        await device.populate('company', 'title');
+      } catch (error) {
+        console.error('Erro ao salvar dispositivo no banco:', error);
+        console.error('WhatsApp device data:', whatsappDevice);
+        
+        throw new Error(`Erro ao salvar dispositivo: ${error.message}`);
+      }
 
       // Log evento de criação
       await logDeviceEvent(
@@ -143,7 +155,7 @@ export const devicesRouter = router({
         device.status,
         `Dispositivo ${device.name} criado com sucesso`,
         { 
-          phoneNumber: device.phoneNumber, 
+          deviceHash: device.deviceHash,
           autoStart: device.autoStart,
           statusWebhookConfigured: true 
         }
@@ -192,7 +204,7 @@ export const devicesRouter = router({
 
       // Atualizar no serviço WhatsApp se há dados relevantes
       if (Object.keys(updateData).length > 0) {
-        await whatsAppService.updateDevice(device.phoneNumber, updateData);
+        await whatsAppService.updateDevice(device.deviceHash, updateData);
       }
 
       // Atualizar no banco
@@ -241,7 +253,7 @@ export const devicesRouter = router({
       }
 
       // Deletar no serviço WhatsApp
-      await whatsAppService.deleteDevice(device.phoneNumber, input.force);
+      await whatsAppService.deleteDevice(device.deviceHash, input.force);
 
       // Deletar no banco
       await Device.findByIdAndDelete(input.id);
@@ -252,7 +264,7 @@ export const devicesRouter = router({
         'disconnected',
         'stopped',
         `Dispositivo ${device.name} removido`,
-        { phoneNumber: device.phoneNumber, force: input.force }
+        { deviceHash: device.deviceHash, force: input.force }
       );
 
       return { success: true };
@@ -288,7 +300,7 @@ export const devicesRouter = router({
 
       try {
         // Obter informações atualizadas do WhatsApp
-        const whatsappInfo = await whatsAppService.getDeviceInfo(device.phoneNumber);
+        const whatsappInfo = await whatsAppService.getDeviceInfo(device.deviceHash);
         
         // Atualizar informações no banco
         await Device.findByIdAndUpdate(input.id, {
@@ -338,7 +350,7 @@ export const devicesRouter = router({
         throw new Error('Dispositivo não encontrado');
       }
 
-      const qrData = await whatsAppService.getQRCode(device.phoneNumber);
+      const qrData = await whatsAppService.getQRCode(device.deviceHash);
       
       // QR Code não é mais armazenado no banco, apenas retornado
       return qrData;
@@ -372,7 +384,7 @@ export const devicesRouter = router({
         throw new Error('Dispositivo não encontrado');
       }
 
-      const result = await whatsAppService.startDevice(device.phoneNumber);
+      const result = await whatsAppService.startDevice(device.deviceHash);
 
       // Atualizar status no banco
       await Device.findByIdAndUpdate(input.id, {
@@ -419,7 +431,7 @@ export const devicesRouter = router({
         throw new Error('Dispositivo não encontrado');
       }
 
-      const result = await whatsAppService.stopDevice(device.phoneNumber);
+      const result = await whatsAppService.stopDevice(device.deviceHash);
 
       // Atualizar status no banco
       await Device.findByIdAndUpdate(input.id, {
@@ -466,7 +478,7 @@ export const devicesRouter = router({
         throw new Error('Dispositivo não encontrado');
       }
 
-      const result = await whatsAppService.restartDevice(device.phoneNumber);
+      const result = await whatsAppService.restartDevice(device.deviceHash);
 
       // Atualizar status no banco
       await Device.findByIdAndUpdate(input.id, {
@@ -513,7 +525,7 @@ export const devicesRouter = router({
         throw new Error('Dispositivo não encontrado');
       }
 
-      const result = await whatsAppService.logoutDevice(device.phoneNumber);
+      const result = await whatsAppService.logoutDevice(device.deviceHash);
 
       // Atualizar status no banco
       await Device.findByIdAndUpdate(input.id, {

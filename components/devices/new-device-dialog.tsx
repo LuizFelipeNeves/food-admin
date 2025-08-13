@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -26,7 +26,6 @@ import * as z from 'zod'
 
 const formSchema = z.object({
   name: z.string().min(2, 'Nome muito curto'),
-  phoneNumber: z.string().min(10, 'Número de telefone inválido'),
   isMain: z.boolean(),
   autoStart: z.boolean().default(true),
 })
@@ -48,11 +47,19 @@ export function NewDeviceDialog({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: '',
-      phoneNumber: '',
-      isMain: false,
+      isMain: !hasMainDevice, // Se não há dispositivo principal, marca como principal
       autoStart: true,
     },
   })
+
+  // Atualiza o valor de isMain quando hasMainDevice muda
+  useEffect(() => {
+    if (!hasMainDevice) {
+      form.setValue('isMain', true)
+    } else {
+      form.setValue('isMain', false)
+    }
+  }, [hasMainDevice, form])
 
   function onSubmit(values: z.infer<typeof formSchema>) {
     onSave(values)
@@ -88,20 +95,6 @@ export function NewDeviceDialog({
 
             <FormField
               control={form.control}
-              name="phoneNumber"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Número do WhatsApp</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Ex: 5511999999999" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
               name="autoStart"
               render={({ field }) => (
                 <FormItem className="flex items-center justify-between rounded-lg border p-4">
@@ -121,28 +114,28 @@ export function NewDeviceDialog({
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="isMain"
-              render={({ field }) => (
-                <FormItem className="flex items-center justify-between rounded-lg border p-4">
-                  <div className="space-y-0.5">
-                    <FormLabel>Dispositivo Principal</FormLabel>
-                    <div className="text-sm text-muted-foreground">
-                      {hasMainDevice
-                        ? 'Já existe um dispositivo principal. Marcar este como principal irá remover o status do outro dispositivo.'
-                        : 'Marque esta opção para definir este como o dispositivo principal'}
+            {hasMainDevice && (
+              <FormField
+                control={form.control}
+                name="isMain"
+                render={({ field }) => (
+                  <FormItem className="flex items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel>Dispositivo Principal</FormLabel>
+                      <div className="text-sm text-muted-foreground">
+                        Já existe um dispositivo principal. Marcar este como principal irá remover o status do outro dispositivo.
+                      </div>
                     </div>
-                  </div>
-                  <FormControl>
-                    <Switch
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            )}
 
             <DialogFooter>
               <Button

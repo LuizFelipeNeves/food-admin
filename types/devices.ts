@@ -5,7 +5,6 @@
 export interface Device {
   _id: string;
   name: string;
-  phoneNumber: string;
   deviceHash: string;
   status: 'active' | 'registered' | 'error' | 'stopped';
   isMain?: boolean;
@@ -47,7 +46,6 @@ export interface DeviceListInput {
 
 export interface DeviceCreateInput {
   name: string;
-  phoneNumber: string;
   storeId: string;
   isMain: boolean;
   autoStart: boolean;

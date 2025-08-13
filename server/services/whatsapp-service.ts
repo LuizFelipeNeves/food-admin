@@ -3,7 +3,6 @@ interface WhatsAppAPIConfig {
 }
 
 interface CreateDevicePayload {
-  phoneNumber: string;
   name?: string;
   webhookUrl?: string;
   webhookSecret?: string;
@@ -13,20 +12,28 @@ interface CreateDevicePayload {
 }
 
 interface DeviceResponse {
-  deviceHash: string;
-  phoneNumber: string;
-  name?: string;
-  status: string;
-  webhookUrl?: string;
-  webhookSecret?: string;
-  statusWebhookUrl?: string;
-  statusWebhookSecret?: string;
+  success: boolean;
+  message: string;
+  data: {
+    deviceHash: string;
+    phoneHash: string;
+    name?: string;
+    status: string;
+    processInfo?: {
+      pid: number;
+      status: string;
+      running: boolean;
+      startedAt: string;
+      port: number;
+      deviceHash: string;
+      sessionPath: string;
+    };
+  };
 }
 
 interface DeviceInfo {
   id: number;
   deviceHash: string;
-  phoneNumber: string;
   name?: string;
   status: string;
   processStatus: {
@@ -47,41 +54,105 @@ export class WhatsAppService {
     this.config = config;
   }
 
+  private async handleApiError(response: Response, operation: string): Promise<never> {
+    let errorMessage = `Erro ao ${operation}`;
+    
+    try {
+      const contentType = response.headers.get('content-type');
+      
+      if (contentType?.includes('application/json')) {
+        const errorData = await response.json();
+        
+        // Tenta extrair mensagem de erro de diferentes formatos possíveis
+        if (errorData.message) {
+          errorMessage = errorData.message;
+        } else if (errorData.error) {
+          errorMessage = typeof errorData.error === 'string' ? errorData.error : errorData.error.message || errorMessage;
+        } else if (errorData.details) {
+          errorMessage = errorData.details;
+        }
+      } else {
+        const textError = await response.text();
+        if (textError) {
+          errorMessage = textError;
+        }
+      }
+    } catch {
+      // Se falhar ao ler o erro, usa mensagens baseadas no status HTTP
+      switch (response.status) {
+        case 400:
+          errorMessage = `Dados inválidos para ${operation}`;
+          break;
+        case 401:
+          errorMessage = 'Token de autenticação inválido ou expirado';
+          break;
+        case 403:
+          errorMessage = 'Acesso negado para esta operação';
+          break;
+        case 404:
+          errorMessage = 'Dispositivo não encontrado';
+          break;
+        case 409:
+          errorMessage = 'Conflito: dispositivo já existe ou está em uso';
+          break;
+        case 429:
+          errorMessage = 'Muitas requisições. Tente novamente em alguns minutos';
+          break;
+        case 500:
+          errorMessage = 'Erro interno do servidor WhatsApp';
+          break;
+        case 503:
+          errorMessage = 'Serviço WhatsApp temporariamente indisponível';
+          break;
+        default:
+          errorMessage = `Erro ${response.status}: ${operation}`;
+      }
+    }
+
+    throw new Error(errorMessage);
+  }
+
   private getAuthHeaders() {
     const token = process.env.WHATSAPP_API_TOKEN;
     return {
-      'Authorization': `Bearer ${token}`,
+      'Authorization': `Basic ${token}`,
       'Content-Type': 'application/json',
     };
   }
 
   async createDevice(payload: CreateDevicePayload): Promise<DeviceResponse> {
+    console.log('WhatsApp API - Creating device with payload:', payload);
+    
     const response = await fetch(`${this.config.baseUrl}/api/devices`, {
       method: 'POST',
       headers: this.getAuthHeaders(),
       body: JSON.stringify(payload),
     });
 
+    console.log('WhatsApp API - Response status:', response.status);
+    console.log('WhatsApp API - Response headers:', Object.fromEntries(response.headers.entries()));
+
     if (!response.ok) {
-      const error = await response.text();
-      throw new Error(`Failed to create device: ${error}`);
+      await this.handleApiError(response, 'criar dispositivo');
     }
 
-    return response.json();
+    const result = await response.json();
+    console.log('WhatsApp API - Response body:', result);
+    
+    return result;
   }
 
-  async getDeviceInfo(phoneNumber: string): Promise<DeviceInfo> {
+  async getDeviceInfo(deviceHash: string): Promise<DeviceInfo> {
     const response = await fetch(`${this.config.baseUrl}/api/devices/info`, {
       method: 'GET',
       headers: {
         ...this.getAuthHeaders(),
-        'x-instance-id': phoneNumber,
+        'x-instance-id': deviceHash,
       },
     });
 
     if (!response.ok) {
-      const error = await response.text();
-      throw new Error(`Failed to get device info: ${error}`);
+      await this.handleApiError(response, 'obter informações do dispositivo');
     }
 
     return response.json();
@@ -101,32 +172,30 @@ export class WhatsAppService {
     });
 
     if (!response.ok) {
-      const error = await response.text();
-      throw new Error(`Failed to list devices: ${error}`);
+      await this.handleApiError(response, 'listar dispositivos');
     }
 
     return response.json();
   }
 
-  async updateDevice(phoneNumber: string, updateData: Partial<CreateDevicePayload>) {
+  async updateDevice(deviceHash: string, updateData: Partial<CreateDevicePayload>) {
     const response = await fetch(`${this.config.baseUrl}/api/devices`, {
       method: 'PUT',
       headers: {
         ...this.getAuthHeaders(),
-        'x-instance-id': phoneNumber,
+        'x-instance-id': deviceHash,
       },
       body: JSON.stringify(updateData),
     });
 
     if (!response.ok) {
-      const error = await response.text();
-      throw new Error(`Failed to update device: ${error}`);
+      await this.handleApiError(response, 'atualizar dispositivo');
     }
 
     return response.json();
   }
 
-  async deleteDevice(phoneNumber: string, force: boolean = false) {
+  async deleteDevice(deviceHash: string, force: boolean = false) {
     const searchParams = new URLSearchParams();
     if (force) searchParams.set('force', 'true');
 
@@ -136,98 +205,92 @@ export class WhatsAppService {
       method: 'DELETE',
       headers: {
         ...this.getAuthHeaders(),
-        'x-instance-id': phoneNumber,
+        'x-instance-id': deviceHash,
       },
     });
 
     if (!response.ok) {
-      const error = await response.text();
-      throw new Error(`Failed to delete device: ${error}`);
+      await this.handleApiError(response, 'remover dispositivo');
     }
 
     return response.json();
   }
 
-  async startDevice(phoneNumber: string) {
+  async startDevice(deviceHash: string) {
     const response = await fetch(`${this.config.baseUrl}/api/devices/start`, {
       method: 'POST',
       headers: {
         ...this.getAuthHeaders(),
-        'x-instance-id': phoneNumber,
+        'x-instance-id': deviceHash,
       },
     });
 
     if (!response.ok) {
-      const error = await response.text();
-      throw new Error(`Failed to start device: ${error}`);
+      await this.handleApiError(response, 'iniciar dispositivo');
     }
 
     return response.json();
   }
 
-  async stopDevice(phoneNumber: string) {
+  async stopDevice(deviceHash: string) {
     const response = await fetch(`${this.config.baseUrl}/api/devices/stop`, {
       method: 'POST',
       headers: {
         ...this.getAuthHeaders(),
-        'x-instance-id': phoneNumber,
+        'x-instance-id': deviceHash,
       },
     });
 
     if (!response.ok) {
-      const error = await response.text();
-      throw new Error(`Failed to stop device: ${error}`);
+      await this.handleApiError(response, 'parar dispositivo');
     }
 
     return response.json();
   }
 
-  async restartDevice(phoneNumber: string) {
+  async restartDevice(deviceHash: string) {
     const response = await fetch(`${this.config.baseUrl}/api/devices/restart`, {
       method: 'POST',
       headers: {
         ...this.getAuthHeaders(),
-        'x-instance-id': phoneNumber,
+        'x-instance-id': deviceHash,
       },
     });
 
     if (!response.ok) {
-      const error = await response.text();
-      throw new Error(`Failed to restart device: ${error}`);
+      await this.handleApiError(response, 'reiniciar dispositivo');
     }
 
     return response.json();
   }
 
-  async getQRCode(phoneNumber: string): Promise<{ qrCode?: string }> {
+  async getQRCode(deviceHash: string): Promise<{ qrCode?: string }> {
     const response = await fetch(`${this.config.baseUrl}/api/app/login`, {
       method: 'GET',
       headers: {
         ...this.getAuthHeaders(),
-        'x-instance-id': phoneNumber,
+        'x-instance-id': deviceHash,
       },
     });
 
     if (!response.ok) {
-      const error = await response.text();
-      throw new Error(`Failed to get QR code: ${error}`);
+      await this.handleApiError(response, 'obter código QR');
     }
 
     return response.json();
   }
 
-  async logoutDevice(phoneNumber: string) {
+  async logoutDevice(deviceHash: string) {
     const response = await fetch(`${this.config.baseUrl}/api/app/logout`, {
       method: 'GET',
       headers: {
         ...this.getAuthHeaders(),
-        'x-instance-id': phoneNumber,
+        'x-instance-id': deviceHash,
       },
     });
 
     if (!response.ok) {
-      const error = await response.text();
-      throw new Error(`Failed to logout device: ${error}`);
+      await this.handleApiError(response, 'desconectar dispositivo');
     }
 
     return response.json();
