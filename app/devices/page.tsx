@@ -218,7 +218,7 @@ export default function DevicesPage() {
       case 'active':
         actions.canStop = true
         actions.canRestart = true
-        actions.canQR = false // Quando ativo, não precisa de QR
+        actions.canQR = true // Quando ativo, não precisa de QR
         break
       case 'registered':
         actions.canStart = true

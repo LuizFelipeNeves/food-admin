@@ -81,6 +81,7 @@ export interface QRCodeResponse {
   qrCode?: string;
   status: string;
   message?: string;
+  qr_duration?: number;
 }
 
 export interface DeviceListResponse {

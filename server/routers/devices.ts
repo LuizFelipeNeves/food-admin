@@ -353,7 +353,13 @@ export const devicesRouter = router({
       const qrData = await whatsAppService.getQRCode(device.deviceHash);
       
       // QR Code não é mais armazenado no banco, apenas retornado
-      return qrData;
+      // Mapear a estrutura da API para o formato esperado pelo frontend
+      return {
+        qrCode: qrData.results?.qr_code || null,
+        status: qrData.code,
+        message: qrData.message,
+        qr_duration: qrData.results?.qr_duration || 30
+      };
     }),
 
   start: protectedProcedure

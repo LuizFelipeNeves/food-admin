@@ -264,7 +264,7 @@ export class WhatsAppService {
     return response.json();
   }
 
-  async getQRCode(deviceHash: string): Promise<{ qrCode?: string }> {
+  async getQRCode(deviceHash: string): Promise<{ code: string; message: string; results: { qr_duration: number; qr_code: string } }> {
     const response = await fetch(`${this.config.baseUrl}/api/app/login`, {
       method: 'GET',
       headers: {
