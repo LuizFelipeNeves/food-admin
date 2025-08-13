@@ -38,10 +38,11 @@ export class OrderNotificationService {
 
   private getPaymentMethodText(paymentMethod: string): string {
     const methods: { [key: string]: string } = {
-      'card': '💳 Cartão (Débito/Crédito)',
+      'credit': '💳 Cartão Crédito',
+      'debit': '💳 Cartão Débito',
       'pix': '📱 PIX',
       'cash': '💵 Dinheiro',
-      'voucher': '🎫 Vale Refeição'
+      'vrRefeicao': '🎫 Vale Refeição'
     }
     return methods[paymentMethod] || paymentMethod
   }
@@ -50,7 +51,7 @@ export class OrderNotificationService {
     if (order.deliveryType === 'delivery') {
       const fee = order.deliveryFee || 0
       const feeText = fee > 0 ? ` (taxa de: ${this.formatCurrency(fee)})` : ''
-      return `🛵 Delivery${feeText}\n🏠 ${this.formatAddress(order)}\n(Estimativa: entre 20~60 minutos)`
+      return `🛵 Entrega${feeText}\n🏠 ${this.formatAddress(order)}\n(Estimativa: entre 20~60 minutos)`
     } else {
       return '🏪 Retirada no local'
     }
