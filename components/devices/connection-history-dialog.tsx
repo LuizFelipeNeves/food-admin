@@ -20,7 +20,7 @@ import {
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { trpc } from '@/app/_trpc/client'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import useCurrentStore from '@/hooks/useCurrentStore'
 import { Activity, Wifi, WifiOff, AlertTriangle, CheckCircle, QrCode, MessageCircle, Loader2 } from 'lucide-react'
 import type { Device, DeviceHistoryInput } from '@/types/devices'
@@ -85,6 +85,9 @@ export function ConnectionHistoryDialog({
   )
 
   const events = historyData?.events || []
+  
+  // Obter tipos de evento únicos que existem no histórico
+  const availableEventTypes: string[] = Array.from(new Set(events.map((event: any) => event.eventType)))
 
   const getEventBadgeVariant = (eventType: string) => {
     switch (eventType) {
@@ -116,38 +119,40 @@ export function ConnectionHistoryDialog({
             <div className="flex items-center gap-2">
               <label className="text-sm font-medium">Filtrar por tipo:</label>
               <Select value={eventTypeFilter} onValueChange={setEventTypeFilter}>
-                <SelectTrigger className="w-40">
+                <SelectTrigger className="w-44">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
-                  <SelectItem value="connected">Conectado</SelectItem>
-                  <SelectItem value="disconnected">Desconectado</SelectItem>
-                  <SelectItem value="error">Erro</SelectItem>
-                  <SelectItem value="qr_generated">QR Code</SelectItem>
-                  <SelectItem value="authenticated">Autenticado</SelectItem>
-                  <SelectItem value="ready">Pronto</SelectItem>
-                  <SelectItem value="message_received">Msg Recebida</SelectItem>
-                  <SelectItem value="message_sent">Msg Enviada</SelectItem>
+                  <SelectItem value="all">
+                    Todos ({events.length})
+                  </SelectItem>
+                  {availableEventTypes.map((eventType) => {
+                    const count = events.filter((event: any) => event.eventType === eventType).length
+                    const label = eventTypeLabels[eventType] || eventType
+                    return (
+                      <SelectItem key={eventType} value={eventType}>
+                        {label} ({count})
+                      </SelectItem>
+                    )
+                  })}
                 </SelectContent>
               </Select>
             </div>
           </div>
 
+          {/* Contagem de eventos */}
+          <div className="text-sm text-muted-foreground">
+            {isLoadingHistory ? (
+              <span className="inline-block h-4 bg-muted animate-pulse rounded w-32"></span>
+            ) : (
+              `${events.length} evento${events.length !== 1 ? 's' : ''} encontrado${events.length !== 1 ? 's' : ''}`
+            )}
+          </div>
+
           {/* Lista de eventos */}
           <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Histórico de Eventos</CardTitle>
-              <CardDescription>
-                {isLoadingHistory ? (
-                  <div className="h-4 bg-muted animate-pulse rounded w-32"></div>
-                ) : (
-                  `${events.length} evento${events.length !== 1 ? 's' : ''} encontrado${events.length !== 1 ? 's' : ''}`
-                )}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ScrollArea className="h-96">
+            <CardContent className="p-0">
+              <ScrollArea className="h-80 p-4">
                 {isLoadingHistory ? (
                   <div className="flex flex-col items-center justify-center p-8 space-y-4">
                     <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -158,36 +163,28 @@ export function ConnectionHistoryDialog({
                     <div className="text-sm text-muted-foreground">Nenhum evento encontrado</div>
                   </div>
                 ) : (
-                  <div className="space-y-3">
+                  <div className="space-y-2">
                     {events.map((event: any) => {
                       const Icon = eventTypeIcons[event.eventType] || Activity
                       return (
-                        <div key={event._id} className="flex items-start gap-3 p-3 border rounded-lg">
-                          <div className={`p-2 rounded-full ${eventTypeColors[event.eventType] || 'bg-gray-500'}`}>
+                        <div key={event._id} className="flex items-center gap-2 p-2 border rounded-md text-sm">
+                          <div className={`p-1 rounded-full ${eventTypeColors[event.eventType] || 'bg-gray-500'}`}>
                             <Icon className="h-3 w-3 text-white" />
                           </div>
-                          <div className="flex-1 space-y-1">
+                          <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">
-                              <Badge variant={getEventBadgeVariant(event.eventType)}>
+                              <Badge variant={getEventBadgeVariant(event.eventType)} className="text-xs">
                                 {eventTypeLabels[event.eventType] || event.eventType}
                               </Badge>
-                              <span className="text-sm text-muted-foreground">
-                                {format(new Date(event.timestamp), 'PPp', { locale: ptBR })}
+                              <span className="text-xs text-muted-foreground truncate">
+                                {format(new Date(event.timestamp), 'dd/MM HH:mm', { locale: ptBR })}
                               </span>
                             </div>
                             {event.message && (
-                              <p className="text-sm">{event.message}</p>
-                            )}
-                            {event.metadata && Object.keys(event.metadata).length > 0 && (
-                              <details className="text-xs text-muted-foreground">
-                                <summary className="cursor-pointer">Detalhes técnicos</summary>
-                                <pre className="mt-1 p-2 bg-muted rounded text-xs overflow-auto">
-                                  {JSON.stringify(event.metadata, null, 2)}
-                                </pre>
-                              </details>
+                              <p className="text-xs text-muted-foreground truncate">{event.message}</p>
                             )}
                           </div>
-                          <Badge variant="outline" className="text-xs">
+                          <Badge variant="outline" className="text-xs shrink-0">
                             {event.status}
                           </Badge>
                         </div>
