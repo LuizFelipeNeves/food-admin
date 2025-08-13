@@ -61,26 +61,6 @@ export const roadmapData: RoadmapItem[] = [
     priority: 'medium'
   },
   {
-    id: '7',
-    title: 'Autenticação',
-    description: 'Sistema de cadastro, login, recuperação de senha e emails',
-    status: 'planned',
-    quarter: 'Q1',
-    year: 2025,
-    category: 'core',
-    priority: 'high',
-  },
-  {
-    id: '8',
-    title: 'Gestão de Dispositivos',
-    description: 'APIs para criar dispositivo, gerenciar QR Code e histórico',
-    status: 'planned',
-    quarter: 'Q1',
-    year: 2025,
-    category: 'core',
-    priority: 'high',
-  },
-  {
     id: '10',
     title: 'Sistema de Assinaturas',
     description: 'Integração com gateway de pagamento, upgrade/downgrade de plano',

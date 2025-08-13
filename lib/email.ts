@@ -40,8 +40,9 @@ export async function sendVerificationEmail(email: string, verificationUrl: stri
  * Envia email de recuperação de senha
  */
 export async function sendPasswordResetEmail(email: string, resetUrl: string) {
+  const EMAIL_FROM = process.env.EMAIL_FROM
   const { data, error } = await resend.emails.send({
-    from: `Sistema <${process.env.EMAIL_FROM}>`,
+    from: `Sistema <${EMAIL_FROM}>`,
     to: email,
     subject: "Recuperação de senha",
     html: `
