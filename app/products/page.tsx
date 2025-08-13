@@ -378,93 +378,97 @@ export default function ProductsPage() {
 
   return (
     <Layout>
-      <div className="flex-1 p-8 pt-6 overflow-auto">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-2xl font-bold tracking-tight">
-            {tabs[activeTab as keyof typeof tabs] as string}
-          </h2>
-        </div>
-
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
-            <div className="w-full sm:w-auto overflow-x-auto">
-              <TabsList className="w-full sm:w-auto">
-                {Object.keys(tabs).map((key, tIndex) => (
-                  <TabsTrigger key={key} value={key} className={cn("flex-1 sm:flex-none", tIndex === Object.keys(tabs).length - 1 && "whitespace-nowrap")}> {tabs[key as keyof typeof tabs]} </TabsTrigger>
-                ))}
-              </TabsList>
-            </div>
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-2">
-              {activeTab === "products" && (
-                <>
-                  <Input
-                    placeholder="Filtrar produtos..."
-                    value={(table?.getColumn('name')?.getFilterValue() as string) ?? ''}
-                    onChange={(event) => table?.getColumn('name')?.setFilterValue(event.target.value)}
-                    className="w-full sm:w-[180px]"
-                  />
-                  <Button
-                    onClick={() => setProductDialog({ open: true, item: null })}
-                    disabled={!categories || !additionalGroups}
-                    className="w-full sm:w-auto whitespace-nowrap"
-                  >
-                    <Plus className="mr-2 h-4 w-4" /> Novo Produto
-                  </Button>
-                </>
-              )}
-              {activeTab === "categories" && (
-                <>
-                  <Input
-                    placeholder="Filtrar categorias..."
-                    value={(table?.getColumn('name')?.getFilterValue() as string) ?? ''}
-                    onChange={(event) => table?.getColumn('name')?.setFilterValue(event.target.value)}
-                    className="w-full sm:w-[180px]"
-                  />
-                  <Button
-                    onClick={() => setCategoryDialog({ open: true, item: null })}
-                    className="w-full sm:w-auto whitespace-nowrap"
-                  >
-                    <Plus className="mr-2 h-4 w-4" /> Nova Categoria
-                  </Button>
-                </>
-              )}
-              {activeTab === "additionals" && (
-                <>
-                  <Input
-                    placeholder="Filtrar adicionais..."
-                    value={(table?.getColumn('name')?.getFilterValue() as string) ?? ''}
-                    onChange={(event) => table?.getColumn('name')?.setFilterValue(event.target.value)}
-                    className="w-full sm:w-[180px]"
-                  />
-                  <Button
-                    onClick={() => setAdditionalDialog({ open: true, item: null })}
-                    className="w-full sm:w-auto whitespace-nowrap"
-                  >
-                    <Plus className="mr-2 h-4 w-4" /> Novo Adicional
-                  </Button>
-                </>
-              )}
-              {activeTab === "additional-groups" && (
-                <>
-                  <Input
-                    placeholder="Filtrar categorias..."
-                    value={(table?.getColumn('name')?.getFilterValue() as string) ?? ''}
-                    onChange={(event) => table?.getColumn('name')?.setFilterValue(event.target.value)}
-                    className="w-full sm:w-[180px]"
-                  />
-                  <Button
-                    onClick={() => setAdditionalGroupDialog({ open: true, item: null })}
-                    className="w-full sm:w-auto whitespace-nowrap"
-                  >
-                    <Plus className="mr-2 h-4 w-4" /> Novo Grupo
-                  </Button>
-                </>
-              )}
-            </div>
+      <div className="flex flex-col h-full">
+        <div className="flex-shrink-0 p-8 pb-4">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-2xl font-bold tracking-tight">
+              {tabs[activeTab as keyof typeof tabs] as string}
+            </h2>
           </div>
 
-          <div className="flex-1 overflow-auto px-1">
-            <TabsContent value="products" className="h-full">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
+              <div className="w-full sm:w-auto overflow-x-auto">
+                <TabsList className="w-full sm:w-auto">
+                  {Object.keys(tabs).map((key, tIndex) => (
+                    <TabsTrigger key={key} value={key} className={cn("flex-1 sm:flex-none", tIndex === Object.keys(tabs).length - 1 && "whitespace-nowrap")}> {tabs[key as keyof typeof tabs]} </TabsTrigger>
+                  ))}
+                </TabsList>
+              </div>
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-2">
+                {activeTab === "products" && (
+                  <>
+                    <Input
+                      placeholder="Filtrar produtos..."
+                      value={(table?.getColumn('name')?.getFilterValue() as string) ?? ''}
+                      onChange={(event) => table?.getColumn('name')?.setFilterValue(event.target.value)}
+                      className="w-full sm:w-[180px]"
+                    />
+                    <Button
+                      onClick={() => setProductDialog({ open: true, item: null })}
+                      disabled={!categories || !additionalGroups}
+                      className="w-full sm:w-auto whitespace-nowrap"
+                    >
+                      <Plus className="mr-2 h-4 w-4" /> Novo Produto
+                    </Button>
+                  </>
+                )}
+                {activeTab === "categories" && (
+                  <>
+                    <Input
+                      placeholder="Filtrar categorias..."
+                      value={(table?.getColumn('name')?.getFilterValue() as string) ?? ''}
+                      onChange={(event) => table?.getColumn('name')?.setFilterValue(event.target.value)}
+                      className="w-full sm:w-[180px]"
+                    />
+                    <Button
+                      onClick={() => setCategoryDialog({ open: true, item: null })}
+                      className="w-full sm:w-auto whitespace-nowrap"
+                    >
+                      <Plus className="mr-2 h-4 w-4" /> Nova Categoria
+                    </Button>
+                  </>
+                )}
+                {activeTab === "additionals" && (
+                  <>
+                    <Input
+                      placeholder="Filtrar adicionais..."
+                      value={(table?.getColumn('name')?.getFilterValue() as string) ?? ''}
+                      onChange={(event) => table?.getColumn('name')?.setFilterValue(event.target.value)}
+                      className="w-full sm:w-[180px]"
+                    />
+                    <Button
+                      onClick={() => setAdditionalDialog({ open: true, item: null })}
+                      className="w-full sm:w-auto whitespace-nowrap"
+                    >
+                      <Plus className="mr-2 h-4 w-4" /> Novo Adicional
+                    </Button>
+                  </>
+                )}
+                {activeTab === "additional-groups" && (
+                  <>
+                    <Input
+                      placeholder="Filtrar categorias..."
+                      value={(table?.getColumn('name')?.getFilterValue() as string) ?? ''}
+                      onChange={(event) => table?.getColumn('name')?.setFilterValue(event.target.value)}
+                      className="w-full sm:w-[180px]"
+                    />
+                    <Button
+                      onClick={() => setAdditionalGroupDialog({ open: true, item: null })}
+                      className="w-full sm:w-auto whitespace-nowrap"
+                    >
+                      <Plus className="mr-2 h-4 w-4" /> Novo Grupo
+                    </Button>
+                  </>
+                )}
+              </div>
+            </div>
+          </Tabs>
+        </div>
+
+        <div className="flex-1 overflow-auto px-8">
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsContent value="products" className="mt-0 h-full">
               <div className="space-y-4 h-full">
                 {productsIsLoading ? (
                   <div className="w-full h-24 flex items-center justify-center">
@@ -484,7 +488,7 @@ export default function ProductsPage() {
               </div>
             </TabsContent>
 
-            <TabsContent value="categories" className="h-full">
+            <TabsContent value="categories" className="mt-0 h-full">
               <div className="space-y-4 h-full">
                 {categoriesIsLoading ? (
                   <div className="w-full h-24 flex items-center justify-center">
@@ -504,7 +508,7 @@ export default function ProductsPage() {
               </div>
             </TabsContent>
 
-            <TabsContent value="additionals" className="h-full">
+            <TabsContent value="additionals" className="mt-0 h-full">
               <div className="space-y-4 h-full">
                 {additionalsIsLoading ? (
                   <div className="w-full h-24 flex items-center justify-center">
@@ -524,7 +528,7 @@ export default function ProductsPage() {
               </div>
             </TabsContent>
 
-            <TabsContent value="additional-groups" className="h-full">
+            <TabsContent value="additional-groups" className="mt-0 h-full">
               <div className="space-y-4 h-full">
                 {additionalGroupsIsLoading ? (
                   <div className="w-full h-24 flex items-center justify-center">
@@ -543,10 +547,11 @@ export default function ProductsPage() {
                 )}
               </div>
             </TabsContent>
-          </div>
-        </Tabs>
+          </Tabs>
+        </div>
+      </div>
 
-        <ProductDialog
+      <ProductDialog
           open={productDialog.open}
           onOpenChange={(open) => setProductDialog({ open, item: null })}
           product={productDialog.item || null}
@@ -579,7 +584,6 @@ export default function ProductsPage() {
           {...getDeleteDialogProps()}
           onOpenChange={(open) => setDeleteDialog({ ...deleteDialog, open })}
         />
-      </div>
     </Layout>
   );
 }

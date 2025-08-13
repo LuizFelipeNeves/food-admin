@@ -16,27 +16,6 @@ import { PlanChangeDialog } from '@/components/subscription/plan-change-dialog'
 
 const plans = [
   {
-    name: 'Free',
-    price: 'Grátis',
-    priceDetails: 'Sem compromisso',
-    features: [
-      'Até 100 pedidos/mês',
-      'Painel básico',
-      'Relatórios simples',
-      'Suporte por email',
-      '1 dispositivo',
-      'Backup semanal',
-      'Sem customizações',
-    ],
-    current: false,
-    usagePercent: 0,
-    highlight: false,
-    popular: false,
-    color: 'bg-background hover:bg-muted/50',
-    description: 'Perfeito para começar seu negócio',
-    buttonVariant: 'outline' as const
-  },
-  {
     name: 'Básico',
     price: 'R$ 49',
     priceDetails: 'por mês',
@@ -53,7 +32,7 @@ const plans = [
     current: false,
     usagePercent: 45,
     highlight: false,
-    popular: true,
+    popular: false,
     color: 'bg-blue-50 dark:bg-blue-500/5 hover:bg-blue-100/50 dark:hover:bg-blue-500/10',
     description: 'Ideal para negócios em crescimento',
     buttonVariant: 'secondary' as const
@@ -76,7 +55,7 @@ const plans = [
     current: true,
     usagePercent: 75,
     highlight: true,
-    popular: false,
+    popular: true,
     color: 'bg-primary/10 hover:bg-primary/20',
     description: 'Para empresas que precisam de mais recursos',
     buttonVariant: 'default' as const
@@ -206,9 +185,6 @@ export default function SubscriptionPage() {
                       <CardHeader className="p-4 sm:p-6 space-y-2">
                         <CardTitle className="flex items-center justify-between text-base sm:text-lg gap-2 flex-wrap">
                           <span>{plan.name}</span>
-                          {plan.current && (
-                            <Badge variant="secondary" className="px-2 sm:px-3 text-xs whitespace-nowrap">Plano Atual</Badge>
-                          )}
                         </CardTitle>
                         <CardDescription className="min-h-[40px] text-sm">
                           {plan.description}
