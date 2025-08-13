@@ -101,7 +101,6 @@ export function OrderFilters({ onFiltersChange }: OrderFiltersProps) {
             <SelectContent>
               <SelectItem value="all">Todos</SelectItem>
               <SelectItem value="pending">Novo</SelectItem>
-              <SelectItem value="confirmed">Confirmado</SelectItem>
               <SelectItem value="preparing">Preparando</SelectItem>
               <SelectItem value="ready">Pronto</SelectItem>
               <SelectItem value="delivering">Em Entrega</SelectItem>

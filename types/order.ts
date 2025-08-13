@@ -28,7 +28,7 @@ export interface Customer {
   address: Address
 }
 
-export type OrderStatus = 'pending' | 'confirmed' | 'preparing' | 'ready' | 'delivering' | 'completed'
+export type OrderStatus = 'pending' | 'preparing' | 'ready' | 'delivering' | 'completed'
 export type PaymentMethod = 'credit' | 'debit' | 'pix' | 'money'
 export type PaymentStatus = 'pending' | 'approved' | 'rejected'
 
@@ -83,11 +83,6 @@ export const COLUMNS = {
     id: 'pending',
     title: 'Novos',
     color: 'bg-gray-100 dark:bg-gray-500/20'
-  },
-  confirmed: {
-    id: 'confirmed',
-    title: 'Confirmados',
-    color: 'bg-blue-100 dark:bg-blue-500/20'
   },
   preparing: {
     id: 'preparing',

@@ -18,7 +18,6 @@ interface TimelineProps {
 
 const statusIcons = {
   new: Clock,
-  confirmed: PackageSearch,
   preparing: PackageOpen,
   ready: PackageCheck,
   delivering: Truck,

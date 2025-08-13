@@ -93,7 +93,6 @@ export const columns: ColumnDef<Order>[] = [
       const status = row.getValue('status') as Order['status']
       const statusMap = {
         pending: { label: 'Novo', variant: 'default' },
-        confirmed: { label: 'Confirmado', variant: 'secondary' },
         preparing: { label: 'Preparando', variant: 'warning' },
         ready: { label: 'Pronto', variant: 'success' },
         delivering: { label: 'Entregando', variant: 'secondary' },
