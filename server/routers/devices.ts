@@ -413,14 +413,14 @@ export const devicesRouter = router({
 
       // Atualizar status no banco
       await Device.findByIdAndUpdate(input.id, {
-        status: 'active',
+        status: 'registered',
       });
 
       // Log evento
       await logDeviceEvent(
         device._id.toString(),
         'connected',
-        'active',
+        'registered',
         `Dispositivo ${device.name} iniciado`,
         result
       );

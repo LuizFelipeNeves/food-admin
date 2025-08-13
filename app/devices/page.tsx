@@ -4,7 +4,7 @@ import { useState, useCallback } from 'react'
 import { Layout } from '@/components/layout/layout'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Plus, QrCode, History, Star, Play, Square, RotateCcw, LogOut, UserX } from 'lucide-react'
+import { Plus, QrCode, History, Star, Play, Square, RotateCcw, LogOut, UserX, Copy } from 'lucide-react'
 import { QRCodeDialog } from '@/components/devices/qr-code-dialog'
 import { ConnectionHistoryDialog } from '@/components/devices/connection-history-dialog'
 import { NewDeviceDialog } from '@/components/devices/new-device-dialog'
@@ -228,6 +228,14 @@ export default function DevicesPage() {
     setHistoryDialog(true)
   }
 
+  const handleCopyDeviceId = (deviceHash: string) => {
+    navigator.clipboard.writeText(deviceHash)
+    toast({
+      title: 'Device ID copiado!',
+      description: 'O Device ID foi copiado para a área de transferência.',
+    })
+  }
+
 
   const handleNewDevice = (data: { name: string; isMain: boolean; autoStart: boolean }) => {
     const input: DeviceCreateInput = { ...data, storeId }
@@ -296,7 +304,7 @@ export default function DevicesPage() {
         actions.canLogout = isLoggedIn // Só pode deslogar se estiver logado
         break
       case 'registered':
-        actions.canStart = true
+        actions.canStart = false
         actions.canQR = !isLoggedIn // Só mostra QR se não estiver logado
         actions.canLogout = isLoggedIn // Só pode deslogar se estiver logado
         break
@@ -356,7 +364,6 @@ export default function DevicesPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-[200px]">Nome</TableHead>
-                    <TableHead>Device Hash</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Última Conexão</TableHead>
                     <TableHead className="text-right">Ações</TableHead>
@@ -372,11 +379,6 @@ export default function DevicesPage() {
                             <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
                           )}
                         </div>
-                      </TableCell>
-                      <TableCell>
-                        <code className="text-xs bg-muted px-1 py-0.5 rounded">
-                          {device.deviceHash}
-                        </code>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
@@ -405,6 +407,17 @@ export default function DevicesPage() {
                             const actions = getAvailableActions(device.status, device.isLoggedIn)
                             return (
                               <>
+                                {actions.canStart && (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleStartDevice(device._id)}
+                                    title="Iniciar dispositivo"
+                                  >
+                                    <Play className="h-4 w-4 mr-1" />
+                                    Iniciar
+                                  </Button>
+                                )}
                                 {actions.canQR && (
                                   <Button
                                     variant="outline"
@@ -437,12 +450,6 @@ export default function DevicesPage() {
                                 const actions = getAvailableActions(device.status, device.isLoggedIn)
                                 return (
                                   <>
-                                    {actions.canStart && (
-                                      <DropdownMenuItem onClick={() => handleStartDevice(device._id)}>
-                                        <Play className="mr-2 h-4 w-4" />
-                                        Iniciar
-                                      </DropdownMenuItem>
-                                    )}
                                     {actions.canStop && (
                                       <DropdownMenuItem onClick={() => handleStopDevice(device._id)}>
                                         <Square className="mr-2 h-4 w-4" />
@@ -461,6 +468,10 @@ export default function DevicesPage() {
                                         Deslogar
                                       </DropdownMenuItem>
                                     )}
+                                    <DropdownMenuItem onClick={() => handleCopyDeviceId(device.deviceHash)}>
+                                      <Copy className="mr-2 h-4 w-4" />
+                                      Copiar Device ID
+                                    </DropdownMenuItem>
                                     {actions.canDelete && (
                                       <DropdownMenuItem 
                                         onClick={() => handleDeleteDevice(device)}
