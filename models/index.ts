@@ -310,6 +310,7 @@ const orderSchema = new mongoose.Schema(
     total: { type: Number, required: true },
     status: { type: String, required: true },
     deliveryTime: { type: Number },
+    sendNotification: { type: Boolean, default: false },
     events: [{
       date: { type: Date, required: true },
       status: { type: String, required: true },

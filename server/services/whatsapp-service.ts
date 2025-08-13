@@ -312,6 +312,26 @@ export class WhatsAppService {
 
     return response.json();
   }
+
+  async sendMessage(deviceHash: string, phone: string, message: string) {
+    const response = await fetch(`${this.config.baseUrl}/api/send/message`, {
+      method: 'POST',
+      headers: {
+        ...this.getAuthHeaders(),
+        'x-instance-id': deviceHash,
+      },
+      body: JSON.stringify({
+        phone,
+        message,
+      }),
+    });
+
+    if (!response.ok) {
+      await this.handleApiError(response, 'enviar mensagem');
+    }
+
+    return response.json();
+  }
 }
 
 const whatsappConfig: WhatsAppAPIConfig = {

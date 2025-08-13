@@ -60,7 +60,7 @@ export default function DevicesPage() {
   // WebSocket global para detectar LOGIN_SUCCESS de qualquer dispositivo
   useWhatsAppWebSocket({
     enabled: !!storeId, // Só habilitar quando tiver storeId
-    onDeviceUpdate: useCallback((deviceHash, updates) => {
+    onDeviceUpdate: useCallback((deviceHash: string, updates: any) => {
       // Atualização otimista no React Query
       queryClient.setQueryData(
         [['devices', 'list'], { storeId }],

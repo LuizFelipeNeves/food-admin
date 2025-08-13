@@ -164,7 +164,12 @@ export default function PosPage() {
     setIsPaymentModalOpen(true);
   }, [orderItems.length]);
 
-  const handleConfirmPayment = useCallback((paymentMethod: string) => {    
+  const handleConfirmPayment = useCallback((data: {
+    paymentMethod: string;
+    customerName?: string;
+    customerPhone?: string;
+    sendNotification?: boolean;
+  }) => {    
     createOrderMutation.mutate({
       items: orderItems.map((item) => ({
         productId: item._id,
@@ -172,8 +177,11 @@ export default function PosPage() {
         notes: item.notes,
         additionals: item.additionals?.map(a => a._id) || [],
       })),
-      paymentMethod,
+      paymentMethod: data.paymentMethod,
       storeId: storeId,
+      customerName: data.customerName,
+      customerPhone: data.customerPhone,
+      sendNotification: data.sendNotification,
     });
   }, [createOrderMutation, orderItems, storeId]);
 

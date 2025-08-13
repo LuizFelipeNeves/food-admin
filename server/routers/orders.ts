@@ -6,6 +6,7 @@ import { z } from 'zod'
 import { startOfDay, endOfDay, subDays, differenceInMinutes } from 'date-fns'
 import mongoose from 'mongoose'
 import { TRPCError } from '@trpc/server'
+import { whatsAppNotificationService } from '../services/whatsapp-notification-service'
 
 export const ordersRouter = router({
   getAll: protectedProcedure
@@ -208,7 +209,22 @@ export const ordersRouter = router({
           { new: true }
         )
         .populate('user')
+        .populate('store')
         .lean()
+
+        // Enviar notificação por WhatsApp apenas se o pedido tem sendNotification = true
+        if (updatedOrder && (updatedOrder as any).sendNotification) {
+          const result = await whatsAppNotificationService.sendOrderStatusUpdateNotification(
+            updatedOrder,
+            input.status
+          )
+          
+          if (!result.success) {
+            console.log('Notificação WhatsApp não enviada:', result.message || result.error)
+          }
+        } else if (updatedOrder && !(updatedOrder as any).sendNotification) {
+          console.log('Notificação WhatsApp não enviada: pedido não configurado para receber notificações')
+        }
 
         // Retorna o pedido atualizado para atualizar o cache
         return {

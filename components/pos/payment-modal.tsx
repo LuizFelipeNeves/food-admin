@@ -17,13 +17,19 @@ import { useState } from "react";
 import { OrderItem } from "./order-summary";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { CreditCard, Banknote, QrCode, Receipt, ArrowRight } from "lucide-react";
+import { CreditCard, Banknote, QrCode, Receipt, ArrowRight, User, MessageSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface PaymentModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: (paymentMethod: string) => void;
+  onConfirm: (data: {
+    paymentMethod: string;
+    customerName?: string;
+    customerPhone?: string;
+    sendNotification?: boolean;
+  }) => void;
   items: OrderItem[];
 }
 
@@ -36,6 +42,9 @@ export function PaymentModal({
   const [paymentMethod, setPaymentMethod] = useState("credit");
   const [receivedAmount, setReceivedAmount] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
+  const [customerName, setCustomerName] = useState("");
+  const [customerPhone, setCustomerPhone] = useState("");
+  const [sendNotification, setSendNotification] = useState(false);
 
   // Calcular o subtotal incluindo os adicionais
   const subtotal = items.reduce(
@@ -58,7 +67,12 @@ export function PaymentModal({
   const handleConfirm = () => {
     setIsProcessing(true);
     setTimeout(() => {
-      onConfirm(paymentMethod);
+      onConfirm({
+        paymentMethod,
+        customerName: customerName.trim() || undefined,
+        customerPhone: customerPhone.trim() || undefined,
+        sendNotification
+      });
       setIsProcessing(false);
       resetForm();
     }, 1000);
@@ -67,6 +81,9 @@ export function PaymentModal({
   const resetForm = () => {
     setPaymentMethod("credit");
     setReceivedAmount("");
+    setCustomerName("");
+    setCustomerPhone("");
+    setSendNotification(false);
   };
 
   const handleClose = () => {
@@ -140,6 +157,57 @@ export function PaymentModal({
           <div className="flex justify-between font-medium">
             <span>Total</span>
             <span className="text-lg text-primary">{formatCurrency(subtotal)}</span>
+          </div>
+
+          {/* Seção de informações do cliente */}
+          <div className="space-y-3 p-3 bg-muted/30 rounded-md">
+            <div className="flex items-center gap-2">
+              <User className="h-4 w-4 text-muted-foreground" />
+              <Label className="text-sm font-medium">Informações do Cliente (Opcional)</Label>
+            </div>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label htmlFor="customer-name" className="text-xs">Nome</Label>
+                <Input
+                  id="customer-name"
+                  placeholder="Nome do cliente"
+                  value={customerName}
+                  onChange={(e) => setCustomerName(e.target.value)}
+                  className="h-8 text-sm"
+                />
+              </div>
+              
+              <div className="space-y-1">
+                <Label htmlFor="customer-phone" className="text-xs">Telefone</Label>
+                <Input
+                  id="customer-phone"
+                  placeholder="(11) 99999-9999"
+                  value={customerPhone}
+                  onChange={(e) => setCustomerPhone(e.target.value)}
+                  className="h-8 text-sm"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="send-notification" 
+                checked={sendNotification}
+                onCheckedChange={(checked) => setSendNotification(checked === true)}
+                disabled={!customerPhone.trim()}
+              />
+              <Label 
+                htmlFor="send-notification" 
+                className={cn(
+                  "text-xs flex items-center gap-1",
+                  !customerPhone.trim() && "text-muted-foreground"
+                )}
+              >
+                <MessageSquare className="h-3 w-3" />
+                Enviar notificação por WhatsApp
+              </Label>
+            </div>
           </div>
 
           <div className="space-y-2">
