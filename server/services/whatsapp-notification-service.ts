@@ -93,6 +93,14 @@ export class WhatsAppNotificationService {
       // Gerar mensagem baseada no status
       const notification = orderNotificationService.createStatusUpdateMessage(status)
       
+      // Se não há mensagem para este status, não envia
+      if (!notification.message) {
+        return {
+          success: false,
+          message: `Status '${status}' não possui mensagem configurada`
+        }
+      }
+      
       // Enviar mensagem
       await whatsAppService.sendMessage(
         (device as any).deviceHash,

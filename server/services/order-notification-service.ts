@@ -62,9 +62,7 @@ export class OrderNotificationService {
     const delivery = this.getDeliveryText(order)
     const total = this.formatCurrency(order.total)
 
-    const message = `Pedido Criado
---------------
-Pedido nº ${order._id?.toString().slice(-6) || 'N/A'}
+    const message = `Pedido nº ${order._id?.toString().slice(-6) || 'N/A'}
 
 Itens:
 ${items}
@@ -81,24 +79,30 @@ Obrigado pela preferência, se precisar de algo é só chamar! 😉`
 
   createStatusUpdateMessage(status: string): OrderNotificationMessage {
     const statusMessages: { [key: string]: string } = {
-      'in_production': `Em Producao
-----------
-
-Agora vai! Seu pedido já está em produção 🥳`,
-      'out_for_delivery': `----------
-
-Tô chegando! Seu pedido já está na rota de entrega 🛵`,
-      'completed': `----------
-
-Seu pedido foi entregue! Esperamos que tenha gostado! 😊`,
-      'cancelled': `----------
-
-Pedido cancelado. Entre em contato conosco se tiver dúvidas.`
+      // Status "preparing" = Em Preparo
+      'preparing': `Agora vai! Seu pedido já está em produção 🥳`,
+      
+      // Status "delivering" = Em Entrega  
+      'delivering': `Tô chegando! Seu pedido já está na rota de entrega 🛵`,
+      
+      // Status "delivered" ou "completed" = Entregue
+      'delivered': `Seu pedido foi entregue! Esperamos que tenha gostado! 😊`,
+      
+      'completed': `Seu pedido foi entregue! Esperamos que tenha gostado! 😊`,
+      
+      // Status cancelado
+      'cancelled': `Pedido cancelado. Entre em contato conosco se tiver dúvidas.`,
+      
+      // Status pronto
+      'ready': `Seu pedido está pronto! 🎉`
     }
 
-    const message = statusMessages[status] || `Status atualizado: ${status}`
+    // Se o status não está mapeado, não retorna mensagem
+    if (!statusMessages[status]) {
+      return { message: '' }
+    }
     
-    return { message }
+    return { message: statusMessages[status] }
   }
 }
 
