@@ -36,37 +36,43 @@ export function QRCodeDialog({
   const [isConnected, setIsConnected] = useState<boolean>(false)
   const isRequestingRef = useRef<boolean>(false)
   
+  // WebSocket callbacks
+  const handleLoginSuccess = useCallback(() => {
+    console.log('Dispositivo conectado com sucesso!')
+    setIsConnected(true)
+    setIsTimerActive(false)
+    
+    // Fechar dialog após 2 segundos para mostrar o feedback
+    setTimeout(() => {
+      onOpenChange(false)
+    }, 2000)
+  }, [onOpenChange])
+
+  const handleDeviceUpdate = useCallback((deviceHash: string, updates: any) => {
+    // Atualização otimista no React Query
+    queryClient.setQueryData(
+      [['devices', 'list'], { storeId }],
+      (oldData: any) => {
+        if (!oldData?.devices) return oldData
+        
+        return {
+          ...oldData,
+          devices: oldData.devices.map((dev: any) => 
+            dev.deviceHash === deviceHash 
+              ? { ...dev, ...updates, lastSeen: new Date().toISOString() }
+              : dev
+          )
+        }
+      }
+    )
+  }, [queryClient, storeId])
+
   // WebSocket para detectar LOGIN_SUCCESS
   useWhatsAppWebSocket({
     deviceHash: device.deviceHash,
-    onLoginSuccess: () => {
-      console.log('Dispositivo conectado com sucesso!')
-      setIsConnected(true)
-      setIsTimerActive(false)
-      
-      // Fechar dialog após 2 segundos para mostrar o feedback
-      setTimeout(() => {
-        onOpenChange(false)
-      }, 2000)
-    },
-    onDeviceUpdate: (deviceHash, updates) => {
-      // Atualização otimista no React Query
-      queryClient.setQueryData(
-        [['devices', 'list'], { storeId }],
-        (oldData: any) => {
-          if (!oldData?.devices) return oldData
-          
-          return {
-            ...oldData,
-            devices: oldData.devices.map((dev: any) => 
-              dev.deviceHash === deviceHash 
-                ? { ...dev, ...updates, lastSeen: new Date().toISOString() }
-                : dev
-            )
-          }
-        }
-      )
-    }
+    enabled: open, // Only enable when dialog is open
+    onLoginSuccess: handleLoginSuccess,
+    onDeviceUpdate: handleDeviceUpdate
   })
 
   const getQRCodeMutation = trpc.devices.getQRCode.useMutation({

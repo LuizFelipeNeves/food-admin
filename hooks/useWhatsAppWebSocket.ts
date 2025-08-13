@@ -6,6 +6,8 @@ import { useEffect, useRef } from 'react'
 let globalWs: WebSocket | null = null
 let globalWsListeners: Set<(message: WhatsAppWebSocketMessage) => void> = new Set()
 let globalWsUrl: string | null = null
+let isConnecting = false
+let connectionCloseTimeout: NodeJS.Timeout | null = null
 
 interface WhatsAppWebSocketMessage {
   type: 'whatsapp-websocket-message'
@@ -27,29 +29,41 @@ interface UseWhatsAppWebSocketProps {
   enabled?: boolean
 }
 
+
 // Função para conectar o WebSocket global
 const connectGlobalWebSocket = (wsUrl: string) => {
+  // Verificações básicas para evitar conexões desnecessárias
+  if (isConnecting) {
+    return null
+  }
+
+  // Se já está conectado na mesma URL, reutilizar
   if (globalWs?.readyState === WebSocket.OPEN && globalWsUrl === wsUrl) {
     return globalWs
   }
 
-  // Fechar conexão anterior se existir
-  if (globalWs) {
+  // Se está tentando conectar na mesma URL, não duplicar
+  if (globalWs?.readyState === WebSocket.CONNECTING && globalWsUrl === wsUrl) {
+    return globalWs
+  }
+
+  // Fechar conexão anterior se necessário
+  if (globalWs && globalWs.readyState !== WebSocket.CLOSED) {
     globalWs.close()
   }
 
+  // Criar nova conexão
+  isConnecting = true
   globalWsUrl = wsUrl
   globalWs = new WebSocket(wsUrl)
 
   globalWs.onopen = () => {
-    console.log('WebSocket conectado')
+    isConnecting = false
   }
 
   globalWs.onmessage = (event) => {
     try {
       const data: WhatsAppWebSocketMessage = JSON.parse(event.data)
-      console.log('Mensagem WebSocket recebida:', data)
-      
       // Notificar todos os listeners
       globalWsListeners.forEach(listener => listener(data))
     } catch (error) {
@@ -58,11 +72,11 @@ const connectGlobalWebSocket = (wsUrl: string) => {
   }
 
   globalWs.onclose = (event) => {
-    console.log('WebSocket desconectado:', event.code, event.reason)
     globalWs = null
     globalWsUrl = null
+    isConnecting = false
     
-    // Tentar reconectar após 5 segundos se não foi fechado intencionalmente
+    // Só tentar reconectar se não foi fechado intencionalmente e há listeners ativos
     if (event.code !== 1000 && globalWsListeners.size > 0) {
       setTimeout(() => {
         if (globalWsListeners.size > 0) {
@@ -73,7 +87,7 @@ const connectGlobalWebSocket = (wsUrl: string) => {
   }
 
   globalWs.onerror = (error) => {
-    console.error('Erro no WebSocket:', error)
+    isConnecting = false
   }
 
   return globalWs
@@ -87,14 +101,22 @@ export function useWhatsAppWebSocket({
   enabled = true
 }: UseWhatsAppWebSocketProps) {
   const listenerRef = useRef<((message: WhatsAppWebSocketMessage) => void) | null>(null)
+  const callbacksRef = useRef({ onLoginSuccess, onMessage, onDeviceUpdate })
+
+  // Update callbacks ref whenever they change
+  useEffect(() => {
+    callbacksRef.current = { onLoginSuccess, onMessage, onDeviceUpdate }
+  }, [onLoginSuccess, onMessage, onDeviceUpdate])
 
   // Criar listener para este hook
   useEffect(() => {
-    if (!enabled) return
+    if (!enabled) {
+      return
+    }
 
     const messageListener = (data: WhatsAppWebSocketMessage) => {
       // Chamar callback genérico
-      onMessage?.(data)
+      callbacksRef.current.onMessage?.(data)
 
       // Verificar se é para o dispositivo correto
       if (deviceHash && data.deviceHash === deviceHash) {
@@ -103,12 +125,12 @@ export function useWhatsAppWebSocket({
           console.log('LOGIN_SUCCESS detectado para device:', deviceHash)
           
           // Atualizar dispositivo como logado e ativo
-          onDeviceUpdate?.(deviceHash, {
+          callbacksRef.current.onDeviceUpdate?.(deviceHash, {
             isLoggedIn: true,
             status: 'active'
           })
           
-          onLoginSuccess?.()
+          callbacksRef.current.onLoginSuccess?.()
         }
       } else if (!deviceHash) {
         // Se não há deviceHash específico, processar todas as mensagens
@@ -116,7 +138,7 @@ export function useWhatsAppWebSocket({
           console.log('LOGIN_SUCCESS detectado para device:', data.deviceHash)
           
           // Atualizar dispositivo como logado e ativo
-          onDeviceUpdate?.(data.deviceHash, {
+          callbacksRef.current.onDeviceUpdate?.(data.deviceHash, {
             isLoggedIn: true,
             status: 'active'
           })
@@ -124,14 +146,32 @@ export function useWhatsAppWebSocket({
       }
     }
 
-    // Adicionar listener
+    // Cancelar timeout de fechamento se um novo listener está sendo adicionado
+    if (connectionCloseTimeout) {
+      clearTimeout(connectionCloseTimeout)
+      connectionCloseTimeout = null
+    }
+
+    // Adicionar listener apenas se não existir
+    if (listenerRef.current) {
+      globalWsListeners.delete(listenerRef.current)
+    }
+    
     listenerRef.current = messageListener
     globalWsListeners.add(messageListener)
 
-    // Conectar se necessário
+    // Conectar apenas se necessário
     const baseUrl = process.env.NEXT_PUBLIC_WHATSAPP_API_BASE_URL || 'http://localhost:3000'
     const wsUrl = baseUrl.replace('http://', 'ws://').replace('https://', 'wss://') + '/ws'
-    connectGlobalWebSocket(wsUrl)
+    
+    // Só conectar se não há conexão ativa ou se a conexão foi perdida
+    const needsConnection = !globalWs || 
+                           globalWs.readyState === WebSocket.CLOSED || 
+                           globalWs.readyState === WebSocket.CLOSING
+    
+    if (needsConnection && !isConnecting) {
+      connectGlobalWebSocket(wsUrl)
+    }
 
     // Cleanup
     return () => {
@@ -140,14 +180,21 @@ export function useWhatsAppWebSocket({
         listenerRef.current = null
       }
       
-      // Se não há mais listeners, fechar conexão
-      if (globalWsListeners.size === 0 && globalWs) {
-        globalWs.close(1000, 'Desconectado pelo usuário')
-        globalWs = null
-        globalWsUrl = null
+      // Aguardar um tempo antes de fechar a conexão para permitir remontagem
+      if (globalWsListeners.size === 0 && globalWs && !connectionCloseTimeout) {
+        connectionCloseTimeout = setTimeout(() => {
+          // Verificar novamente se ainda não há listeners
+          if (globalWsListeners.size === 0 && globalWs) {
+            globalWs.close(1000, 'Desconectado pelo usuário')
+            globalWs = null
+            globalWsUrl = null
+            isConnecting = false
+          }
+          connectionCloseTimeout = null
+        }, 1000) // Aguarda 1 segundo para permitir remontagem
       }
     }
-  }, [enabled, deviceHash, onLoginSuccess, onMessage, onDeviceUpdate])
+  }, [enabled, deviceHash])
 
   return {
     connect: () => {

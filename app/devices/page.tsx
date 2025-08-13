@@ -58,32 +58,34 @@ export default function DevicesPage() {
   const hasMainDevice = devices.some((device) => device.isMain)
 
   // WebSocket global para detectar LOGIN_SUCCESS de qualquer dispositivo
+  const handleDeviceUpdate = useCallback((deviceHash: string, updates: any) => {
+    // Atualização otimista no React Query
+    queryClient.setQueryData(
+      [['devices', 'list'], { storeId }],
+      (oldData: any) => {
+        if (!oldData?.devices) return oldData
+        
+        return {
+          ...oldData,
+          devices: oldData.devices.map((dev: any) => 
+            dev.deviceHash === deviceHash 
+              ? { ...dev, ...updates, lastSeen: new Date().toISOString() }
+              : dev
+          )
+        }
+      }
+    )
+    
+    // Mostrar toast de sucesso
+    toast({
+      title: 'Dispositivo conectado!',
+      description: `O dispositivo foi conectado com sucesso.`,
+    })
+  }, [queryClient, storeId, toast])
+
   useWhatsAppWebSocket({
     enabled: !!storeId, // Só habilitar quando tiver storeId
-    onDeviceUpdate: useCallback((deviceHash: string, updates: any) => {
-      // Atualização otimista no React Query
-      queryClient.setQueryData(
-        [['devices', 'list'], { storeId }],
-        (oldData: any) => {
-          if (!oldData?.devices) return oldData
-          
-          return {
-            ...oldData,
-            devices: oldData.devices.map((dev: any) => 
-              dev.deviceHash === deviceHash 
-                ? { ...dev, ...updates, lastSeen: new Date().toISOString() }
-                : dev
-            )
-          }
-        }
-      )
-      
-      // Mostrar toast de sucesso
-      toast({
-        title: 'Dispositivo conectado!',
-        description: `O dispositivo foi conectado com sucesso.`,
-      })
-    }, [queryClient, storeId, toast])
+    onDeviceUpdate: handleDeviceUpdate
   })
 
   const createDeviceMutation = trpc.devices.create.useMutation({
