@@ -337,6 +337,7 @@ const deviceSchema = new mongoose.Schema(
     },
     isMain: { type: Boolean, default: false },
     autoStart: { type: Boolean, default: true },
+    isLoggedIn: { type: Boolean, default: false },
     lastSeen: { type: Date, default: null },
     company: {
       type: mongoose.Schema.Types.ObjectId,
@@ -449,6 +450,7 @@ export interface IDevice {
   status: 'active' | 'registered' | 'error' | 'stopped';
   isMain?: boolean;
   autoStart: boolean;
+  isLoggedIn: boolean;
   lastSeen?: Date | null;
   company: {
     _id: string;

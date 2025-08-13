@@ -264,7 +264,7 @@ export class WhatsAppService {
     return response.json();
   }
 
-  async getQRCode(deviceHash: string): Promise<{ code: string; message: string; results: { qr_duration: number; qr_code: string } }> {
+  async getQRCode(deviceHash: string): Promise<{ code: string; message: string; results?: { qr_duration: number; qr_code: string } }> {
     const response = await fetch(`${this.config.baseUrl}/api/app/login`, {
       method: 'GET',
       headers: {
@@ -272,6 +272,23 @@ export class WhatsAppService {
         'x-instance-id': deviceHash,
       },
     });
+
+    // Se for status 400, pode ser ALREADY_LOGGED_IN, então vamos verificar antes de dar erro
+    if (!response.ok && response.status === 400) {
+      try {
+        const contentType = response.headers.get('content-type');
+        if (contentType?.includes('application/json')) {
+          const errorData = await response.json();
+          
+          // Se for ALREADY_LOGGED_IN, retornar os dados ao invés de dar erro
+          if (errorData.code === 'ALREADY_LOGGED_IN') {
+            return errorData;
+          }
+        }
+      } catch {
+        // Se falhar ao ler JSON, continua com o erro normal
+      }
+    }
 
     if (!response.ok) {
       await this.handleApiError(response, 'obter código QR');

@@ -9,6 +9,7 @@ export interface Device {
   status: 'active' | 'registered' | 'error' | 'stopped';
   isMain?: boolean;
   autoStart: boolean;
+  isLoggedIn: boolean;
   lastSeen?: Date | null;
   company: {
     _id: string;
@@ -82,6 +83,7 @@ export interface QRCodeResponse {
   status: string;
   message?: string;
   qr_duration?: number;
+  isAlreadyLoggedIn?: boolean;
 }
 
 export interface DeviceListResponse {

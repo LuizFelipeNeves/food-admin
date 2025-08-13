@@ -9,6 +9,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { trpc } from '@/app/_trpc/client'
+import { useQueryClient } from '@tanstack/react-query'
 import useCurrentStore from '@/hooks/useCurrentStore'
 import { useWhatsAppWebSocket } from '@/hooks/useWhatsAppWebSocket'
 import { Progress } from '@/components/ui/progress'
@@ -27,6 +28,7 @@ export function QRCodeDialog({
   device,
 }: QRCodeDialogProps) {
   const { storeId } = useCurrentStore()
+  const queryClient = useQueryClient()
   const [qrCode, setQrCode] = useState<string | null>(device.qrCode || null)
   const [countdown, setCountdown] = useState<number>(0)
   const [qrDuration, setQrDuration] = useState<number>(30)
@@ -52,6 +54,23 @@ export function QRCodeDialog({
   const getQRCodeMutation = trpc.devices.getQRCode.useMutation({
     onSuccess: (data) => {
       isRequestingRef.current = false
+      
+      // Verificar se o dispositivo já está logado
+      if (data.isAlreadyLoggedIn) {
+        console.log('Device is already logged in, showing connected state')
+        setIsConnected(true)
+        setIsTimerActive(false)
+        
+        // Invalidar queries para atualizar a UI
+        queryClient.invalidateQueries({ queryKey: [['devices', 'list']] })
+        
+        // Fechar dialog após 2 segundos
+        setTimeout(() => {
+          onOpenChange(false)
+        }, 2000)
+        return
+      }
+      
       if (data.qrCode) {
         setQrCode(data.qrCode)
         setQrDuration(data.qr_duration || 30)

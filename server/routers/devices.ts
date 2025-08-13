@@ -352,13 +352,32 @@ export const devicesRouter = router({
 
       const qrData = await whatsAppService.getQRCode(device.deviceHash);
       
+      console.log('QR Code response:', JSON.stringify(qrData, null, 2));
+      
+      // Se dispositivo já está logado, atualizar status
+      if (qrData.code === 'ALREADY_LOGGED_IN') {
+        await Device.findByIdAndUpdate(input.id, {
+          status: 'active',
+          isLoggedIn: true,
+          lastSeen: new Date(),
+        });
+
+        return {
+          qrCode: null,
+          status: 'ALREADY_LOGGED_IN',
+          message: 'Dispositivo já está conectado',
+          isAlreadyLoggedIn: true
+        };
+      }
+      
       // QR Code não é mais armazenado no banco, apenas retornado
       // Mapear a estrutura da API para o formato esperado pelo frontend
       return {
         qrCode: qrData.results?.qr_code || null,
         status: qrData.code,
         message: qrData.message,
-        qr_duration: qrData.results?.qr_duration || 30
+        qr_duration: qrData.results?.qr_duration || 30,
+        isAlreadyLoggedIn: false
       };
     }),
 
@@ -536,6 +555,7 @@ export const devicesRouter = router({
       // Atualizar status no banco
       await Device.findByIdAndUpdate(input.id, {
         status: 'registered',
+        isLoggedIn: false,
         lastSeen: null,
       });
 
@@ -544,8 +564,16 @@ export const devicesRouter = router({
         device._id.toString(),
         'disconnected',
         'registered',
-        `Dispositivo ${device.name} desconectado (logout)`,
-        result
+        `Dispositivo ${device.name} desconectado (logout) por ${ctx.user.email}`,
+        { 
+          ...result,
+          loggedOutBy: {
+            userId: ctx.user.id,
+            email: ctx.user.email,
+            name: ctx.user.name
+          },
+          action: 'manual_logout'
+        }
       );
 
       return result;

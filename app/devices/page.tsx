@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { Layout } from '@/components/layout/layout'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Plus, QrCode, History, Star, Play, Square, RotateCcw, LogOut } from 'lucide-react'
+import { Plus, QrCode, History, Star, Play, Square, RotateCcw, LogOut, UserX } from 'lucide-react'
 import { QRCodeDialog } from '@/components/devices/qr-code-dialog'
 import { ConnectionHistoryDialog } from '@/components/devices/connection-history-dialog'
 import { NewDeviceDialog } from '@/components/devices/new-device-dialog'
@@ -28,6 +28,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { MoreHorizontal } from 'lucide-react'
 import type { Device, DeviceListInput, DeviceControlInput, DeviceDeleteInput, DeviceCreateInput } from '@/types/devices'
 
@@ -40,6 +41,10 @@ export default function DevicesPage() {
   const [qrCodeDialog, setQrCodeDialog] = useState(false)
   const [historyDialog, setHistoryDialog] = useState(false)
   const [newDeviceDialog, setNewDeviceDialog] = useState(false)
+  const [logoutDialog, setLogoutDialog] = useState(false)
+  const [deviceToLogout, setDeviceToLogout] = useState<Device | null>(null)
+  const [deleteDialog, setDeleteDialog] = useState(false)
+  const [deviceToDelete, setDeviceToDelete] = useState<Device | null>(null)
 
   const listInput: DeviceListInput = { storeId }
   
@@ -136,6 +141,23 @@ export default function DevicesPage() {
     },
   })
 
+  const logoutDeviceMutation = trpc.devices.logout.useMutation({
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [['devices', 'list']] })
+      toast({
+        title: 'Dispositivo deslogado',
+        description: 'O dispositivo foi deslogado com sucesso.',
+      })
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Erro ao deslogar dispositivo',
+        description: error.message,
+        variant: 'destructive',
+      })
+    },
+  })
+
   const getStatusColor = (status: Device['status']) => {
     switch (status) {
       case 'active':
@@ -197,41 +219,67 @@ export default function DevicesPage() {
     restartDeviceMutation.mutate(input)
   }
 
-  const handleDeleteDevice = (deviceId: string) => {
-    if (confirm('Tem certeza que deseja remover este dispositivo?')) {
-      const input: DeviceDeleteInput = { id: deviceId, storeId }
+  const handleDeleteDevice = (device: Device) => {
+    setDeviceToDelete(device)
+    setDeleteDialog(true)
+  }
+
+  const confirmDelete = () => {
+    if (deviceToDelete) {
+      const input: DeviceDeleteInput = { id: deviceToDelete._id, storeId }
       deleteDeviceMutation.mutate(input)
+      setDeleteDialog(false)
+      setDeviceToDelete(null)
     }
   }
 
-  // Função para determinar quais ações estão disponíveis baseadas no status
-  const getAvailableActions = (status: Device['status']) => {
+  const handleLogoutDevice = (device: Device) => {
+    setDeviceToLogout(device)
+    setLogoutDialog(true)
+  }
+
+  const confirmLogout = () => {
+    if (deviceToLogout) {
+      const input: DeviceControlInput = { id: deviceToLogout._id, storeId }
+      logoutDeviceMutation.mutate(input)
+      setLogoutDialog(false)
+      setDeviceToLogout(null)
+    }
+  }
+
+  // Função para determinar quais ações estão disponíveis baseadas no status e login
+  const getAvailableActions = (status: Device['status'], isLoggedIn: boolean) => {
     const actions = {
       canStart: false,
       canStop: false,
       canRestart: false,
       canDelete: true, // Sempre pode deletar
       canQR: false,
+      canLogout: false,
     }
 
     switch (status) {
       case 'active':
         actions.canStop = true
         actions.canRestart = true
-        actions.canQR = true // Quando ativo, não precisa de QR
+        actions.canQR = !isLoggedIn // Só mostra QR se não estiver logado
+        actions.canLogout = isLoggedIn // Só pode deslogar se estiver logado
         break
       case 'registered':
         actions.canStart = true
-        actions.canQR = true // Quando registrado, pode precisar de QR
+        actions.canQR = !isLoggedIn // Só mostra QR se não estiver logado
+        actions.canLogout = isLoggedIn // Só pode deslogar se estiver logado
         break
       case 'stopped':
         actions.canStart = true
         actions.canQR = false
+        actions.canLogout = false
         break
       case 'error':
         actions.canStart = true
-        actions.canRestart = true // Em caso de erro, pode tentar reiniciar
-        actions.canQR = true // Em caso de erro, pode precisar de novo QR
+        actions.canRestart = true
+        actions.canQR = !isLoggedIn // Só mostra QR se não estiver logado
+        actions.canLogout = isLoggedIn // Só pode deslogar se estiver logado
         break
     }
 
@@ -307,7 +355,12 @@ export default function DevicesPage() {
                               device.status
                             )}`}
                           />
-                          {getStatusText(device.status)}
+                          <span>{getStatusText(device.status)}</span>
+                          {device.isLoggedIn && (
+                            <span className="text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full">
+                              Conectado
+                            </span>
+                          )}
                         </div>
                       </TableCell>
                       <TableCell>
@@ -319,7 +372,7 @@ export default function DevicesPage() {
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
                           {(() => {
-                            const actions = getAvailableActions(device.status)
+                            const actions = getAvailableActions(device.status, device.isLoggedIn)
                             return (
                               <>
                                 {actions.canQR && (
@@ -351,7 +404,7 @@ export default function DevicesPage() {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               {(() => {
-                                const actions = getAvailableActions(device.status)
+                                const actions = getAvailableActions(device.status, device.isLoggedIn)
                                 return (
                                   <>
                                     {actions.canStart && (
@@ -372,9 +425,15 @@ export default function DevicesPage() {
                                         Reiniciar
                                       </DropdownMenuItem>
                                     )}
+                                    {actions.canLogout && (
+                                      <DropdownMenuItem onClick={() => handleLogoutDevice(device)}>
+                                        <UserX className="mr-2 h-4 w-4" />
+                                        Deslogar
+                                      </DropdownMenuItem>
+                                    )}
                                     {actions.canDelete && (
                                       <DropdownMenuItem 
-                                        onClick={() => handleDeleteDevice(device._id)}
+                                        onClick={() => handleDeleteDevice(device)}
                                         className="text-red-600"
                                       >
                                         <LogOut className="mr-2 h-4 w-4" />
@@ -417,6 +476,40 @@ export default function DevicesPage() {
         onOpenChange={setNewDeviceDialog}
         onSave={handleNewDevice}
         hasMainDevice={hasMainDevice}
+      />
+
+      <ConfirmDialog
+        open={logoutDialog}
+        onOpenChange={setLogoutDialog}
+        onConfirm={confirmLogout}
+        title="Deslogar Dispositivo"
+        description={
+          <>
+            Tem certeza que deseja deslogar o dispositivo <strong>{deviceToLogout?.name}</strong>?
+            <br /><br />
+            Esta ação irá desconectar o WhatsApp deste dispositivo e será necessário escanear o QR Code novamente para reconectar.
+          </>
+        }
+        confirmText="Deslogar"
+        confirmVariant="destructive"
+        isLoading={logoutDeviceMutation.isLoading}
+      />
+
+      <ConfirmDialog
+        open={deleteDialog}
+        onOpenChange={setDeleteDialog}
+        onConfirm={confirmDelete}
+        title="Remover Dispositivo"
+        description={
+          <>
+            Tem certeza que deseja remover permanentemente o dispositivo <strong>{deviceToDelete?.name}</strong>?
+            <br /><br />
+            Esta ação não pode ser desfeita. O dispositivo será completamente removido do sistema.
+          </>
+        }
+        confirmText="Remover"
+        confirmVariant="destructive"
+        isLoading={deleteDeviceMutation.isLoading}
       />
     </Layout>
   )
