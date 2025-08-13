@@ -315,7 +315,7 @@ export class WhatsAppService {
 }
 
 const whatsappConfig: WhatsAppAPIConfig = {
-  baseUrl: process.env.WHATSAPP_API_BASE_URL || 'http://localhost:3000',
+  baseUrl: process.env.NEXT_PUBLIC_WHATSAPP_API_BASE_URL || 'http://localhost:3000',
 };
 
 export const whatsAppService = new WhatsAppService(whatsappConfig);

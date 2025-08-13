@@ -48,6 +48,24 @@ export function QRCodeDialog({
       setTimeout(() => {
         onOpenChange(false)
       }, 2000)
+    },
+    onDeviceUpdate: (deviceHash, updates) => {
+      // Atualização otimista no React Query
+      queryClient.setQueryData(
+        [['devices', 'list'], { storeId }],
+        (oldData: any) => {
+          if (!oldData?.devices) return oldData
+          
+          return {
+            ...oldData,
+            devices: oldData.devices.map((dev: any) => 
+              dev.deviceHash === deviceHash 
+                ? { ...dev, ...updates, lastSeen: new Date().toISOString() }
+                : dev
+            )
+          }
+        }
+      )
     }
   })
 

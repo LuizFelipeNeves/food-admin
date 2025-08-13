@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { Layout } from '@/components/layout/layout'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -30,6 +30,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { MoreHorizontal } from 'lucide-react'
+import { useWhatsAppWebSocket } from '@/hooks/useWhatsAppWebSocket'
 import type { Device, DeviceListInput, DeviceControlInput, DeviceDeleteInput, DeviceCreateInput } from '@/types/devices'
 
 
@@ -55,6 +56,35 @@ export default function DevicesPage() {
 
   const devices = devicesData?.devices || []
   const hasMainDevice = devices.some((device) => device.isMain)
+
+  // WebSocket global para detectar LOGIN_SUCCESS de qualquer dispositivo
+  useWhatsAppWebSocket({
+    enabled: !!storeId, // Só habilitar quando tiver storeId
+    onDeviceUpdate: useCallback((deviceHash, updates) => {
+      // Atualização otimista no React Query
+      queryClient.setQueryData(
+        [['devices', 'list'], { storeId }],
+        (oldData: any) => {
+          if (!oldData?.devices) return oldData
+          
+          return {
+            ...oldData,
+            devices: oldData.devices.map((dev: any) => 
+              dev.deviceHash === deviceHash 
+                ? { ...dev, ...updates, lastSeen: new Date().toISOString() }
+                : dev
+            )
+          }
+        }
+      )
+      
+      // Mostrar toast de sucesso
+      toast({
+        title: 'Dispositivo conectado!',
+        description: `O dispositivo foi conectado com sucesso.`,
+      })
+    }, [queryClient, storeId, toast])
+  })
 
   const createDeviceMutation = trpc.devices.create.useMutation({
     onSuccess: () => {
@@ -178,7 +208,7 @@ export default function DevicesPage() {
       case 'active':
         return 'Ativo'
       case 'registered':
-        return 'Registrado'
+        return 'Aguardando conectar'
       case 'error':
         return 'Erro'
       case 'stopped':
